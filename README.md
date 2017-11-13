@@ -1,7 +1,7 @@
 <div align="center">
 
   <a href="https://github.com/senaite/senaite.ci">
-    <img src="logo.png" alt="SENAITE" height="64" />
+    <img src="static/logo.png" alt="SENAITE" height="64" />
   </a>
   <h1>SENAITE SYNC</h1>
 
