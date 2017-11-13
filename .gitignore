@@ -99,3 +99,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+.mr.developer.cfg
+bin
+src/bika.lims
+src/senaite.api
+src/senaite.jsonapi

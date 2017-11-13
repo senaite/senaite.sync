@@ -1,0 +1,46 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="senaite">
+  <head>
+
+    <metal:block fill-slot="javascript_head_slot"
+                 tal:define="portal context/@@plone_portal_state/portal;">
+    </metal:block>
+
+  </head>
+  <body>
+
+    <metal:title fill-slot="content-title">
+      <h1 i18n:translate="">
+        SENAITE SYNC
+      </h1>
+    </metal:title>
+    <metal:description fill-slot="content-description">
+      <p i18n:translate="">
+      </p>
+    </metal:description>
+
+    <div metal:fill-slot="content-core"
+         tal:define="portal context/@@plone_portal_state/portal;">
+
+      <form id="sync_form"
+            name="sync_form"
+            method="POST">
+
+        <input type="hidden" name="submitted" value="1"/>
+        <span tal:replace="structure context/@@authenticator/authenticator"/>
+
+        <input class="btn btn-success btn-sm allowMultiSubmit"
+               type="submit"
+               name="sync"
+               i18n:attributes="value"
+               value="Sync"/>
+
+      </form>
+
+    </div>
+
+  </body>
+</html>

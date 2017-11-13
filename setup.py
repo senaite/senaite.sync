@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-version = '1.0.1'
+version = '1.0.0'
 
 
 setup(
@@ -37,8 +37,17 @@ setup(
         'setuptools',
         'senaite.api',
         'senaite.jsonapi',
+        'requests',
     ],
-    extras_require={},
+    extras_require={
+        'test': [
+            'Products.PloneTestCase',
+            'Products.SecureMailHost',
+            'plone.app.testing',
+            'robotsuite',
+            'unittest2',
+        ]
+    },
     entry_points="""
       # -*- Entry points: -*-
       [z3c.autoinclude.plugin]
