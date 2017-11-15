@@ -6,6 +6,7 @@ import urllib
 import urlparse
 import requests
 
+from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
 
 from Products.Five import BrowserView
@@ -67,36 +68,42 @@ class Sync(BrowserView):
         self.request.set('disable_plone.rightcolumn', 1)
         self.request.set('disable_border', 1)
 
-        # Handle Form Submit
+        # Handle form submit
         form = self.request.form
-        if not form.get("submitted", False):
+        fetchform = form.get("fetchform", False)
+        dataform = form.get("dataform", False)
+        if not any([fetchform, dataform]):
             return self.template()
 
-        # Clear the storage and return
+        # remember the form field values
+        self.url = form.get("url", None)
+        self.username = form.get("ac_name", None)
+        self.password = form.get("ac_password", None)
+
+        # Handle "Import" action
+        if form.get("import", False):
+            key = form.get("key", None)
+            logger.info("Import data from {}".format(key))
+            return self.template()
+
+        # Handle "Clear" action
         if form.get("clear", False):
             self.flush_storage()
             message = _("Cleared Data Storage")
             self.add_status_message(message, "info")
             return self.template()
 
-        # Fetch the data into the storage
+        # Handle "Fetch" action
         if form.get("fetch", False):
-            url = form.get("url", None)
-            username = form.get("ac_name", None)
-            password = form.get("ac_password", None)
 
             # check if all mandatory fields have values
-            if not all([url, username, password]):
+            if not all([self.url, self.username, self.password]):
                 message = _("Please fill in all required fields")
                 self.add_status_message(message, "error")
                 return self.template()
-            else:
-                self.url = url
-                self.username = username
-                self.password = password
 
             # initialize the session
-            self.session = self.get_session(username, password)
+            self.session = self.get_session(self.username, self.password)
 
             # try to get the version of the remote JSON API
             version = self.get_version()
@@ -112,49 +119,34 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
-            # Start the fetch process
-            self.fetch()
+            # Start the fetch process beginning from the portal object
+            self.fetch(uid="0")
 
         # always render the template
         return self.template()
 
-    def fetch(self):
+    def fetch(self, uid):
         """Fetch the data from the source
         """
+        # Fetch the object by uid
+        parent = self.get_json(uid, complete=True, children=True)
+        children = parent.pop("children", [])
+        self.store(uid, parent)
 
-        # Fetch Bika Setup Folder
-        bikasetup = self.get_first_item("bikasetup", complete=True)
-        self.store(bikasetup.get("uid"), bikasetup)
+        # Fetch the children of this object
+        for child in children:
+            child_uid = child.get("uid")
+            if not child_uid:
+                message = "Item '{}' has no UID key".format(child)
+                self.add_status_message(message, "warn")
+                continue
 
-        # Fetch all Bika Setup Items
-        for folder in self.yield_items("search", path=bikasetup.get("path"), depth=1, complete=True):
-            self.store(folder.get("uid"), folder)
-            for item in self.yield_items("search", path=folder.get("path"), depth=1, complete=True):
-                self.store(item.get("uid"), item)
+            child_item = self.get_json(child_uid, complete=True, children=True)
+            child_children = child_item.pop("children", [])
+            self.store(child_uid, child_item)
 
-        # Fetch Method Folder
-        methodfolder = self.get_first_item("methods", complete=True)
-        self.store(methodfolder.get("uid"), methodfolder)
-
-        # Fetch all Methods
-        for item in self.yield_items("search", path=methodfolder.get("path"), depth=1, complete=True):
-            self.store(item.get("uid"), item)
-
-        # Fetch Client Folder
-        clientfolder = self.get_first_item("clientfolder", complete=True)
-        self.store(clientfolder.get("uid"), clientfolder)
-
-        # Fetch all Clients, Contacts, ARs, Samples, Attachments ...
-        for item in self.yield_items("search", path=clientfolder.get("path"), depth=1, complete=True):
-            self.store(item.get("uid"), item)
-
-        # Fetch Worksheet Folder
-        worksheetfolder = self.get_first_item("worksheetfolder", complete=True)
-        self.store(worksheetfolder.get("uid"), worksheetfolder)
-
-        # Fetch Worksheets
-        for item in self.yield_items("search", path=worksheetfolder.get("path"), depth=1, complete=True):
-            self.store(item.get("uid"), item)
+            for child_child in child_children:
+                self.fetch(uid=child_child.get("uid"))
 
     def store(self, key, value):
         """Store item in storage
@@ -166,17 +158,22 @@ class Sync(BrowserView):
             storage = OOBTree()
             self.storage[self.url] = storage
 
-        # store the data
-        storage[key] = value
+        # already fetched
+        if key in storage:
+            return
 
-        # Create indexes
-        for index in ["path", "id", "portal_type"]:
+        # Create some indexes
+        for index in ["portal_type", "parent_id"]:
             index_key = "by_{}".format(index)
             if not storage.get(index_key):
                 storage[index_key] = OOBTree()
-            if not storage[index_key].get(key):
-                storage[index_key][key] = []
-            storage[index_key][key].append(value.get(index))
+            metadata = value.get(index)
+            if not storage[index_key].get(metadata):
+                storage[index_key][metadata] = OOSet()
+            storage[index_key][metadata].add(key)
+
+        # store the data
+        storage[key] = value
 
     def get_version(self):
         """Return the remote JSON API version
@@ -212,19 +209,21 @@ class Sync(BrowserView):
         try:
             response = self.session.get(api_url)
         except Exception as e:
-            message = "Could not connect to {} Please check your URL.".format(api_url)
+            message = "Could not connect to {} Please check.".format(
+                api_url)
             logger.error(e)
             self.add_status_message(message, "error")
             return {}
         status = response.status_code
         if status != 200:
-            message = "GET returned Status Code {}. Please check your URL.".format(status)
-            self.add_status_message(message, "error")
+            message = "GET for {} ({}) returned Status Code {}. Please check.".format(
+                url_or_endpoint, api_url, status)
+            self.add_status_message(message, "warning")
             return {}
         return response.json()
 
     def yield_items(self, url_or_endpoint, **kw):
-        """Yield the full items of all pages
+        """Yield all items of all pages
         """
         data = self.get_json(url_or_endpoint, **kw)
         for item in data.get("items", []):
@@ -236,7 +235,7 @@ class Sync(BrowserView):
                 yield item
 
     def get_api_url(self, url_or_endpoint, **kw):
-        """Create an API URL
+        """Create an API URL from an endpoint or absolute url
         """
         # Nothing to do if we have no base URL
         if self.url is None:
@@ -257,7 +256,7 @@ class Sync(BrowserView):
         return url_or_endpoint
 
     def get_session(self, username, password):
-        """Return a session object
+        """Return a 'requests' session object
         """
         session = requests.Session()
         session.auth = (username, password)
