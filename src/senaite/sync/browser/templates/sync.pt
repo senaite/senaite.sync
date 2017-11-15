@@ -4,11 +4,9 @@
       metal:use-macro="here/main_template/macros/master"
       i18n:domain="senaite">
   <head>
-
     <metal:block fill-slot="javascript_head_slot"
                  tal:define="portal context/@@plone_portal_state/portal;">
     </metal:block>
-
   </head>
   <body>
 
@@ -32,13 +30,100 @@
         <input type="hidden" name="submitted" value="1"/>
         <span tal:replace="structure context/@@authenticator/authenticator"/>
 
+        <!-- Base URL -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="url">
+            Source URL
+            <span class="required"></span>
+            <span i18n:translate=""
+                class="help formHelp">
+              The base URL of the source system, e.g. https://ridingbytes.com or http://localhost:1234/Plone
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
+            <input type="text" size="30"
+                   class="form-control"
+                   id="url"
+                   tal:attributes="value view/url|nothing"
+                   name="url"/>
+          </div>
+        </div>
+
+        <!-- Username -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="ac_name">
+            Username
+            <span class="required"></span>
+            <span i18n:translate=""
+                class="help formHelp">
+              The username to login into the source system
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+            <input type="text"
+                   size="30"
+                   autocomplete="new-username"
+                   class="form-control"
+                   id="ac_name"
+                   tal:attributes="value view/username|nothing"
+                   name="ac_name"/>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="ac_password">
+            Password
+            <span class="required"></span>
+            <span i18n:translate=""
+                class="help formHelp">
+              The password to login into the source system
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+            <input type="password"
+                   autocomplete="new-password"
+                   size="30"
+                   class="form-control"
+                   id="ac_password"
+                   tal:attributes="value view/password|nothing"
+                   name="ac_password"/>
+          </div>
+        </div>
+
         <input class="btn btn-success btn-sm allowMultiSubmit"
                type="submit"
-               name="sync"
+               name="fetch"
                i18n:attributes="value"
-               value="Sync"/>
+               value="Fetch"/>
+
+        <input class="btn btn-warning btn-sm allowMultiSubmit"
+               type="submit"
+               name="clear"
+               i18n:attributes="value"
+               value="Clear"/>
 
       </form>
+
+      <!-- Storage View -->
+      <tal:storage repeat="storage view/storage">
+        <h2>Storage View for <span tal:replace="storage"/> (<span tal:replace="python:len(view.storage[storage].keys())"/> Items)</h2>
+        <table class="table listing">
+          <tr tal:repeat="key python:view.storage[storage].keys()">
+            <td tal:content="key"></td>
+            <td tal:content="python:view.storage[storage][key]"></td>
+          </tr>
+        </table>
+      </tal:storage>
 
     </div>
 
