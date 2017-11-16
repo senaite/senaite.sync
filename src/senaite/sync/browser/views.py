@@ -76,7 +76,10 @@ class Sync(BrowserView):
             return self.template()
 
         # remember the form field values
-        self.url = form.get("url", None)
+        url = form.get("url", None)
+        if not url.startswith("http"):
+            url = "http://{}".format(url)
+        self.url = url
         self.username = form.get("ac_name", None)
         self.password = form.get("ac_password", None)
 
@@ -118,19 +121,28 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
+            # Fetch all users from the source
+            self.fetch_users()
             # Start the fetch process beginning from the portal object
-            self.fetch_data(uid="0")
+            self.fetch_data()
 
         # always render the template
         return self.template()
+
+    def fetch_users(self):
+        """Fetch all users from the source instance
+        """
+        storage = self.get_storage()
+        userstore = storage["users"]
+
+        for user in self.yield_items("users"):
+            username = user.get("username")
+            userstore[username] = user
 
     def import_data(self, key):
         """Import the data from the storage identified by key
         """
         logger.info("*** IMPORT DATA {} ***".format(key))
-        data = self.storage[key]
-        if not data:
-            return False
 
     def fetch_data(self, uid="0"):
         """Fetch the data from the source
@@ -158,29 +170,29 @@ class Sync(BrowserView):
     def store(self, key, value):
         """Store item in storage
         """
-        storage = None
-        if self.storage.get(self.url):
-            storage = self.storage[self.url]
-        else:
-            storage = OOBTree()
-            self.storage[self.url] = storage
+        # Get the storage for the current URL
+        storage = self.get_storage()
+        datastore = storage["data"]
+        indexstore = storage["index"]
 
         # already fetched
-        if key in storage:
+        if key in datastore:
             return
 
         # Create some indexes
         for index in ["portal_type", "parent_id"]:
             index_key = "by_{}".format(index)
-            if not storage.get(index_key):
-                storage[index_key] = OOBTree()
-            metadata = value.get(index)
-            if not storage[index_key].get(metadata):
-                storage[index_key][metadata] = OOSet()
-            storage[index_key][metadata].add(key)
+            if not indexstore.get(index_key):
+                indexstore[index_key] = OOBTree()
+            indexvalue = value.get(index)
+            # Check if the index value, e.g. the portal_type="Sample", is
+            # already known as a key in the index.
+            if not indexstore[index_key].get(indexvalue):
+                indexstore[index_key][indexvalue] = OOSet()
+            indexstore[index_key][indexvalue].add(key)
 
         # store the data
-        storage[key] = value
+        datastore[key] = value
 
     def get_version(self):
         """Return the remote JSON API version
@@ -281,6 +293,19 @@ class Sync(BrowserView):
 
     def get_annotation(self):
         return IAnnotations(self.portal)
+
+    def get_storage(self, key=None):
+        """Return a ready to use storage for the given key
+        """
+        if key is None:
+            key = self.url
+
+        if not self.storage.get(key):
+            self.storage[key] = OOBTree()
+            self.storage[key]["data"] = OOBTree()
+            self.storage[key]["index"] = OOBTree()
+            self.storage[key]["users"] = OOBTree()
+        return self.storage[key]
 
     @property
     def storage(self):

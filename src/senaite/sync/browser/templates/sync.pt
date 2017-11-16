@@ -124,7 +124,7 @@
 
             <dt class="collapsibleHeader">
               Data for <span tal:replace="storage"/>
-              (<span tal:replace="python:len(view.storage[storage].keys())"/> Items)
+              (<span tal:replace="python:len(view.storage[storage]['data'].keys())"/> Items)
             </dt>
 
             <input type="hidden" name="dataform" value="1"/>
@@ -137,6 +137,43 @@
                      i18n:attributes="value"
                      value="Import"/>
 
+              <h3>Users</h3>
+              <table class="table listing collapsibleContent">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Roles</th>
+                    <th>Groups</th>
+                    <th>API URL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr tal:define="data python:view.storage[storage]['users']"
+                      tal:repeat="key python:data.keys()">
+                    <td>
+                      <span tal:content="python:data[key].get('username')"></span>
+                    </td>
+                    <td>
+                      <tal:roles repeat="role python:data[key].get('roles')">
+                        <span tal:content="role"/>&nbsp;
+                      </tal:roles>
+                    </td>
+                    <td>
+                      <tal:roles repeat="group python:data[key].get('groups')">
+                        <span tal:content="group"/>&nbsp;
+                      </tal:roles>
+                    </td>
+                    <td>
+                      <a href="#"
+                         tal:attributes="href python:data[key].get('api_url')">
+                        Link
+                      </a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3>Content</h3>
               <table class="table listing collapsibleContent">
                 <thead>
                   <tr>
@@ -148,23 +185,24 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr tal:repeat="key python:view.storage[storage].keys()">
+                  <tr tal:define="data python:view.storage[storage]['data']"
+                      tal:repeat="key python:data.keys()">
                     <td tal:content="key"></td>
                     <td>
-                      <span tal:content="python:view.storage[storage][key].get('id')"></span>
+                      <span tal:content="python:data[key].get('id')"></span>
                     </td>
                     <td>
-                      <span tal:content="python:view.storage[storage][key].get('path')"></span>
+                      <span tal:content="python:data[key].get('path')"></span>
                     </td>
                     <td>
                       <a href="#"
-                         tal:attributes="href python:view.storage[storage][key].get('url')">
+                         tal:attributes="href python:data[key].get('url')">
                         Link
                       </a>
                     </td>
                     <td>
                       <a href="#"
-                         tal:attributes="href python:view.storage[storage][key].get('api_url')">
+                         tal:attributes="href python:data[key].get('api_url')">
                         Link
                       </a>
                     </td>
