@@ -83,7 +83,7 @@ class Sync(BrowserView):
         # Handle "Import" action
         if form.get("import", False):
             key = form.get("key", None)
-            logger.info("Import data from {}".format(key))
+            self.import_data(key)
             return self.template()
 
         # Handle "Clear" action
@@ -95,7 +95,6 @@ class Sync(BrowserView):
 
         # Handle "Fetch" action
         if form.get("fetch", False):
-
             # check if all mandatory fields have values
             if not all([self.url, self.username, self.password]):
                 message = _("Please fill in all required fields")
@@ -120,12 +119,20 @@ class Sync(BrowserView):
                 return self.template()
 
             # Start the fetch process beginning from the portal object
-            self.fetch(uid="0")
+            self.fetch_data(uid="0")
 
         # always render the template
         return self.template()
 
-    def fetch(self, uid):
+    def import_data(self, key):
+        """Import the data from the storage identified by key
+        """
+        logger.info("*** IMPORT DATA {} ***".format(key))
+        data = self.storage[key]
+        if not data:
+            return False
+
+    def fetch_data(self, uid="0"):
         """Fetch the data from the source
         """
         # Fetch the object by uid
@@ -146,7 +153,7 @@ class Sync(BrowserView):
             self.store(child_uid, child_item)
 
             for child_child in child_children:
-                self.fetch(uid=child_child.get("uid"))
+                self.fetch_data(uid=child_child.get("uid"))
 
     def store(self, key, value):
         """Store item in storage
