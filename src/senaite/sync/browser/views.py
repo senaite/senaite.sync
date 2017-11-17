@@ -11,14 +11,19 @@ from BTrees.OOBTree import OOBTree
 
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from Products.CMFPlone.utils import _createObjectByType
 
 from zope.interface import implements
 from zope.annotation.interfaces import IAnnotations
 from zope.globalrequest import getRequest
+from zope.component import getUtility
+from zope.component.interfaces import IFactory
 
 from plone import protect
+from plone import api as ploneapi
 
 from senaite import api
+from senaite.jsonapi.interfaces import IDataManager
 from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
@@ -76,7 +81,7 @@ class Sync(BrowserView):
             return self.template()
 
         # remember the form field values
-        url = form.get("url", None)
+        url = form.get("url", "")
         if not url.startswith("http"):
             url = "http://{}".format(url)
         self.url = url
@@ -85,11 +90,20 @@ class Sync(BrowserView):
 
         # Handle "Import" action
         if form.get("import", False):
-            key = form.get("key", None)
-            self.import_data(key)
+            domain = form.get("domain", None)
+            self.import_users(domain)
+            self.import_data(domain)
             return self.template()
 
-        # Handle "Clear" action
+        # Handle "Clear this Storage" action
+        if form.get("clear_storage", False):
+            domain = form.get("domain", None)
+            del self.storage[domain]
+            message = _("Cleared Storage {}".format(domain))
+            self.add_status_message(message, "info")
+            return self.template()
+
+        # Handle "Clear all Storages" action
         if form.get("clear", False):
             self.flush_storage()
             message = _("Cleared Data Storage")
@@ -121,36 +135,168 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
+            domain = self.url
             # Fetch all users from the source
-            self.fetch_users()
+            self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
-            self.fetch_data()
+            self.fetch_data(domain, uid="0")
 
         # always render the template
         return self.template()
 
-    def fetch_users(self):
-        """Fetch all users from the source instance
+    def import_users(self, domain):
+        """Import the users from the storage identified by domain
         """
-        storage = self.get_storage()
+        logger.info("*** IMPORT USERS {} ***".format(domain))
+
+        storage = self.get_storage(domain=domain)
+        userstore = storage["users"]
+
+        for username, userdata in userstore.items():
+
+            if ploneapi.user.get(username):
+                logger.info("Skipping existing user {}".format(username))
+                continue
+            email = userdata.get("email", "")
+            roles = userdata.get("roles", ())
+            # TODO handle groups
+            # groups = userdata.get("groups",  groups=groups)())
+            logger.info("Creating user {}".format(username))
+            message = _("Created new user {} with password {}".format(username, username))
+            # create new user with the same password as the username
+            ploneapi.user.create(email=email,
+                                 username=username,
+                                 password=username,
+                                 roles=roles,)
+            self.add_status_message(message, "info")
+            logger.info(message)
+
+    def import_data(self, domain):
+        """Import the data from the storage identified by domain
+        """
+        logger.info("*** IMPORT DATA {} ***".format(domain))
+
+        storage = self.get_storage(domain=domain)
+        datastore = storage["data"]
+        indexstore = storage["index"]
+
+        # Get UIDs grouped by their parent path
+        ppaths = indexstore.get("by_parent_path")
+        if ppaths is None:
+            message = _("No parent path info found in the import data. "
+                        "Please install senaite.jsonapi>=1.1.1 on the source instance "
+                        "and clear&refetch this storage")
+            self.add_status_message(message, "warning")
+            return
+
+        # mapping of uid -> object uid
+        uidmap = {}
+
+        # Import by paths from top to bottom
+        for ppath in sorted(ppaths):
+            # nothing to do
+            if not ppath:
+                continue
+
+            logger.info("Importing items for parent path {}".format(ppath))
+            uids = ppaths[ppath]
+
+            for uid in uids:
+                # get the data for this uid
+                data = datastore[uid]
+                # check if the object exists in this instance
+                remote_path = data.get("path")
+                local_path = self.translate_path(remote_path)
+                existing = self.portal.unrestrictedTraverse(str(local_path), None)
+
+                if existing:
+                    # remember the UID -> object UID mapping for the update step
+                    uidmap[uid] = api.get_uid(existing)
+                else:
+                    # get the container object by path
+                    container_path = self.translate_path(ppath)
+                    container = self.portal.unrestrictedTraverse(str(container_path), None)
+                    # create an object slug in this container
+                    obj = self.create_object_slug(container, data)
+                    # remember the UID -> object UID mapping for the update step
+                    uidmap[uid] = api.get_uid(obj)
+
+        # Update all objects with the given data
+        for uid, obj_uid in uidmap.items():
+            obj = api.get_object_by_uid(obj_uid)
+            logger.info("Update object {} with import data".format(api.get_path(obj)))
+            self.update_object_with_data(obj, datastore[uid])
+
+    def update_object_with_data(self, obj, data):
+        """Update an existing object with data
+        """
+        if api.is_portal(obj):
+            logger.info("Skipping Portal object")
+            return
+
+        logger.info("Updating object {} with data {}".format(api.get_id(obj), data))
+
+        dm = IDataManager(obj)
+        for k, v in data.items():
+            try:
+                success = dm.set(k, v, **data)
+            except:
+                success = False
+
+            if not success:
+                logger.warn("update_object_with_data::skipping key=%r", k)
+                continue
+
+    def create_object_slug(self, container, data, *args, **kwargs):
+        """Create an content object slug for the given data
+        """
+        id = data.get("id")
+        portal_type = data.get("portal_type")
+        types_tool = api.get_tool("portal_types")
+        fti = types_tool.getTypeInfo(portal_type)
+
+        logger.info("Creating {} with ID {} in parent path {}".format(
+            portal_type, id, api.get_path(container)))
+
+        if fti.product:
+            obj = _createObjectByType(portal_type, container, id)
+        else:
+            # newstyle factory
+            factory = getUtility(IFactory, fti.factory)
+            obj = factory(id, *args, **kwargs)
+            if hasattr(obj, '_setPortalTypeName'):
+                obj._setPortalTypeName(fti.getId())
+            # notifies ObjectWillBeAddedEvent, ObjectAddedEvent and ContainerModifiedEvent
+            container._setObject(id, obj)
+            # we get the object here with the current object id, as it might be renamed
+            # already by an event handler
+            obj = container._getOb(obj.getId())
+        return obj
+
+    def translate_path(self, path):
+        """Translate the physical path to a local path
+        """
+        portal_id = self.portal.getId()
+        remote_portal_id = path.split("/")[1]
+        return path.replace(remote_portal_id, portal_id)
+
+    def fetch_users(self, domain):
+        """Fetch all users from the source URL
+        """
+        storage = self.get_storage(domain=domain)
         userstore = storage["users"]
 
         for user in self.yield_items("users"):
             username = user.get("username")
             userstore[username] = user
 
-    def import_data(self, key):
-        """Import the data from the storage identified by key
-        """
-        logger.info("*** IMPORT DATA {} ***".format(key))
-
-    def fetch_data(self, uid="0"):
-        """Fetch the data from the source
+    def fetch_data(self, domain, uid="0"):
+        """Fetch the data from the source URL
         """
         # Fetch the object by uid
         parent = self.get_json(uid, complete=True, children=True)
         children = parent.pop("children", [])
-        self.store(uid, parent)
+        self.store(domain, uid, parent)
 
         # Fetch the children of this object
         for child in children:
@@ -162,25 +308,26 @@ class Sync(BrowserView):
 
             child_item = self.get_json(child_uid, complete=True, children=True)
             child_children = child_item.pop("children", [])
-            self.store(child_uid, child_item)
+            self.store(self.url, child_uid, child_item)
 
             for child_child in child_children:
-                self.fetch_data(uid=child_child.get("uid"))
+                self.fetch_data(domain=domain, uid=child_child.get("uid"))
 
-    def store(self, key, value):
-        """Store item in storage
+    def store(self, domain, key, value, overwrite=False):
+        """Store a dictionary in the domain's storage
         """
         # Get the storage for the current URL
-        storage = self.get_storage()
+        storage = self.get_storage(domain=domain)
         datastore = storage["data"]
         indexstore = storage["index"]
 
         # already fetched
-        if key in datastore:
+        if key in datastore and not overwrite:
+            logger.info("Skipping existing key {}".format(key))
             return
 
         # Create some indexes
-        for index in ["portal_type", "parent_id"]:
+        for index in ["portal_type", "parent_id", "parent_path"]:
             index_key = "by_{}".format(index)
             if not indexstore.get(index_key):
                 indexstore[index_key] = OOBTree()
@@ -200,12 +347,12 @@ class Sync(BrowserView):
         return self.get_json("version")
 
     def get_authenticated_user(self):
-        """Return the remote user
+        """Return the current logged in remote user
         """
         return self.get_first_item("users/current")
 
     def get_first_item(self, url_or_endpoint, **kw):
-        """Fetch the first item of the items list
+        """Fetch the first item of the 'items' list from a std. JSON API reponse
         """
         items = self.get_items(url_or_endpoint, **kw)
         if not items:
@@ -213,7 +360,7 @@ class Sync(BrowserView):
         return items[0]
 
     def get_items(self, url_or_endpoint, **kw):
-        """Return the items list from the data dict
+        """Return the 'items' list from a std. JSON API response
         """
         data = self.get_json(url_or_endpoint, **kw)
         if not isinstance(data, dict):
@@ -221,7 +368,7 @@ class Sync(BrowserView):
         return data.get("items", [])
 
     def get_json(self, url_or_endpoint, **kw):
-        """Returns the parsed JSON
+        """Fetch the given url or endpoint and return a parsed JSON object
         """
         api_url = self.get_api_url(url_or_endpoint, **kw)
         logger.info("get_json::url={}".format(api_url))
@@ -242,7 +389,7 @@ class Sync(BrowserView):
         return response.json()
 
     def yield_items(self, url_or_endpoint, **kw):
-        """Yield all items of all pages
+        """Yield items of all pages
         """
         data = self.get_json(url_or_endpoint, **kw)
         for item in data.get("items", []):
@@ -275,7 +422,7 @@ class Sync(BrowserView):
         return url_or_endpoint
 
     def get_session(self, username, password):
-        """Return a 'requests' session object
+        """Return a session object for authenticated requests
         """
         session = requests.Session()
         session.auth = (username, password)
@@ -287,34 +434,42 @@ class Sync(BrowserView):
         raise SyncError(message, status)
 
     def add_status_message(self, message, level="info"):
-        """Set a status message
+        """Set a portal status message
         """
         return self.context.plone_utils.addPortalMessage(message, level)
 
     def get_annotation(self):
+        """Annotation storage on the portal object
+        """
         return IAnnotations(self.portal)
 
-    def get_storage(self, key=None):
-        """Return a ready to use storage for the given key
+    def get_storage(self, domain=None):
+        """Return a ready to use storage for the given domain (key)
         """
-        if key is None:
-            key = self.url
+        if domain is None:
+            domain = len(self.storage)
 
-        if not self.storage.get(key):
-            self.storage[key] = OOBTree()
-            self.storage[key]["data"] = OOBTree()
-            self.storage[key]["index"] = OOBTree()
-            self.storage[key]["users"] = OOBTree()
-        return self.storage[key]
+        if not self.storage.get(domain):
+            self.storage[domain] = OOBTree()
+            self.storage[domain]["data"] = OOBTree()
+            self.storage[domain]["index"] = OOBTree()
+            self.storage[domain]["users"] = OOBTree()
+        return self.storage[domain]
 
     @property
     def storage(self):
+        """Raw storage property
+
+        Please use get_storage to get a sync storage for a given domain
+        """
         annotation = self.get_annotation()
         if annotation.get(SYNC_STORAGE) is None:
             annotation[SYNC_STORAGE] = OOBTree()
         return annotation[SYNC_STORAGE]
 
     def flush_storage(self):
+        """Drop the whole storage
+        """
         annotation = self.get_annotation()
         if annotation.get(SYNC_STORAGE) is not None:
             del annotation[SYNC_STORAGE]

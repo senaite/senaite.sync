@@ -39,7 +39,7 @@
             <span class="required"></span>
             <span i18n:translate=""
                   class="help formHelp">
-              The base URL of the source system, e.g. https://ridingbytes.com or http://localhost:1234/Plone
+              The base URL of the source system, e.g. http://localhost:1337/senaitelims
             </span>
           </label>
           <div class="form-group input-group">
@@ -110,7 +110,7 @@
                type="submit"
                name="clear"
                i18n:attributes="value"
-               value="Clear"/>
+               value="Clear all Storages"/>
 
       </form>
 
@@ -128,14 +128,21 @@
             </dt>
 
             <input type="hidden" name="dataform" value="1"/>
-            <input type="hidden" name="key" value="" tal:attributes="value storage" />
+            <input type="hidden" name="domain" value="" tal:attributes="value storage" />
 
             <dd class="collapsibleContent">
+
               <input class="btn btn-default btn-sm"
                      type="submit"
                      name="import"
                      i18n:attributes="value"
                      value="Import"/>
+
+              <input class="btn btn-default btn-sm"
+                     type="submit"
+                     name="clear_storage"
+                     i18n:attributes="value"
+                     value="Clear this Storage"/>
 
               <h3>Users</h3>
               <table class="table listing collapsibleContent">
