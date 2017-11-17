@@ -23,7 +23,7 @@ from plone import protect
 from plone import api as ploneapi
 
 from senaite import api
-from senaite.jsonapi.interfaces import IDataManager
+from senaite.jsonapi.interfaces import IFieldManager
 from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
@@ -121,6 +121,11 @@ class Sync(BrowserView):
             # initialize the session
             self.session = self.get_session(self.username, self.password)
 
+            # remember the credentials in the storage
+            storage = self.get_storage(self.url)
+            storage["credentials"]["username"] = self.username
+            storage["credentials"]["password"] = self.password
+
             # try to get the version of the remote JSON API
             version = self.get_version()
             if not version or not version.get('version'):
@@ -179,6 +184,14 @@ class Sync(BrowserView):
         storage = self.get_storage(domain=domain)
         datastore = storage["data"]
         indexstore = storage["index"]
+        uidmap = storage["uidmap"]
+        credentials = storage["credentials"]
+
+        # initialize a new session with the stored credentials for later requests
+        username = credentials.get("username")
+        password = credentials.get("password")
+        self.session = self.get_session(username, password)
+        logger.info("Initialized a new session for user {}".format(username))
 
         # Get UIDs grouped by their parent path
         ppaths = indexstore.get("by_parent_path")
@@ -188,9 +201,6 @@ class Sync(BrowserView):
                         "and clear&refetch this storage")
             self.add_status_message(message, "warning")
             return
-
-        # mapping of uid -> object uid
-        uidmap = {}
 
         # Import by paths from top to bottom
         for ppath in sorted(ppaths):
@@ -225,27 +235,58 @@ class Sync(BrowserView):
         for uid, obj_uid in uidmap.items():
             obj = api.get_object_by_uid(obj_uid)
             logger.info("Update object {} with import data".format(api.get_path(obj)))
-            self.update_object_with_data(obj, datastore[uid])
+            self.update_object_with_data(obj, datastore[uid], domain)
 
-    def update_object_with_data(self, obj, data):
+    def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
         """
+
         if api.is_portal(obj):
             logger.info("Skipping Portal object")
             return
 
-        logger.info("Updating object {} with data {}".format(api.get_id(obj), data))
+        # get the storage and UID map
+        storage = self.get_storage(domain=domain)
+        uidmap = storage["uidmap"]
 
-        dm = IDataManager(obj)
-        for k, v in data.items():
+        for fieldname, field in api.get_fields(obj).items():
+
+            fm = IFieldManager(field)
+            value = data.get(fieldname)
+
+            # handle JSON data reference fields
+            if isinstance(value, dict) and value.get("uid"):
+                # dereference the referenced object
+                value = self.dereference_object(value.get("uid"), uidmap)
+
+            # handle file fields
+            if field.type in ("file", "image", "blob"):
+                if data.get(fieldname) is not None:
+                    fileinfo = data.get(fieldname)
+                    url = fileinfo.get("download")
+                    filename = fileinfo.get("filename")
+                    data["filename"] = filename
+                    response = requests.get(url)
+                    value = response.content
+
+            logger.info("Setting value={} on field={} of object={}".format(
+                repr(value), fieldname, api.get_id(obj)))
             try:
-                success = dm.set(k, v, **data)
+                fm.set(obj, value)
             except:
-                success = False
+                logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
 
-            if not success:
-                logger.warn("update_object_with_data::skipping key=%r", k)
-                continue
+        # finally reindex the object
+        obj.reindexObject()
+
+    def dereference_object(self, uid, uidmap):
+        """Dereference an object by uid
+
+        uidmap is a mapping of remote uid -> local object uid
+        """
+        ref_uid = uidmap.get(uid, None)
+        ref_obj = api.get_object_by_uid(ref_uid, None)
+        return ref_obj
 
     def create_object_slug(self, container, data, *args, **kwargs):
         """Create an content object slug for the given data
@@ -454,6 +495,8 @@ class Sync(BrowserView):
             self.storage[domain]["data"] = OOBTree()
             self.storage[domain]["index"] = OOBTree()
             self.storage[domain]["users"] = OOBTree()
+            self.storage[domain]["uidmap"] = OOBTree()
+            self.storage[domain]["credentials"] = OOBTree()
         return self.storage[domain]
 
     @property
