@@ -234,16 +234,15 @@ class Sync(BrowserView):
         # Update all objects with the given data
         for uid, obj_uid in uidmap.items():
             obj = api.get_object_by_uid(obj_uid)
+            if api.is_portal(obj):
+                logger.info("Skipping Portal object")
+                continue
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
 
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
         """
-
-        if api.is_portal(obj):
-            logger.info("Skipping Portal object")
-            return
 
         # get the storage and UID map
         storage = self.get_storage(domain=domain)
