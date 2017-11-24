@@ -5,6 +5,7 @@
 import urllib
 import urlparse
 import requests
+import transaction
 
 from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
@@ -186,6 +187,7 @@ class Sync(BrowserView):
         indexstore = storage["index"]
         uidmap = storage["uidmap"]
         credentials = storage["credentials"]
+        objmap = {}
 
         # initialize a new session with the stored credentials for later requests
         username = credentials.get("username")
@@ -222,6 +224,7 @@ class Sync(BrowserView):
                 if existing:
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(existing)
+                    objmap[uid] = existing
                 else:
                     # get the container object by path
                     container_path = self.translate_path(ppath)
@@ -230,10 +233,12 @@ class Sync(BrowserView):
                     obj = self.create_object_slug(container, data)
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(obj)
+                    objmap[uid] = obj
+                    transaction.commit()
 
         # Update all objects with the given data
         for uid, obj_uid in uidmap.items():
-            obj = api.get_object_by_uid(obj_uid)
+            obj = objmap[uid]
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
 
