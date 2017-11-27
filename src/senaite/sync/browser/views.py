@@ -67,6 +67,8 @@ class Sync(BrowserView):
         self.password = None
         self.session = None
 
+        self.uids_to_reindex = []
+
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
 
@@ -242,6 +244,8 @@ class Sync(BrowserView):
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
 
+        self.reindex_updated_objects()
+
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
         """
@@ -282,7 +286,7 @@ class Sync(BrowserView):
                 logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
 
         # finally reindex the object
-        obj.reindexObject()
+        self.uids_to_reindex.append(api.get_uid(obj))
 
     def dereference_object(self, uid, uidmap):
         """Dereference an object by uid
@@ -503,6 +507,23 @@ class Sync(BrowserView):
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
         return self.storage[domain]
+
+    def reindex_updated_objects(self):
+        """
+        Reindexes updated objects.
+        """
+        total = len(self.uids_to_reindex)
+        logger.info('Reindexing {} objects which were updated...'.format(total))
+        indexed = 0
+        for uid in self.uids_to_reindex:
+            obj = api.get_object_by_uid(uid)
+            obj.reindexObject()
+            indexed = indexed+1
+            if indexed % 100 == 0:
+                logger.info('{} objects were reindexed, remain {}'.format(
+                                indexed, total-indexed))
+
+        logger.info('Reindexing finished...')
 
     @property
     def storage(self):
