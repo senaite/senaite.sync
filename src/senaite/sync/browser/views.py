@@ -6,10 +6,12 @@ import urllib
 import urlparse
 import requests
 import transaction
+from dateutil.parser import parse as parse_date
 
 from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
 
+from Products.ATContentTypes.utils import dt2DT
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from Products.CMFPlone.utils import _createObjectByType
@@ -224,6 +226,9 @@ class Sync(BrowserView):
                 existing = self.portal.unrestrictedTraverse(str(local_path), None)
 
                 if existing:
+                    r_modified = parse_date(data['modified'])
+                    if dt2DT(r_modified) < existing.modified():
+                        continue
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(existing)
                     objmap[uid] = existing
