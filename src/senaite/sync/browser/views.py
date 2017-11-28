@@ -150,6 +150,7 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
+            logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
         return self.template()
@@ -241,7 +242,8 @@ class Sync(BrowserView):
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(obj)
                     objmap[uid] = obj
-                    transaction.commit()
+
+        transaction.commit()
 
         # Update all objects with the given data
         for uid, obj_uid in uidmap.items():
@@ -250,6 +252,7 @@ class Sync(BrowserView):
             self.update_object_with_data(obj, datastore[uid], domain)
 
         self.reindex_updated_objects()
+        logger.info("*** END OF DATA IMPORT {} ***".format(domain))
 
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
@@ -338,6 +341,7 @@ class Sync(BrowserView):
     def fetch_users(self, domain):
         """Fetch all users from the source URL
         """
+        logger.info("*** FETCH USERS {} ***".format(domain))
         storage = self.get_storage(domain=domain)
         userstore = storage["users"]
 
