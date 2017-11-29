@@ -274,9 +274,11 @@ class Sync(BrowserView):
                 value = self.dereference_object(value.get("uid"), uidmap)
             elif type(value) in (list, tuple):
                 for i, item in enumerate(value):
+                    # If it is list of json data dict of objects, add local
+                    # uid to that dictionary. This local_uid can be used in
+                    # Field Managers.
                     if isinstance(item, dict) and item.get("uid"):
-                        value[i] = self.dereference_object(item.get("uid"),
-                                                           uidmap)
+                        value[i]['local_uid'] = uidmap.get(item.get("uid"))
 
             # handle file fields
             if field.type in ("file", "image", "blob"):
