@@ -6,12 +6,10 @@ import urllib
 import urlparse
 import requests
 import transaction
-from dateutil.parser import parse as parse_date
 
 from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
 
-from Products.ATContentTypes.utils import dt2DT
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from Products.CMFPlone.utils import _createObjectByType
@@ -227,9 +225,6 @@ class Sync(BrowserView):
                 existing = self.portal.unrestrictedTraverse(str(local_path), None)
 
                 if existing:
-                    r_modified = parse_date(data['modified'])
-                    if dt2DT(r_modified) < existing.modified():
-                        continue
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(existing)
                     objmap[uid] = existing
@@ -247,7 +242,9 @@ class Sync(BrowserView):
 
         # Update all objects with the given data
         for uid, obj_uid in uidmap.items():
-            obj = objmap[uid]
+            obj = objmap.get(uid, None)
+            if not obj:
+                continue
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
 
@@ -275,6 +272,11 @@ class Sync(BrowserView):
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
                 value = self.dereference_object(value.get("uid"), uidmap)
+            elif type(value) in (list, tuple):
+                for i, item in enumerate(value):
+                    if isinstance(item, dict) and item.get("uid"):
+                        value[i] = self.dereference_object(item.get("uid"),
+                                                           uidmap)
 
             # handle file fields
             if field.type in ("file", "image", "blob"):
@@ -525,7 +527,10 @@ class Sync(BrowserView):
         logger.info('Reindexing {} objects which were updated...'.format(total))
         indexed = 0
         for uid in self.uids_to_reindex:
-            obj = api.get_object_by_uid(uid)
+            obj = api.get_object_by_uid(uid, None)
+            if not obj:
+                logger.error("Object not found: {} ".format(uid))
+                continue
             obj.reindexObject()
             indexed = indexed+1
             if indexed % 100 == 0:
