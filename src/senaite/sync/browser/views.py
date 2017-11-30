@@ -277,8 +277,11 @@ class Sync(BrowserView):
                     # If it is list of json data dict of objects, add local
                     # uid to that dictionary. This local_uid can be used in
                     # Field Managers.
-                    if isinstance(item, dict) and item.get("uid"):
-                        value[i]['local_uid'] = uidmap.get(item.get("uid"))
+                    if isinstance(item, dict):
+                        for k, v in item.iteritems():
+                            if 'uid' in k:
+                                l_uid = uidmap.get(v)
+                                item[k] = l_uid
 
             # handle file fields
             if field.type in ("file", "image", "blob"):
