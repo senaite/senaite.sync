@@ -8,4 +8,15 @@
   <!-- include packages -->
   <include package=".browser" />
 
+  <!-- AT FIELD MANAGERS
+       Field level interface to get and set values and get a JSON compatible
+       structure of the value.
+  -->
+
+  <!-- Adapter for AT Fields -->
+  <adapter
+      for="Products.Archetypes.interfaces.field.IStringField"
+      factory=".fieldmanagers.StringFieldManager"
+      />
+
 </configure>
