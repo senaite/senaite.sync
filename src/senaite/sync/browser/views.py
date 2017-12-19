@@ -145,6 +145,7 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
+            reg = self.get_bika_registry_records()
 
         # always render the template
         return self.template()
@@ -180,6 +181,7 @@ class Sync(BrowserView):
         """Import the data from the storage identified by domain
         """
         logger.info("*** IMPORT DATA {} ***".format(domain))
+        import pdb; pdb.set_trace()
 
         storage = self.get_storage(domain=domain)
         datastore = storage["data"]
@@ -390,6 +392,13 @@ class Sync(BrowserView):
         """Return the current logged in remote user
         """
         return self.get_first_item("users/current")
+
+    def get_bika_registry_records(self):
+        """
+
+        :return:
+        """
+        return self.get_json("registry/bika-config-registry")
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
