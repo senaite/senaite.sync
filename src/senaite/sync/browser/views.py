@@ -188,8 +188,9 @@ class Sync(BrowserView):
         storage = self.get_storage(domain=domain)
         datastore = storage["data"]
         indexstore = storage["index"]
-        uidmap = storage["uidmap"]
         credentials = storage["credentials"]
+        # At some points api cannot retrieve objects by UID in the end of
+        # creation process. Thus we keep them in an dictionary to access easily.
         objmap = {}
         # We will create objects from top to bottom, but will update from bottom
         # to up.
@@ -229,8 +230,6 @@ class Sync(BrowserView):
                 existing = self.portal.unrestrictedTraverse(str(local_path), None)
 
                 if existing:
-                    # remember the UID -> object UID mapping for the update step
-                    uidmap[uid] = api.get_uid(existing)
                     objmap[uid] = existing
                 else:
                     # get the container object by path
@@ -238,12 +237,16 @@ class Sync(BrowserView):
                     container = self.portal.unrestrictedTraverse(str(container_path), None)
                     # create an object slug in this container
                     obj = self.create_object_slug(container, data)
-                    # remember the UID -> object UID mapping for the update step
-                    uidmap[uid] = api.get_uid(obj)
                     objmap[uid] = obj
 
+        # When creation process is done, commit the transaction to avoid
+        # ReferenceField relation problems.
         transaction.commit()
+
+        # UIDs were added from up to bottom. Reverse the list to update objects
+        # from bottom to up.
         ordered_uids.reverse()
+
         # Update all objects with the given data
         for uid in ordered_uids:
             obj = objmap.get(uid, None)
