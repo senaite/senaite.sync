@@ -191,6 +191,9 @@ class Sync(BrowserView):
         uidmap = storage["uidmap"]
         credentials = storage["credentials"]
         objmap = {}
+        # We will create objects from top to bottom, but will update from bottom
+        # to up.
+        ordered_uids = []
 
         # initialize a new session with the stored credentials for later requests
         username = credentials.get("username")
@@ -217,6 +220,7 @@ class Sync(BrowserView):
             uids = ppaths[ppath]
 
             for uid in uids:
+                ordered_uids.append(uid)
                 # get the data for this uid
                 data = datastore[uid]
                 # check if the object exists in this instance
@@ -239,9 +243,9 @@ class Sync(BrowserView):
                     objmap[uid] = obj
 
         transaction.commit()
-
+        ordered_uids.reverse()
         # Update all objects with the given data
-        for uid, obj_uid in uidmap.items():
+        for uid in ordered_uids:
             obj = objmap.get(uid, None)
             if not obj:
                 continue
@@ -301,7 +305,7 @@ class Sync(BrowserView):
                 logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
 
         # finally reindex the object
-        self.uids_to_reindex.append(api.get_uid(obj))
+        self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
 
     def dereference_object(self, uid, uidmap):
         """Dereference an object by uid
@@ -532,9 +536,9 @@ class Sync(BrowserView):
         logger.info('Reindexing {} objects which were updated...'.format(total))
         indexed = 0
         for uid in self.uids_to_reindex:
-            obj = api.get_object_by_uid(uid, None)
+            obj = api.get_object_by_uid(uid[0], None)
             if not obj:
-                logger.error("Object not found: {} ".format(uid))
+                logger.error("Object not found: {} ".format(uid[1]))
                 continue
             obj.reindexObject()
             indexed = indexed+1
