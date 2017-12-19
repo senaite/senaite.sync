@@ -250,7 +250,8 @@ class Sync(BrowserView):
         # Update all objects with the given data
         for uid in ordered_uids:
             obj = objmap.get(uid, None)
-            if not obj:
+            if obj is None:
+                logger.warn("Object not found: {} ".format(uid))
                 continue
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
@@ -279,16 +280,16 @@ class Sync(BrowserView):
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
                 value = self.dereference_object(value.get("uid"), uidmap)
-            elif type(value) in (list, tuple):
-                for i, item in enumerate(value):
+            elif isinstance(value, (list, tuple)):
+                for item in value:
                     # If it is list of json data dict of objects, add local
                     # uid to that dictionary. This local_uid can be used in
                     # Field Managers.
                     if isinstance(item, dict):
                         for k, v in item.iteritems():
                             if 'uid' in k:
-                                l_uid = uidmap.get(v)
-                                item[k] = l_uid
+                                local_uid = uidmap.get(v)
+                                item[k] = local_uid
 
             # handle file fields
             if field.type in ("file", "image", "blob"):
@@ -540,11 +541,11 @@ class Sync(BrowserView):
         indexed = 0
         for uid in self.uids_to_reindex:
             obj = api.get_object_by_uid(uid[0], None)
-            if not obj:
+            if obj is None:
                 logger.error("Object not found: {} ".format(uid[1]))
                 continue
             obj.reindexObject()
-            indexed = indexed+1
+            indexed += 1
             if indexed % 100 == 0:
                 logger.info('{} objects were reindexed, remain {}'.format(
                                 indexed, total-indexed))
