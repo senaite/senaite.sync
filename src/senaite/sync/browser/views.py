@@ -145,7 +145,7 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
-            reg = self.get_bika_registry_records()
+            reg = self.get_senaite_registry_records()
 
         # always render the template
         return self.template()
@@ -392,12 +392,13 @@ class Sync(BrowserView):
         """
         return self.get_first_item("users/current")
 
-    def get_bika_registry_records(self):
-        """
+    def get_senaite_registry_records(self):
+        """Return the values of the registry records
+        associated to bika or senaite in the source instance
 
-        :return:
+        :returns:
         """
-        return self.get_json("registry/bika-config-registry")
+        return self.get_json("registry/senaite-config-registry")
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
