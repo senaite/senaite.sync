@@ -269,10 +269,6 @@ class Sync(BrowserView):
         """Update an existing object with data
         """
 
-        if api.is_portal(obj):
-            logger.info("Skipping Portal object")
-            return
-
         # get the storage and UID map
         storage = self.get_storage(domain=domain)
         uidmap = storage["uidmap"]
