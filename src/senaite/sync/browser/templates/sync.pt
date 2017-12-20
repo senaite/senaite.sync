@@ -195,7 +195,7 @@
                       <span tal:content="python:key"></span>
                     </td>
                     <td>
-                      <tal:values repeat="value python:data[key]">
+                      <tal:values repeat="value python:str(data[key])">
                         <span tal:content="value"/>&nbsp;
                       </tal:values>
                     </td>
