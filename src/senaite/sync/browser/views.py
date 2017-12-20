@@ -21,6 +21,7 @@ from zope.component.interfaces import IFactory
 
 from plone import protect
 from plone import api as ploneapi
+from plone.registry.interfaces import IRegistry
 
 from senaite import api
 from senaite.jsonapi.interfaces import IFieldManager
@@ -93,6 +94,7 @@ class Sync(BrowserView):
             domain = form.get("domain", None)
             self.import_users(domain)
             self.import_data(domain)
+            self.import_registry_records(domain)
             return self.template()
 
         # Handle "Clear this Storage" action
@@ -145,10 +147,21 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
-            reg = self.get_senaite_registry_records()
+            self.fetch_registry_records(domain)
 
         # always render the template
         return self.template()
+
+    def import_registry_records(self, domain):
+        """Import the registry records from the storage identified by domain
+        """
+        logger.info("*** IMPORT REGISTRY RECORDS {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        registry_store = storage["registry"]["items"]
+        current_registry = getUtility(IRegistry)
+        for record, value in registry_store.keys():
+            logger.info("Updating record {} with value {}".format(record, value))
+            current_registry[record] = value
 
     def import_users(self, domain):
         """Import the users from the storage identified by domain
@@ -320,6 +333,17 @@ class Sync(BrowserView):
         portal_id = self.portal.getId()
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
+
+    def fetch_registry_records(self, domain):
+        """Fetch configuration registry records of interest (those associated
+        to bika or senaite) from source instance
+        """
+        storage = self.get_storage(domain=domain)
+        registry_store = storage["registry"]
+        records = self.get_senaite_registry_records()
+        for record in records.keys():
+            registry_store[record] = records[record]
+
 
     def fetch_users(self, domain):
         """Fetch all users from the source URL
@@ -505,6 +529,7 @@ class Sync(BrowserView):
             self.storage[domain]["users"] = OOBTree()
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
+            self.storage[domain]["registry"] = OOBTree()
         return self.storage[domain]
 
     @property
