@@ -190,7 +190,13 @@ class Sync(BrowserView):
         indexstore = storage["index"]
         uidmap = storage["uidmap"]
         credentials = storage["credentials"]
+
+        # At some points api cannot retrieve objects by UID in the end of
+        # creation process. Thus we keep them in an dictionary to access easily.
         objmap = {}
+        # We will create objects from top to bottom, but will update from bottom
+        # to up.
+        ordered_uids = []
 
         # initialize a new session with the stored credentials for later requests
         username = credentials.get("username")
@@ -217,6 +223,7 @@ class Sync(BrowserView):
             uids = ppaths[ppath]
 
             for uid in uids:
+                ordered_uids.append(uid)
                 # get the data for this uid
                 data = datastore[uid]
                 # check if the object exists in this instance
@@ -238,12 +245,19 @@ class Sync(BrowserView):
                     uidmap[uid] = api.get_uid(obj)
                     objmap[uid] = obj
 
+        # When creation process is done, commit the transaction to avoid
+        # ReferenceField relation problems.
         transaction.commit()
 
+        # UIDs were added from up to bottom. Reverse the list to update objects
+        # from bottom to up.
+        ordered_uids.reverse()
+
         # Update all objects with the given data
-        for uid, obj_uid in uidmap.items():
+        for uid in ordered_uids:
             obj = objmap.get(uid, None)
-            if not obj:
+            if obj is None:
+                logger.warn("Object not found: {} ".format(uid))
                 continue
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
@@ -254,10 +268,6 @@ class Sync(BrowserView):
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
         """
-
-        if api.is_portal(obj):
-            logger.info("Skipping Portal object")
-            return
 
         # get the storage and UID map
         storage = self.get_storage(domain=domain)
@@ -272,16 +282,16 @@ class Sync(BrowserView):
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
                 value = self.dereference_object(value.get("uid"), uidmap)
-            elif type(value) in (list, tuple):
-                for i, item in enumerate(value):
+            elif isinstance(value, (list, tuple)):
+                for item in value:
                     # If it is list of json data dict of objects, add local
                     # uid to that dictionary. This local_uid can be used in
                     # Field Managers.
                     if isinstance(item, dict):
                         for k, v in item.iteritems():
                             if 'uid' in k:
-                                l_uid = uidmap.get(v)
-                                item[k] = l_uid
+                                local_uid = uidmap.get(v)
+                                item[k] = local_uid
 
             # handle file fields
             if field.type in ("file", "image", "blob"):
@@ -301,7 +311,7 @@ class Sync(BrowserView):
                 logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
 
         # finally reindex the object
-        self.uids_to_reindex.append(api.get_uid(obj))
+        self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
 
     def dereference_object(self, uid, uidmap):
         """Dereference an object by uid
@@ -532,12 +542,12 @@ class Sync(BrowserView):
         logger.info('Reindexing {} objects which were updated...'.format(total))
         indexed = 0
         for uid in self.uids_to_reindex:
-            obj = api.get_object_by_uid(uid, None)
-            if not obj:
-                logger.error("Object not found: {} ".format(uid))
+            obj = api.get_object_by_uid(uid[0], None)
+            if obj is None:
+                logger.error("Object not found: {} ".format(uid[1]))
                 continue
             obj.reindexObject()
-            indexed = indexed+1
+            indexed += 1
             if indexed % 100 == 0:
                 logger.info('{} objects were reindexed, remain {}'.format(
                                 indexed, total-indexed))
