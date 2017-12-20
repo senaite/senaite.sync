@@ -6,6 +6,7 @@ import urllib
 import urlparse
 import requests
 import transaction
+from DateTime import DateTime
 
 from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
@@ -310,6 +311,13 @@ class Sync(BrowserView):
             except:
                 logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
 
+        # Set the workflow states
+        wf_info = data.get("workflow_info", [])
+        for wf_dict in wf_info:
+            wf_id = wf_dict.get("workflow")
+            wf_state = wf_dict.get("review_state")
+            self.set_workflow_state(obj, wf_id, wf_state)
+
         # finally reindex the object
         self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
 
@@ -348,6 +356,46 @@ class Sync(BrowserView):
             obj = container._getOb(obj.getId())
         return obj
 
+    def set_workflow_state(self, content, wf_id, state_id, **kw):
+        """Change the workflow state of an object
+        @param content: Content obj which state will be changed
+        @param state_id: name of the state to put on content
+        @param wf_id: workflow name
+        @param kw: change the values of same name of the state mapping
+        @return: None
+        """
+
+        portal_workflow = api.get_tool('portal_workflow')
+
+        # Might raise IndexError if no workflow is associated to this type
+        for wf_def in portal_workflow.getWorkflowsFor(content):
+            if wf_id == wf_def.getId():
+                break
+        else:
+            logger.error("%s: Cannot find workflow id %s" % (content, wf_id))
+
+        wf_state = {
+            'action': None,
+            'actor': None,
+            'comments': "Setting state to %s" % state_id,
+            'review_state': state_id,
+            'time': DateTime(),
+        }
+
+        # Updating wf_state from keyword args
+        for k in kw.keys():
+            # Remove unknown items
+            if k not in wf_state:
+                del kw[k]
+        if 'review_state' in kw:
+            del kw['review_state']
+        wf_state.update(kw)
+
+        portal_workflow.setStatusOf(wf_id, content, wf_state)
+
+        wf_def.updateRoleMappingsFor(content)
+        return
+
     def translate_path(self, path):
         """Translate the physical path to a local path
         """
@@ -370,7 +418,7 @@ class Sync(BrowserView):
         """Fetch the data from the source URL
         """
         # Fetch the object by uid
-        parent = self.get_json(uid, complete=True, children=True)
+        parent = self.get_json(uid, complete=True, children=True, workflow=True)
         children = parent.pop("children", [])
         self.store(domain, uid, parent)
 
@@ -382,7 +430,8 @@ class Sync(BrowserView):
                 self.add_status_message(message, "warn")
                 continue
 
-            child_item = self.get_json(child_uid, complete=True, children=True)
+            child_item = self.get_json(child_uid, complete=True, children=True,
+                                       workflow=True)
             child_children = child_item.pop("children", [])
             self.store(self.url, child_uid, child_item)
 
