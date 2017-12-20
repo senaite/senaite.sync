@@ -18,4 +18,6 @@ class StringFieldManager(ATFieldManager):
         """
         if value is None:
             value = ''
+            if self.field.multiValued:
+                value = []
         return self._set(instance, value, **kw)
