@@ -17,7 +17,8 @@ class StringFieldManager(ATFieldManager):
         """Set the value of the field
         """
         if value is None:
-            value = ''
             if self.field.multiValued:
                 value = []
+            else:
+                value = ''
         return self._set(instance, value, **kw)
