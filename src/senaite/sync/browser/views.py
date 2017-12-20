@@ -181,7 +181,6 @@ class Sync(BrowserView):
         """Import the data from the storage identified by domain
         """
         logger.info("*** IMPORT DATA {} ***".format(domain))
-        import pdb; pdb.set_trace()
 
         storage = self.get_storage(domain=domain)
         datastore = storage["data"]
