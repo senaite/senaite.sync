@@ -5,6 +5,7 @@
 import urllib
 import urlparse
 import requests
+import transaction
 
 from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
@@ -65,6 +66,8 @@ class Sync(BrowserView):
         self.username = None
         self.password = None
         self.session = None
+
+        self.uids_to_reindex = []
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
@@ -145,6 +148,7 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
+            logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
         return self.template()
@@ -187,6 +191,13 @@ class Sync(BrowserView):
         uidmap = storage["uidmap"]
         credentials = storage["credentials"]
 
+        # At some points api cannot retrieve objects by UID in the end of
+        # creation process. Thus we keep them in an dictionary to access easily.
+        objmap = {}
+        # We will create objects from top to bottom, but will update from bottom
+        # to up.
+        ordered_uids = []
+
         # initialize a new session with the stored credentials for later requests
         username = credentials.get("username")
         password = credentials.get("password")
@@ -212,6 +223,7 @@ class Sync(BrowserView):
             uids = ppaths[ppath]
 
             for uid in uids:
+                ordered_uids.append(uid)
                 # get the data for this uid
                 data = datastore[uid]
                 # check if the object exists in this instance
@@ -222,6 +234,7 @@ class Sync(BrowserView):
                 if existing:
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(existing)
+                    objmap[uid] = existing
                 else:
                     # get the container object by path
                     container_path = self.translate_path(ppath)
@@ -230,15 +243,27 @@ class Sync(BrowserView):
                     obj = self.create_object_slug(container, data)
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(obj)
+                    objmap[uid] = obj
+
+        # When creation process is done, commit the transaction to avoid
+        # ReferenceField relation problems.
+        transaction.commit()
+
+        # UIDs were added from up to bottom. Reverse the list to update objects
+        # from bottom to up.
+        ordered_uids.reverse()
 
         # Update all objects with the given data
-        for uid, obj_uid in uidmap.items():
-            obj = api.get_object_by_uid(obj_uid)
-            if api.is_portal(obj):
-                logger.info("Skipping Portal object")
+        for uid in ordered_uids:
+            obj = objmap.get(uid, None)
+            if obj is None:
+                logger.warn("Object not found: {} ".format(uid))
                 continue
             logger.info("Update object {} with import data".format(api.get_path(obj)))
             self.update_object_with_data(obj, datastore[uid], domain)
+
+        self.reindex_updated_objects()
+        logger.info("*** END OF DATA IMPORT {} ***".format(domain))
 
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
@@ -257,6 +282,16 @@ class Sync(BrowserView):
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
                 value = self.dereference_object(value.get("uid"), uidmap)
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    # If it is list of json data dict of objects, add local
+                    # uid to that dictionary. This local_uid can be used in
+                    # Field Managers.
+                    if isinstance(item, dict):
+                        for k, v in item.iteritems():
+                            if 'uid' in k:
+                                local_uid = uidmap.get(v)
+                                item[k] = local_uid
 
             # handle file fields
             if field.type in ("file", "image", "blob"):
@@ -276,7 +311,7 @@ class Sync(BrowserView):
                 logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
 
         # finally reindex the object
-        obj.reindexObject()
+        self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
 
     def dereference_object(self, uid, uidmap):
         """Dereference an object by uid
@@ -323,6 +358,7 @@ class Sync(BrowserView):
     def fetch_users(self, domain):
         """Fetch all users from the source URL
         """
+        logger.info("*** FETCH USERS {} ***".format(domain))
         storage = self.get_storage(domain=domain)
         userstore = storage["users"]
 
@@ -497,6 +533,26 @@ class Sync(BrowserView):
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
         return self.storage[domain]
+
+    def reindex_updated_objects(self):
+        """
+        Reindexes updated objects.
+        """
+        total = len(self.uids_to_reindex)
+        logger.info('Reindexing {} objects which were updated...'.format(total))
+        indexed = 0
+        for uid in self.uids_to_reindex:
+            obj = api.get_object_by_uid(uid[0], None)
+            if obj is None:
+                logger.error("Object not found: {} ".format(uid[1]))
+                continue
+            obj.reindexObject()
+            indexed += 1
+            if indexed % 100 == 0:
+                logger.info('{} objects were reindexed, remain {}'.format(
+                                indexed, total-indexed))
+
+        logger.info('Reindexing finished...')
 
     @property
     def storage(self):
