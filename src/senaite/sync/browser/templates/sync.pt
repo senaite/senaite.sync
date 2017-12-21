@@ -183,25 +183,25 @@
               <table class="table listing collapsibleContent">
                 <thead>
                   <tr>
-                    <th>Record</th>
-                    <th>Value</th>
+                    <th>Keyword</th>
+                    <th>Records and Values</th>
                     <th>API URL</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr tal:define="data python:view.storage[storage]['registry']['items']"
+                  <tr tal:define="data python:view.storage[storage]['registry']"
                       tal:repeat="key python:data.keys()">
                     <td>
                       <span tal:content="python:key"></span>
                     </td>
                     <td>
-                      <tal:values repeat="value python:str(data[key])">
+                      <tal:values repeat="value python:data[key]['items']">
                         <span tal:content="value"/>&nbsp;
                       </tal:values>
                     </td>
                     <td>
                       <a href="#"
-                         tal:attributes="href python:view.storage[storage]['registry'].get('url')">
+                         tal:attributes="href python:view.storage[storage]['registry'][key].get('url')">
                         Link
                       </a>
                     </td>
