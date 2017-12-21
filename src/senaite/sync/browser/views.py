@@ -376,8 +376,9 @@ class Sync(BrowserView):
             logger.error("%s: Cannot find workflow id %s" % (content, wf_id))
 
         for rh in sorted(review_history, key=lambda k: k['time']):
-            portal_workflow.setStatusOf(wf_id, content,
-                                        self.to_review_history_format(rh))
+            if not self.review_history_imported(content, rh, wf_def):
+                portal_workflow.setStatusOf(wf_id, content,
+                                            self.to_review_history_format(rh))
 
         wf_def.updateRoleMappingsFor(content)
         return
@@ -389,10 +390,31 @@ class Sync(BrowserView):
         :return: formatted dictionary
         """
 
-        raw = review_history["time"]
-        parsed = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
-        review_history['time'] = DateTime(parsed)
+        raw = review_history.get("time")
+        if isinstance(raw, basestring):
+            parsed = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+            review_history['time'] = DateTime(parsed)
         return review_history
+
+    def review_history_imported(self, obj, review_history, wf_tool=None):
+        """
+        Check if review History info is already imported for given workflow.
+        :param obj: the object to be checked
+        :param review_history: Review State Dictionary
+        :param wf_tool: Objects Workflow tool. Will be set to 'portal_worklow'
+                if is None.
+        :return: formatted dictionary
+        """
+        if wf_tool is None:
+            wf_tool = api.get_tool('portal_workflow')
+
+        state = review_history.get('review_state')
+        current_rh = wf_tool.getInfoFor(obj, 'review_history', '')
+        for rh in current_rh:
+            if rh.get('review_state') == state:
+                return True
+
+        return False
 
     def translate_path(self, path):
         """Translate the physical path to a local path
