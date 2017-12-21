@@ -95,9 +95,10 @@ class Sync(BrowserView):
         # Handle "Import" action
         if form.get("import", False):
             domain = form.get("domain", None)
+            self.import_registry_records(domain)
             self.import_users(domain)
             self.import_data(domain)
-            self.import_registry_records(domain)
+            logger.info("*** END OF DATA IMPORT {} ***".format(domain))
             return self.template()
 
         # Handle "Clear this Storage" action
@@ -160,12 +161,17 @@ class Sync(BrowserView):
         """Import the registry records from the storage identified by domain
         """
         logger.info("*** IMPORT REGISTRY RECORDS {} ***".format(domain))
+
         storage = self.get_storage(domain=domain)
-        registry_store = storage["registry"]["items"]
+        registry_store = storage["registry"]
         current_registry = getUtility(IRegistry)
-        for record, value in registry_store.keys():
-            logger.info("Updating record {} with value {}".format(record, value))
-            current_registry[record] = value
+        # Check for each of the keywords used to retrieve data
+        # the records that were found and import them
+        for keyword in registry_store.keys():
+            records = registry_store[keyword]["items"][0]
+            for record in records.keys():
+                logger.info("Updating record {} with value {}".format(record, records.get(record)))
+                current_registry[record] = records.get(record)
 
     def import_users(self, domain):
         """Import the users from the storage identified by domain
@@ -277,7 +283,6 @@ class Sync(BrowserView):
             self.update_object_with_data(obj, datastore[uid], domain)
 
         self.reindex_updated_objects()
-        logger.info("*** END OF DATA IMPORT {} ***".format(domain))
 
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
@@ -375,10 +380,20 @@ class Sync(BrowserView):
         """
         storage = self.get_storage(domain=domain)
         registry_store = storage["registry"]
-        records = self.get_senaite_registry_records()
-        for record in records.keys():
-            registry_store[record] = records[record]
-
+        # fetch records associated with senaite and store them
+        # if found
+        senaite_records = self.get_senaite_registry_records()
+        if senaite_records["items"][0]:
+            registry_store["senaite"] = OOBTree()
+            for record in senaite_records.keys():
+                registry_store["senaite"][record] = senaite_records[record]
+        # fetch records associated with bika and store them
+        # if found
+        bika_records = self.get_bika_registry_records()
+        if bika_records["items"][0]:
+            registry_store["bika"] = OOBTree()
+            for record in bika_records.keys():
+                registry_store["bika"][record] = bika_records[record]
 
     def fetch_users(self, domain):
         """Fetch all users from the source URL
@@ -454,11 +469,17 @@ class Sync(BrowserView):
 
     def get_senaite_registry_records(self):
         """Return the values of the registry records
-        associated to bika or senaite in the source instance
-
-        :returns:
+        associated to senaite in the source instance by
+        querying the API with keyword senaite
         """
-        return self.get_json("registry/senaite-config-registry")
+        return self.get_json("registry/senaite")
+
+    def get_bika_registry_records(self):
+        """Return the values of the registry records
+        associated to bika in the source instance by
+        querying the API with keyword bika
+        """
+        return self.get_json("registry/bika")
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
