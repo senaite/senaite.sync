@@ -477,6 +477,9 @@ class Sync(BrowserView):
         associated to the specified keyword in the source instance.
         If keyword is None it returns the whole registry
         """
+        if keyword is None:
+            return self.get_json("registry")
+
         return self.get_json("registry/{}".format(keyword))
 
     def get_first_item(self, url_or_endpoint, **kw):
