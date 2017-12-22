@@ -385,11 +385,10 @@ class Sync(BrowserView):
         retrieved_records = {}
 
         if keys is None:
-            keys = []
-        for key in keys:
-            retrieved_records[key] = self.get_registry_records_by_key(key)
-        else:
             retrieved_records["all"] = self.get_registry_records_by_key()
+        else:
+            for key in keys:
+                retrieved_records[key] = self.get_registry_records_by_key(key)
 
         for key in retrieved_records.keys():
             if not retrieved_records[key]:
