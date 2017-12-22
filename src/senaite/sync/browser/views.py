@@ -151,6 +151,7 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
+            # Fetch registry records that contain the word bika or senaite
             self.fetch_registry_records(domain, ["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
@@ -165,8 +166,8 @@ class Sync(BrowserView):
         storage = self.get_storage(domain=domain)
         registry_store = storage["registry"]
         current_registry = getUtility(IRegistry)
-        # Check for each of the keywords used to retrieve data
-        # the records that were found and import them
+        # For each of the keywords used to retrieve registry data
+        # import the records that were found
         for keyword in registry_store.keys():
             records = registry_store[keyword]["items"][0]
             for record in records.keys():
@@ -378,16 +379,21 @@ class Sync(BrowserView):
         """Fetch configuration registry records of interest (those associated
         to the keywords passed) from source instance
         """
+        logger.info("*** FETCH REGISTRY RECORDS {} ***".format(domain))
         storage = self.get_storage(domain=domain)
         registry_store = storage["registry"]
         retrieved_records = {}
+        # If keyword is None retrieve the whole registry
         if keywords is None:
             retrieved_records["all"] = self.get_registry_records_by_keyword()
+        # If a list of keywords is passed then retrieve only the records associated
+        # to those keywords
         else:
             for keyword in keywords:
                 records = self.get_registry_records_by_keyword(keyword)
                 retrieved_records[keyword] = records
-
+        # Once all the records of interest have been fetched store them like:
+        # storage["registry"][keyword][record] = record_data
         for keyword in retrieved_records.keys():
             if retrieved_records[keyword]["items"][0]:
                 registry_store[keyword] = OOBTree()
@@ -468,7 +474,7 @@ class Sync(BrowserView):
 
     def get_registry_records_by_keyword(self, keyword=None):
         """Return the values of the registry records
-        associated to the keyword in the source instance.
+        associated to the specified keyword in the source instance.
         If keyword is None it returns the whole registry
         """
         return self.get_json("registry/{}".format(keyword))
