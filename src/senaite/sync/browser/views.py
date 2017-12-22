@@ -374,26 +374,25 @@ class Sync(BrowserView):
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
 
-    def fetch_registry_records(self, domain):
+    def fetch_registry_records(self, domain, keywords=None):
         """Fetch configuration registry records of interest (those associated
-        to bika or senaite) from source instance
+        to the keywords passed) from source instance
         """
         storage = self.get_storage(domain=domain)
         registry_store = storage["registry"]
-        # fetch records associated with senaite and store them
-        # if found
-        senaite_records = self.get_senaite_registry_records()
-        if senaite_records["items"][0]:
-            registry_store["senaite"] = OOBTree()
-            for record in senaite_records.keys():
-                registry_store["senaite"][record] = senaite_records[record]
-        # fetch records associated with bika and store them
-        # if found
-        bika_records = self.get_bika_registry_records()
-        if bika_records["items"][0]:
-            registry_store["bika"] = OOBTree()
-            for record in bika_records.keys():
-                registry_store["bika"][record] = bika_records[record]
+        retrieved_records = {}
+        if keywords is None:
+            retrieved_records["all"] = self.get_registry_records_by_keyword()
+        else:
+            for keyword in keywords:
+                records = self.get_registry_records_by_keyword(keyword)
+                retrieved_records[keyword] = records
+
+        for keyword in retrieved_records.keys():
+            if retrieved_records[keyword]["items"][0]:
+                registry_store[keyword] = OOBTree()
+                for record in retrieved_records[keyword].keys():
+                    registry_store[keyword][record] = retrieved_records[keyword][record]
 
     def fetch_users(self, domain):
         """Fetch all users from the source URL
@@ -467,19 +466,12 @@ class Sync(BrowserView):
         """
         return self.get_first_item("users/current")
 
-    def get_senaite_registry_records(self):
+    def get_registry_records_by_keyword(self, keyword=None):
         """Return the values of the registry records
-        associated to senaite in the source instance by
-        querying the API with keyword senaite
+        associated to the keyword in the source instance.
+        If keyword is None it returns the whole registry
         """
-        return self.get_json("registry/senaite")
-
-    def get_bika_registry_records(self):
-        """Return the values of the registry records
-        associated to bika in the source instance by
-        querying the API with keyword bika
-        """
-        return self.get_json("registry/bika")
+        return self.get_json("registry/{}".format(keyword))
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
