@@ -185,7 +185,6 @@
                   <tr>
                     <th>Keyword</th>
                     <th>Records and Values</th>
-                    <th>API URL</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,15 +194,9 @@
                       <span tal:content="python:key"></span>
                     </td>
                     <td>
-                      <tal:values repeat="value python:data[key]['items']">
+                      <tal:values repeat="value python:data[key]">
                         <span tal:content="value"/>&nbsp;
                       </tal:values>
-                    </td>
-                    <td>
-                      <a href="#"
-                         tal:attributes="href python:view.storage[storage]['registry'][key].get('url')">
-                        Link
-                      </a>
                     </td>
                   </tr>
                 </tbody>
