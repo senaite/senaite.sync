@@ -152,7 +152,7 @@ class Sync(BrowserView):
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
             # Fetch registry records that contain the word bika or senaite
-            self.fetch_registry_records(domain, ["bika", "senaite"])
+            self.fetch_registry_records(domain, keys=["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
@@ -375,7 +375,7 @@ class Sync(BrowserView):
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
 
-    def fetch_registry_records(self, domain, keywords=None):
+    def fetch_registry_records(self, domain, keys=None):
         """Fetch configuration registry records of interest (those associated
         to the keywords passed) from source instance
         """
