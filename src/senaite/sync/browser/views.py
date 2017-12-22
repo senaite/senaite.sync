@@ -151,7 +151,7 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
-            self.fetch_registry_records(domain)
+            self.fetch_registry_records(domain, ["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
