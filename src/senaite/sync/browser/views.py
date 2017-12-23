@@ -24,6 +24,7 @@ from zope.component.interfaces import IFactory
 
 from plone import protect
 from plone import api as ploneapi
+from plone.registry.interfaces import IRegistry
 
 from senaite import api
 from senaite.jsonapi.interfaces import IFieldManager
@@ -96,8 +97,10 @@ class Sync(BrowserView):
         # Handle "Import" action
         if form.get("import", False):
             domain = form.get("domain", None)
+            self.import_registry_records(domain)
             self.import_users(domain)
             self.import_data(domain)
+            logger.info("*** END OF DATA IMPORT {} ***".format(domain))
             return self.template()
 
         # Handle "Clear this Storage" action
@@ -150,10 +153,28 @@ class Sync(BrowserView):
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
             self.fetch_data(domain, uid="0")
+            # Fetch registry records that contain the word bika or senaite
+            self.fetch_registry_records(domain, keys=["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
         return self.template()
+
+    def import_registry_records(self, domain):
+        """Import the registry records from the storage identified by domain
+        """
+        logger.info("*** IMPORT REGISTRY RECORDS {} ***".format(domain))
+
+        storage = self.get_storage(domain=domain)
+        registry_store = storage["registry"]
+        current_registry = getUtility(IRegistry)
+        # For each of the keywords used to retrieve registry data
+        # import the records that were found
+        for key in registry_store.keys():
+            records = registry_store[key]
+            for record in records.keys():
+                logger.info("Updating record {} with value {}".format(record, records.get(record)))
+                current_registry[record] = records.get(record)
 
     def import_users(self, domain):
         """Import the users from the storage identified by domain
@@ -265,7 +286,6 @@ class Sync(BrowserView):
             self.update_object_with_data(obj, datastore[uid], domain)
 
         self.reindex_updated_objects()
-        logger.info("*** END OF DATA IMPORT {} ***".format(domain))
 
     def update_object_with_data(self, obj, data, domain):
         """Update an existing object with data
@@ -423,6 +443,28 @@ class Sync(BrowserView):
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
 
+    def fetch_registry_records(self, domain, keys=None):
+        """Fetch configuration registry records of interest (those associated
+        to the keywords passed) from source instance
+        """
+        logger.info("*** FETCH REGISTRY RECORDS {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        registry_store = storage["registry"]
+        retrieved_records = {}
+
+        if keys is None:
+            retrieved_records["all"] = self.get_registry_records_by_key()
+        else:
+            for key in keys:
+                retrieved_records[key] = self.get_registry_records_by_key(key)
+
+        for key in retrieved_records.keys():
+            if not retrieved_records[key]:
+                continue
+            registry_store[key] = OOBTree()
+            for record in retrieved_records[key][0].keys():
+                registry_store[key][record] = retrieved_records[key][0][record]
+
     def fetch_users(self, domain):
         """Fetch all users from the source URL
         """
@@ -495,6 +537,16 @@ class Sync(BrowserView):
         """Return the current logged in remote user
         """
         return self.get_first_item("users/current")
+
+    def get_registry_records_by_key(self, key=None):
+        """Return the values of the registry records
+        associated to the specified keyword in the source instance.
+        If keyword is None it returns the whole registry
+        """
+        if key is None:
+            return self.get_items("registry")
+
+        return self.get_items("registry/{}".format(key))
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
@@ -601,6 +653,7 @@ class Sync(BrowserView):
             self.storage[domain]["users"] = OOBTree()
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
+            self.storage[domain]["registry"] = OOBTree()
         return self.storage[domain]
 
     def reindex_updated_objects(self):
