@@ -7,6 +7,7 @@ import urlparse
 import requests
 import transaction
 from DateTime import DateTime
+from datetime import datetime
 
 from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
@@ -335,8 +336,8 @@ class Sync(BrowserView):
         wf_info = data.get("workflow_info", [])
         for wf_dict in wf_info:
             wf_id = wf_dict.get("workflow")
-            wf_state = wf_dict.get("review_state")
-            self.set_workflow_state(obj, wf_id, wf_state)
+            review_history = wf_dict.get("review_history")
+            self.import_review_history(obj, wf_id, review_history)
 
         # finally reindex the object
         self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
@@ -376,10 +377,10 @@ class Sync(BrowserView):
             obj = container._getOb(obj.getId())
         return obj
 
-    def set_workflow_state(self, content, wf_id, state_id, **kw):
+    def import_review_history(self, content, wf_id, review_history, **kw):
         """Change the workflow state of an object
         @param content: Content obj which state will be changed
-        @param state_id: name of the state to put on content
+        @param review_history: Review history of the object
         @param wf_id: workflow name
         @param kw: change the values of same name of the state mapping
         @return: None
@@ -394,27 +395,46 @@ class Sync(BrowserView):
         else:
             logger.error("%s: Cannot find workflow id %s" % (content, wf_id))
 
-        wf_state = {
-            'action': None,
-            'actor': None,
-            'comments': "Setting state to %s" % state_id,
-            'review_state': state_id,
-            'time': DateTime(),
-        }
-
-        # Updating wf_state from keyword args
-        for k in kw.keys():
-            # Remove unknown items
-            if k not in wf_state:
-                del kw[k]
-        if 'review_state' in kw:
-            del kw['review_state']
-        wf_state.update(kw)
-
-        portal_workflow.setStatusOf(wf_id, content, wf_state)
+        for rh in sorted(review_history, key=lambda k: k['time']):
+            if not self.review_history_imported(content, rh, wf_def):
+                portal_workflow.setStatusOf(wf_id, content,
+                                            self.to_review_history_format(rh))
 
         wf_def.updateRoleMappingsFor(content)
         return
+
+    def to_review_history_format(self, review_history):
+        """
+        Format review history dictionary
+        :param review_history: Review State Dictionary
+        :return: formatted dictionary
+        """
+
+        raw = review_history.get("time")
+        if isinstance(raw, basestring):
+            parsed = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+            review_history['time'] = DateTime(parsed)
+        return review_history
+
+    def review_history_imported(self, obj, review_history, wf_tool=None):
+        """
+        Check if review History info is already imported for given workflow.
+        :param obj: the object to be checked
+        :param review_history: Review State Dictionary
+        :param wf_tool: Objects Workflow tool. Will be set to 'portal_worklow'
+                if is None.
+        :return: formatted dictionary
+        """
+        if wf_tool is None:
+            wf_tool = api.get_tool('portal_workflow')
+
+        state = review_history.get('review_state')
+        current_rh = wf_tool.getInfoFor(obj, 'review_history', '')
+        for rh in current_rh:
+            if rh.get('review_state') == state:
+                return True
+
+        return False
 
     def translate_path(self, path):
         """Translate the physical path to a local path
