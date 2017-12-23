@@ -32,6 +32,8 @@ from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
 
+from src.senaite.jsonapi.fieldmanagers import ProxyFieldManager
+
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
 
@@ -294,6 +296,9 @@ class Sync(BrowserView):
         # get the storage and UID map
         storage = self.get_storage(domain=domain)
         uidmap = storage["uidmap"]
+        # Proxy Fields must be set after its dependency object is already set.
+        # Thus, we will store all the ProxyFields and set them in the end
+        proxy_fields = []
 
         for fieldname, field in api.get_fields(obj).items():
 
@@ -325,12 +330,35 @@ class Sync(BrowserView):
                     response = requests.get(url)
                     value = response.content
 
+            # Leave the Proxy Fields for later
+            if isinstance(fm, ProxyFieldManager):
+                proxy_fields.append({'field_name': fieldname,
+                                     'fm': fm, 'value': value})
+                continue
+
             logger.info("Setting value={} on field={} of object={}".format(
                 repr(value), fieldname, api.get_id(obj)))
             try:
                 fm.set(obj, value)
             except:
-                logger.error("Could not set field '{}' with value '{}'".format(fieldname, value))
+                logger.error(
+                    "Could not set field '{}' with value '{}'".format(
+                        fieldname, value))
+
+        # All reference fields are set. We can set the proxy fields now.
+        for pf in proxy_fields:
+            field_name = pf.get("field_name")
+            fm = pf.get("fm")
+            value = pf.get("value")
+            logger.info("Setting value={} on field={} of object={}".format(
+                repr(value), field_name, api.get_id(obj)))
+            try:
+                fm.set(obj, value)
+            except:
+                logger.error(
+                    "Could not set field '{}' with value '{}'".format(
+                        field_name,
+                        value))
 
         # Set the workflow states
         wf_info = data.get("workflow_info", [])
