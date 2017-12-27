@@ -32,7 +32,7 @@ from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
 
-from src.senaite.jsonapi.fieldmanagers import ProxyFieldManager
+from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
