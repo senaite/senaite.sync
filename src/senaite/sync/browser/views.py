@@ -36,6 +36,7 @@ from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
+SYNC_CREDENTIALS = "senaite.sync.credentials"
 
 
 class SyncError(Exception):
@@ -53,6 +54,77 @@ class SyncError(Exception):
 
     def __str__(self):
         return self.message
+
+
+class AutoSync(BrowserView):
+    implements(ISync)
+
+    def __init__(self, context, request):
+        super(BrowserView, self).__init__(context, request)
+        self.context = context
+        self.request = request
+
+    def __call__(self):
+        protect.CheckAuthenticator(self.request.form)
+        self.portal = api.get_portal()
+        return "Holala"
+
+    @property
+    def _credentials_storage(self):
+        """
+        """
+        annotation = self.get_annotation()
+        if annotation.get(SYNC_CREDENTIALS) is None:
+            annotation[SYNC_CREDENTIALS] = []
+        return annotation[SYNC_CREDENTIALS]
+
+    def get_credentials_storage(self):
+        """
+        :return:
+        """
+        return self._credentials_storage
+
+    def get_annotation(self):
+        """Annotation storage on the portal object
+        """
+        return IAnnotations(self.portal)
+
+    def add_new_credential(self, data):
+        """
+        """
+        if data is not isinstance(dict):
+            return
+
+        required_indexes = ["domain_name", "url", "ac_username", "ac_password"]
+
+        for i in required_indexes:
+            if data.get(i, None) is None:
+                return
+
+        storage = self.get_credentials_storage()
+        for s in storage:
+            if s.get("domain_name") == data.get("domain_name"):
+                return
+
+        # store the data
+        storage.append(data)
+
+    def remove_domain(self, domain_name):
+        """
+
+        :param domain_name:
+        :return:
+        """
+        storage = self.get_credentials_storage()
+        storage = [s for s in storage if s.get("domain_name") != domain_name]
+        return storage
+
+    def reset(self):
+        """Drop the whole storage of credentials
+        """
+        annotation = self.get_annotation()
+        if annotation.get(SYNC_CREDENTIALS) is not None:
+            del annotation[SYNC_CREDENTIALS]
 
 
 class Sync(BrowserView):
