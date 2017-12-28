@@ -79,8 +79,15 @@ class EditAutoSync(BrowserView):
         form = self.request.form
         if form.get("add_domain", False):
             self.add_new_credential(form)
+        elif form.get("remove_domain", False):
+            name = form.get("domain_name")
+            self.remove_domain(name)
 
         return self.template()
+
+    def get_domains(self):
+        storage = get_credentials_storage(self.portal)
+        return storage
 
     def add_new_credential(self, data):
         """
@@ -113,6 +120,7 @@ class EditAutoSync(BrowserView):
         storage = get_credentials_storage(self.portal)
         if storage.get(domain_name, False):
             del storage[domain_name]
+            logger.info("Domain Removed: {}".format(domain_name))
 
     def reset(self):
         """Drop the whole storage of credentials
