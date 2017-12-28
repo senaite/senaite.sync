@@ -56,6 +56,72 @@ class SyncError(Exception):
         return self.message
 
 
+class EditAutoSync(BrowserView):
+    """Sync Controller View
+    """
+    implements(ISync)
+
+    template = ViewPageTemplateFile("templates/edit_sync_domains.pt")
+
+    def __init__(self, context, request):
+        super(BrowserView, self).__init__(context, request)
+        self.context = context
+        self.request = request
+
+    def __call__(self):
+        protect.CheckAuthenticator(self.request.form)
+
+        self.portal = api.get_portal()
+        self.request.set('disable_plone.rightcolumn', 1)
+        self.request.set('disable_border', 1)
+
+        # Handle form submit
+        form = self.request.form
+        if form.get("add_domain", False):
+            self.add_new_credential(form)
+
+        return self.template()
+
+    def add_new_credential(self, data):
+        """
+        """
+        if not isinstance(data, dict):
+            return
+
+        required_indexes = ["domain_name", "url", "ac_username", "ac_password"]
+        credentials = {}
+        for i in required_indexes:
+            if not data.get(i, False):
+                return
+            credentials[i] = data[i]
+
+        name = credentials.get("domain_name")
+        storage = get_credentials_storage(self.portal)
+        if storage.get(name, False):
+            return
+
+        # store the data
+        storage[name] = credentials
+        logger.info("New credentials were added for: {}".format(name))
+
+    def remove_domain(self, domain_name):
+        """
+
+        :param domain_name:
+        :return:
+        """
+        storage = get_credentials_storage(self.portal)
+        if storage.get(domain_name, False):
+            del storage[domain_name]
+
+    def reset(self):
+        """Drop the whole storage of credentials
+        """
+        annotation = self.get_annotation()
+        if annotation.get(SYNC_CREDENTIALS) is not None:
+            del annotation[SYNC_CREDENTIALS]
+
+
 class AutoSync(BrowserView):
     implements(ISync)
 
@@ -67,64 +133,25 @@ class AutoSync(BrowserView):
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
         self.portal = api.get_portal()
+        print get_credentials_storage(self.portal)
         return "Holala"
 
-    @property
-    def _credentials_storage(self):
-        """
-        """
-        annotation = self.get_annotation()
-        if annotation.get(SYNC_CREDENTIALS) is None:
-            annotation[SYNC_CREDENTIALS] = []
-        return annotation[SYNC_CREDENTIALS]
 
-    def get_credentials_storage(self):
-        """
-        :return:
-        """
-        return self._credentials_storage
+def get_annotation(portal):
+    """Annotation storage on the portal object
+    """
+    if portal is None:
+        portal = api.get_portal()
+    return IAnnotations(portal)
 
-    def get_annotation(self):
-        """Annotation storage on the portal object
-        """
-        return IAnnotations(self.portal)
 
-    def add_new_credential(self, data):
-        """
-        """
-        if data is not isinstance(dict):
-            return
-
-        required_indexes = ["domain_name", "url", "ac_username", "ac_password"]
-
-        for i in required_indexes:
-            if data.get(i, None) is None:
-                return
-
-        storage = self.get_credentials_storage()
-        for s in storage:
-            if s.get("domain_name") == data.get("domain_name"):
-                return
-
-        # store the data
-        storage.append(data)
-
-    def remove_domain(self, domain_name):
-        """
-
-        :param domain_name:
-        :return:
-        """
-        storage = self.get_credentials_storage()
-        storage = [s for s in storage if s.get("domain_name") != domain_name]
-        return storage
-
-    def reset(self):
-        """Drop the whole storage of credentials
-        """
-        annotation = self.get_annotation()
-        if annotation.get(SYNC_CREDENTIALS) is not None:
-            del annotation[SYNC_CREDENTIALS]
+def get_credentials_storage(portal):
+    """
+    """
+    annotation = get_annotation(portal)
+    if not annotation.get(SYNC_CREDENTIALS):
+        annotation[SYNC_CREDENTIALS] = {}
+    return annotation[SYNC_CREDENTIALS]
 
 
 class Sync(BrowserView):
