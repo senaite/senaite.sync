@@ -141,8 +141,36 @@ class AutoSync(BrowserView):
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
         self.portal = api.get_portal()
-        print get_credentials_storage(self.portal)
-        return "Holala"
+        storage = get_credentials_storage(self.portal)
+        logger.info("**** AUTO SYNC STARTED ****")
+
+        for key, value in storage.items():
+            logger.info("Fetching data for: {} ".format(key))
+            self.request.form["fetchform"] = 1
+            self.request.form["fetch"] = 1
+            self.request.form["url"] = value["url"]
+            self.request.form["ac_name"] = value["ac_username"]
+            self.request.form["ac_password"] = value["ac_password"]
+            response = Sync(self.context, self.request)
+            response()
+            self.request.form["fetchform"] = False
+            self.request.form["fetch"] = False
+
+            logger.info("Importing data for: {} ".format(key))
+            self.request.form["dataform"] = 1
+            self.request.form["import"] = 1
+            self.request.form["domain"] = value["url"]
+            response = Sync(self.context, self.request)
+            response()
+
+            logger.info("Clearing storage data for: {} ".format(key))
+            self.request.form["import"] = False
+            self.request.form["clear_storage"] = 1
+            response = Sync(self.context, self.request)
+            response()
+
+        logger.info("**** AUTO SYNC FINISHED ****")
+        return "Done..."
 
 
 def get_annotation(portal):
@@ -158,7 +186,7 @@ def get_credentials_storage(portal):
     """
     annotation = get_annotation(portal)
     if not annotation.get(SYNC_CREDENTIALS):
-        annotation[SYNC_CREDENTIALS] = {}
+        annotation[SYNC_CREDENTIALS] = OOBTree()
     return annotation[SYNC_CREDENTIALS]
 
 
