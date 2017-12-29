@@ -57,7 +57,10 @@ class SyncError(Exception):
 
 
 class EditAutoSync(BrowserView):
-    """Sync Controller View
+    """
+    View for editing domains and their data which will be used for
+    Auto Synchronization. From this view, user cannot run fetch or import step,
+    but can only add/remove remote instance (domain) parameters.
     """
     implements(ISync)
 
@@ -86,11 +89,18 @@ class EditAutoSync(BrowserView):
         return self.template()
 
     def get_domains(self):
+        """
+        This function returns all the domains registered for Auto Sync.
+        :return: dictionary of the domains.
+        """
         storage = get_credentials_storage(self.portal)
         return storage
 
     def add_new_credential(self, data):
         """
+        Adds new domain parameters to the credentials storage.
+        :param data: parameters dict of the new domain.
+        :return:
         """
         if not isinstance(data, dict):
             return
@@ -104,6 +114,7 @@ class EditAutoSync(BrowserView):
 
         name = credentials.get("domain_name")
         storage = get_credentials_storage(self.portal)
+        # Domain names must be unique
         if storage.get(name, False):
             return
 
@@ -113,8 +124,8 @@ class EditAutoSync(BrowserView):
 
     def remove_domain(self, domain_name):
         """
-
-        :param domain_name:
+        Removes selected domain from the credentials storage.
+        :param domain_name: name of the domain to be removed
         :return:
         """
         storage = get_credentials_storage(self.portal)
@@ -131,6 +142,12 @@ class EditAutoSync(BrowserView):
 
 
 class AutoSync(BrowserView):
+    """
+    A View to be called by clock server periodically in order to run Auto Sync.
+    With an authentication required, it will go through all the domains
+    registered in the system and run 1. Fetch, 2. Import, 3. Clear steps for
+    each of them.
+    """
     implements(ISync)
 
     def __init__(self, context, request):
@@ -141,10 +158,14 @@ class AutoSync(BrowserView):
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
         self.portal = api.get_portal()
+
+        # Credentials storage must be filled beforehand. Users with enough
+        # privileges can add domains from 'edit_auto_sync' view.
         storage = get_credentials_storage(self.portal)
         logger.info("**** AUTO SYNC STARTED ****")
 
         for key, value in storage.items():
+            # First step is fetching data for the domain
             logger.info("Fetching data for: {} ".format(key))
             self.request.form["fetchform"] = 1
             self.request.form["fetch"] = 1
@@ -153,6 +174,8 @@ class AutoSync(BrowserView):
             self.request.form["ac_password"] = value["ac_password"]
             response = Sync(self.context, self.request)
             response()
+
+            # Second step is importing fetched data
             self.request.form["fetchform"] = False
             self.request.form["fetch"] = False
 
@@ -163,6 +186,8 @@ class AutoSync(BrowserView):
             response = Sync(self.context, self.request)
             response()
 
+            # The last step is clearing fetched data from the storage to avoid
+            # increase of the memory
             logger.info("Clearing storage data for: {} ".format(key))
             self.request.form["import"] = False
             self.request.form["clear_storage"] = 1
@@ -183,6 +208,32 @@ def get_annotation(portal):
 
 def get_credentials_storage(portal):
     """
+    Credentials for domains to be used for Auto Sync are stored in a different
+    annotation. Required parameters for each domain are following:
+        -domain_name:   Unique name for the domain,
+        -url:           URL of the remote instance,
+        -ac_username:   Username to log in the remote instance,
+        -ac_password:   Unique name for the domain,
+
+    Credentials are saved in a OOBTree with the structure as in the example:
+    E.g:
+        {
+            'server_1': {
+                        'url': 'http://localhost:8080/Plone/',
+                        'ac_username': 'lab_man',
+                        'ac_password': 'lab_man',
+                        'domain_name': 'server_1',
+                        },
+            'client_1': {
+                        'url': 'http://localhost:9090/Plone/',
+                        'ac_username': 'admin',
+                        'ac_password': 'admin',
+                        'domain_name': 'client_1',
+                        },
+        }
+
+    :param portal: Portal object.
+    :return:
     """
     annotation = get_annotation(portal)
     if not annotation.get(SYNC_CREDENTIALS):
