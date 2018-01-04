@@ -445,7 +445,6 @@ class Sync(BrowserView):
                 if existing:
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(existing)
-                    objmap[uid] = existing
                 else:
                     # get the container object by path
                     container_path = self.translate_path(ppath)
@@ -454,7 +453,6 @@ class Sync(BrowserView):
                     obj = self.create_object_slug(container, data)
                     # remember the UID -> object UID mapping for the update step
                     uidmap[uid] = api.get_uid(obj)
-                    objmap[uid] = obj
 
         # When creation process is done, commit the transaction to avoid
         # ReferenceField relation problems.
@@ -466,7 +464,7 @@ class Sync(BrowserView):
 
         # Update all objects with the given data
         for uid in ordered_uids:
-            obj = objmap.get(uid, None)
+            obj = api.get_object_by_uid(uidmap[uid])
             if obj is None:
                 logger.warn("Object not found: {} ".format(uid))
                 continue
@@ -554,7 +552,8 @@ class Sync(BrowserView):
             self.import_review_history(obj, wf_id, review_history)
 
         # finally reindex the object
-        self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
+        obj.reindexObject()
+        # self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
 
     def dereference_object(self, uid, uidmap):
         """Dereference an object by uid
