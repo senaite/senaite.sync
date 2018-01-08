@@ -501,8 +501,7 @@ class Sync(BrowserView):
         storage = self.get_storage(domain=domain)
         mailsettings_store = storage["mailsettings"]
         settings = self.get_items("mailsettings")
-        import pdb; pdb.set_trace()
-        for key, val in settings[0]:
+        for key, val in settings[0].items():
             mailsettings_store[key] = val
 
     def fetch_users(self, domain):
