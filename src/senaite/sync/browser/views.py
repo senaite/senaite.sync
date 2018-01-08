@@ -157,6 +157,7 @@ class Sync(BrowserView):
             self.fetch_data(domain, uid="0")
             # Fetch registry records that contain the word bika or senaite
             self.fetch_registry_records(domain, keys=["bika", "senaite"])
+            self.fetch_mail_settings(domain)
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
@@ -493,6 +494,17 @@ class Sync(BrowserView):
             for record in retrieved_records[key][0].keys():
                 registry_store[key][record] = retrieved_records[key][0][record]
 
+    def fetch_mail_settings(self, domain):
+        """Fetch mail settings
+        """
+        logger.info("*** FETCH MAIL SETTINGS {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        mailsettings_store = storage["mailsettings"]
+        settings = self.get_items("mailsettings")
+        import pdb; pdb.set_trace()
+        for key, val in settings[0]:
+            mailsettings_store[key] = val
+
     def fetch_users(self, domain):
         """Fetch all users from the source URL
         """
@@ -682,6 +694,7 @@ class Sync(BrowserView):
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
+            self.storage[domain]["mailsettings"] = OOBTree()
         return self.storage[domain]
 
     def reindex_updated_objects(self):
