@@ -247,6 +247,7 @@ class Sync(BrowserView):
     implements(ISync)
 
     template = ViewPageTemplateFile("templates/sync.pt")
+    fields_to_skip = ['excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
     def __init__(self, context, request):
         super(BrowserView, self).__init__(context, request)
@@ -485,6 +486,9 @@ class Sync(BrowserView):
         proxy_fields = []
 
         for fieldname, field in api.get_fields(obj).items():
+
+            if fieldname in self.fields_to_skip:
+                continue
 
             fm = IFieldManager(field)
             value = data.get(fieldname)
