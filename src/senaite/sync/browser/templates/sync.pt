@@ -184,7 +184,7 @@
                 <thead>
                   <tr>
                     <th>Keyword</th>
-                    <th>Records and Values</th>
+                    <th>Records</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,6 +197,26 @@
                       <tal:values repeat="value python:data[key]">
                         <span tal:content="value"/>&nbsp;
                       </tal:values>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>Mail settings</h3>
+              <table class="table listing collapsibleContent">
+                <thead>
+                  <tr>
+                    <th>Setting</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr tal:define="data python:view.storage[storage]['mailsettings']"
+                      tal:repeat="key python:data.keys()">
+                    <td>
+                      <span tal:content="python:key"></span>
+                    </td>
+                    <td>
+                      <span tal:content="python:data[key]"></span>
                     </td>
                   </tr>
                 </tbody>
