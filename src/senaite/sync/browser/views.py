@@ -101,6 +101,7 @@ class Sync(BrowserView):
             domain = form.get("domain", None)
             self.import_registry_records(domain)
             self.import_users(domain)
+            self.import_mail_settings(domain)
             self.import_data(domain)
             logger.info("*** END OF DATA IMPORT {} ***".format(domain))
             return self.template()
@@ -162,6 +163,24 @@ class Sync(BrowserView):
 
         # always render the template
         return self.template()
+
+    def import_mail_settings(self, domain):
+        """Import the mail control panel configuration settings
+        """
+        logger.info("*** IMPORT MAIL CONFIGURATION {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        mail_settings_store = storage["mailsettings"]
+
+        mail_host = ploneapi.portal.get_tool(name='MailHost')
+        portal = api.get_portal()
+
+        for key, value in dict(mail_settings_store).items():
+            # Check if the key corresponds to a config value of the mail host
+            if key in vars(mail_host):
+                setattr(mail_host, key, value)
+            else:
+                setattr(portal, key, value)
+
 
     def import_registry_records(self, domain):
         """Import the registry records from the storage identified by domain
