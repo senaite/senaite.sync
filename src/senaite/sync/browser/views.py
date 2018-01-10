@@ -101,6 +101,7 @@ class Sync(BrowserView):
             domain = form.get("domain", None)
             self.import_registry_records(domain)
             self.import_users(domain)
+            self.import_mail_settings(domain)
             self.import_data(domain)
             logger.info("*** END OF DATA IMPORT {} ***".format(domain))
             return self.template()
@@ -157,10 +158,28 @@ class Sync(BrowserView):
             self.fetch_data(domain, uid="0")
             # Fetch registry records that contain the word bika or senaite
             self.fetch_registry_records(domain, keys=["bika", "senaite"])
+            self.fetch_mail_settings(domain)
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
         return self.template()
+
+    def import_mail_settings(self, domain):
+        """Import mail settings
+        """
+        logger.info("*** IMPORT MAIL CONFIGURATION {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        mail_settings_store = storage["mailsettings"]
+        # retrieve the objects that contain the mail settings
+        mail_host = ploneapi.portal.get_tool(name='MailHost')
+        portal = api.get_portal()
+        # for each of the values fetched from source try to set it
+        for key, value in dict(mail_settings_store).items():
+            if hasattr(mail_host, key):
+                setattr(mail_host, key, value)
+            elif hasattr(portal, key):
+                setattr(portal, key, value)
+
 
     def import_registry_records(self, domain):
         """Import the registry records from the storage identified by domain
@@ -493,6 +512,16 @@ class Sync(BrowserView):
             for record in retrieved_records[key][0].keys():
                 registry_store[key][record] = retrieved_records[key][0][record]
 
+    def fetch_mail_settings(self, domain):
+        """Fetch mail settings
+        """
+        logger.info("*** FETCH MAIL SETTINGS {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        mailsettings_store = storage["mailsettings"]
+        settings = self.get_items("mailsettings")
+        for key, val in settings[0].items():
+            mailsettings_store[key] = val
+
     def fetch_users(self, domain):
         """Fetch all users from the source URL
         """
@@ -682,6 +711,7 @@ class Sync(BrowserView):
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
+            self.storage[domain]["mailsettings"] = OOBTree()
         return self.storage[domain]
 
     def reindex_updated_objects(self):
