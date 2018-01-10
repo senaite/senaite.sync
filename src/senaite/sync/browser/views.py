@@ -165,7 +165,7 @@ class Sync(BrowserView):
         return self.template()
 
     def import_mail_settings(self, domain):
-        """Import the mail control panel configuration settings
+        """Import mail settings
         """
         logger.info("*** IMPORT MAIL CONFIGURATION {} ***".format(domain))
         storage = self.get_storage(domain=domain)
