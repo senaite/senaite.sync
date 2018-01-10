@@ -39,6 +39,7 @@ setup(
         'senaite.jsonapi',
         'requests',
         'plone.api',
+        'souper',
     ],
     extras_require={
         'test': [

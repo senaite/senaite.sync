@@ -22,6 +22,8 @@ from zope.globalrequest import getRequest
 from zope.component import getUtility
 from zope.component.interfaces import IFactory
 
+from souper.soup import get_soup
+
 from plone import protect
 from plone import api as ploneapi
 from plone.registry.interfaces import IRegistry
@@ -78,6 +80,7 @@ class EditAutoSync(BrowserView):
         self.request.set('disable_plone.rightcolumn', 1)
         self.request.set('disable_border', 1)
 
+        _get_soup('test', self.portal)
         # Handle form submit
         form = self.request.form
         if form.get("add_domain", False):
@@ -910,3 +913,55 @@ class Sync(BrowserView):
         annotation = self.get_annotation()
         if annotation.get(SYNC_STORAGE) is not None:
             del annotation[SYNC_STORAGE]
+
+from zope.interface import Interface
+from zope.component import provideAdapter
+from souper.interfaces import IStorageLocator
+from souper.soup import SoupData
+from zope.interface import implementer
+from souper.interfaces import ICatalogFactory
+from souper.soup import NodeAttributeIndexer
+from zope.component import provideUtility
+from repoze.catalog.catalog import Catalog
+from repoze.catalog.indexes.keyword import CatalogKeywordIndex
+
+
+def _get_soup(domain_name, portal=None):
+    """
+    """
+    if portal is None:
+        portal = api.get_portal()
+    soup = get_soup(domain_name, portal)
+    import pdb; pdb.set_trace()
+    return soup
+
+
+def _set_soup(domain_name):
+
+    @implementer(IStorageLocator)
+    class StorageLocator(object):
+        def __init__(self, context):
+            self.context = context
+
+        def storage(self, soup_name):
+            if soup_name not in self.context:
+                self.context[soup_name] = SoupData()
+
+            return self.context[soup_name]
+
+    provideAdapter(StorageLocator, adapts=[Interface])
+
+    @implementer(ICatalogFactory)
+    class DomainSoupCatalogFactory(object):
+
+        def __call__(self, context=None):
+            catalog = Catalog()
+            r_uid_indexer = NodeAttributeIndexer('remote_uid')
+            catalog[u'remote_uid'] = CatalogKeywordIndex(r_uid_indexer)
+            path_indexer = NodeAttributeIndexer('path')
+            catalog[u'path'] = CatalogKeywordIndex(path_indexer)
+            l_uid_indexer = NodeAttributeIndexer('local_uid')
+            catalog[u'local_uid'] = CatalogKeywordIndex(l_uid_indexer)
+            return catalog
+
+    provideUtility(DomainSoupCatalogFactory(), name=domain_name)
