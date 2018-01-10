@@ -173,7 +173,7 @@ class Sync(BrowserView):
         # retrieve the objects that contain the mail settings
         mail_host = ploneapi.portal.get_tool(name='MailHost')
         portal = api.get_portal()
-        # for each of the values fetched from source try to set it 
+        # for each of the values fetched from source try to set it
         for key, value in dict(mail_settings_store).items():
             if hasattr(mail_host, key):
                 setattr(mail_host, key, value)
