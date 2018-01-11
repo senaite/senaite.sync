@@ -991,23 +991,33 @@ class SoupHandler:
             return None
         return record
 
-    def get_by_remote_uid(self, remote_uid):
+    def find_unique(self, column, value):
+        recs = [r for r in self.soup.query(Eq(column, value))]
+        if recs:
+            return record_to_dict(recs[0])
+        return None
+
+    def update_by_remote_uid(self, remote_uid, **kwargs):
         recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
-        if recs:
-            return record_to_dict(recs[0])
-        return None
+        if not recs:
+            logger.error("Could not find any record with remote_uid: '{}'"
+                         .format(remote_uid))
+            return False
+        for k, v in kwargs.iteritems():
+            recs[0].attrs[k] = v
+        self.soup.reindex([recs[0]])
+        return True
 
-    def get_by_local_uid(self, local_uid):
-        recs = [r for r in self.soup.query(Eq('local_uid', local_uid))]
-        if recs:
-            return record_to_dict(recs[0])
-        return None
-
-    def get_by_path(self, path):
+    def update_by_path(self, path, **kwargs):
         recs = [r for r in self.soup.query(Eq('path', path))]
-        if recs:
-            return record_to_dict(recs[0])
-        return None
+        if not recs:
+            logger.error("Could not find any record with path: '{}'"
+                         .format(path))
+            return False
+        for k, v in kwargs.iteritems():
+            recs[0].attrs[k] = v
+        self.soup.reindex([recs[0]])
+        return True
 
     def _create_domain_catalog(self):
         """
