@@ -22,7 +22,7 @@ from zope.globalrequest import getRequest
 from zope.component import getUtility
 from zope.component.interfaces import IFactory
 
-from souper.soup import get_soup
+from souper.soup import get_soup as souper_get_soup
 
 from plone import protect
 from plone import api as ploneapi
@@ -80,7 +80,6 @@ class EditAutoSync(BrowserView):
         self.request.set('disable_plone.rightcolumn', 1)
         self.request.set('disable_border', 1)
 
-        _get_soup('test', self.portal)
         # Handle form submit
         form = self.request.form
         if form.get("add_domain", False):
@@ -920,26 +919,118 @@ from souper.interfaces import IStorageLocator
 from souper.soup import SoupData
 from zope.interface import implementer
 from souper.interfaces import ICatalogFactory
+from zope.component.interfaces import ComponentLookupError
 from souper.soup import NodeAttributeIndexer
 from zope.component import provideUtility
 from repoze.catalog.catalog import Catalog
-from repoze.catalog.indexes.keyword import CatalogKeywordIndex
+from repoze.catalog.indexes.field import CatalogFieldIndex
+from souper.soup import Record
+from repoze.catalog.query import Eq
+from repoze.catalog.query import Or
 
 
-def _get_soup(domain_name, portal=None):
+class SoupHandler:
     """
     """
-    if portal is None:
-        portal = api.get_portal()
-    soup = get_soup(domain_name, portal)
-    import pdb; pdb.set_trace()
-    return soup
 
+    def __init__(self, domain_name):
+        self.domain_name = domain_name
+        self.portal = api.get_portal()
+        self.soup = self._set_soup()
 
-def _set_soup(domain_name):
+    def _set_soup(self):
+        """
+        """
+        soup = souper_get_soup(self.domain_name, self.portal)
+        try:
+            getUtility(ICatalogFactory, name=self.domain_name)
+        except ComponentLookupError:
+            logger.info("****** Setting Soup catalog ********")
+            self._create_domain_catalog()
+            logger.info("***** Soup Catalog is set. *****")
+
+        return soup
+
+    def insert(self, data):
+        """
+        :param domain_name:
+        :param data:
+        :return:
+        """
+        if self._already_exists(data):
+            logger.error("Trying to insert existing record... {}".format(data))
+            return False
+        record = Record()
+        record.attrs['remote_uid'] = data['remote_uid']
+        record.attrs['path'] = data['path']
+        record.attrs['obj_type'] = data['obj_type']
+        record.attrs['local_uid'] = data.get('local_uid', "")
+        try:
+            r_id = self.soup.add(record)
+        except AttributeError:
+            r_id = self.soup.add(record)
+        logger.info("Record {} inserted: {}".format(r_id, data))
+        return r_id
+
+    def _already_exists(self, data):
+        """
+
+        :param data:
+        :return:
+        """
+        r_uid_q = Eq('remote_uid', data.get("remote_uid", "_"))
+        l_uid_q = Eq('local_uid', data.get("local_uid", "_"))
+        p_q = Eq('path', data.get("path", "_"))
+        ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, p_q))]
+        return ret is not []
+
+    def get_record_by_id(self, rec_id):
+        try:
+            record = self.soup.get(rec_id)
+        except KeyError:
+            return None
+        return record
+
+    def get_by_remote_uid(self, remote_uid):
+        recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
+        if recs:
+            return record_to_dict(recs[0])
+        return None
+
+    def get_by_local_uid(self, local_uid):
+        recs = [r for r in self.soup.query(Eq('local_uid', local_uid))]
+        if recs:
+            return record_to_dict(recs[0])
+        return None
+
+    def get_by_path(self, path):
+        recs = [r for r in self.soup.query(Eq('path', path))]
+        if recs:
+            return record_to_dict(recs[0])
+        return None
+
+    def _create_domain_catalog(self):
+        """
+        :return:
+        """
+        @implementer(ICatalogFactory)
+        class DomainSoupCatalogFactory(object):
+            def __call__(self, context=None):
+                catalog = Catalog()
+                r_uid_indexer = NodeAttributeIndexer('remote_uid')
+                catalog[u'remote_uid'] = CatalogFieldIndex(r_uid_indexer)
+                path_indexer = NodeAttributeIndexer('path')
+                catalog[u'path'] = CatalogFieldIndex(path_indexer)
+                l_uid_indexer = NodeAttributeIndexer('local_uid')
+                catalog[u'local_uid'] = CatalogFieldIndex(l_uid_indexer)
+                return catalog
+
+        provideUtility(DomainSoupCatalogFactory(), name=self.domain_name)
 
     @implementer(IStorageLocator)
     class StorageLocator(object):
+        """
+        """
         def __init__(self, context):
             self.context = context
 
@@ -951,17 +1042,13 @@ def _set_soup(domain_name):
 
     provideAdapter(StorageLocator, adapts=[Interface])
 
-    @implementer(ICatalogFactory)
-    class DomainSoupCatalogFactory(object):
 
-        def __call__(self, context=None):
-            catalog = Catalog()
-            r_uid_indexer = NodeAttributeIndexer('remote_uid')
-            catalog[u'remote_uid'] = CatalogKeywordIndex(r_uid_indexer)
-            path_indexer = NodeAttributeIndexer('path')
-            catalog[u'path'] = CatalogKeywordIndex(path_indexer)
-            l_uid_indexer = NodeAttributeIndexer('local_uid')
-            catalog[u'local_uid'] = CatalogKeywordIndex(l_uid_indexer)
-            return catalog
-
-    provideUtility(DomainSoupCatalogFactory(), name=domain_name)
+def record_to_dict(record):
+    ret = {
+        'rec_int_id': record.intid,
+        'remote_uid': record.attrs.get('remote_uid', ""),
+        'local_uid': record.attrs.get('local_uid', ""),
+        'path': record.attrs.get('path', ""),
+        'obj_type': record.attrs.get('obj_type', "")
+    }
+    return ret
