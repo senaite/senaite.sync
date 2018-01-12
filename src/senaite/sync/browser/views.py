@@ -40,9 +40,10 @@ API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
 SYNC_CREDENTIALS = "senaite.sync.credentials"
 SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
-                         "parent_path": "parent_path",
                          "path": "path",
-                         "local_uid": "local_uid"}
+                         "portal_type": "obj_type"}
+
+SKIP_PORTAL_TYPES = ["Document"]
 
 
 
@@ -720,7 +721,7 @@ class Sync(BrowserView):
             for child_child in child_children:
                 self.fetch_data(domain=domain, uid=child_child.get("uid"))
 
-    def _fetch_data(self, domain, catalog='uid_catalog', window=10, overlap=1):
+    def _fetch_data(self, catalog='uid_catalog', window=10, overlap=1):
         """Fetch data from source URL
 
         :param domain:
@@ -740,7 +741,8 @@ class Sync(BrowserView):
             items = self.get_items("search", catalog=catalog, limit=window, b_start=current_page*effective_window)
             for item in items:
                 # extract the required data for the import
-                data_dict = self._get_data(item)
+                if item["portal_type"] not in SKIP_PORTAL_TYPES:
+                    data_dict = self._get_data(item)
 
 
     def _get_data(self, item):
@@ -751,7 +753,6 @@ class Sync(BrowserView):
         """
         data_dict = {}
         for key, mapped_key in SOUPER_REQUIRED_FIELDS.items():
-            if key in item.keys():
                 data_dict[mapped_key] = item.get(key)
         return data_dict
 
