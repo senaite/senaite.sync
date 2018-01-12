@@ -722,12 +722,15 @@ class Sync(BrowserView):
                 self.fetch_data(domain=domain, uid=child_child.get("uid"))
 
     def _fetch_data(self, catalog='uid_catalog', window=10, overlap=1):
-        """Fetch data from source URL
+        """Fetch data from a specified catalog in the source URL
 
-        :param domain:
-        :param catalog:
-        :param window:
-        :param overlap:
+        :param catalog: Catalog where the search is to be performed. Supported catalogs are listed
+        in senaite.jsonapi.catalog
+        :type catalog: string
+        :param window: number of elements to be retrieved with each query to the catalog
+        :type window: int
+        :param overlap: overlap between windows
+        :type overlap: int
         :return:
         """
         # Dummy query to get overall number of items in the specified catalog
@@ -736,20 +739,25 @@ class Sync(BrowserView):
         # with the desired window size and overlap
         effective_window = window-overlap
         number_of_pages = (catalog_data["count"]/effective_window) + 1
-        # Start retrieving the data
+        # Retrieve data from catalog in batches with size equal to window,
+        # format it and insert it into the import soup
         for current_page in xrange(number_of_pages):
             items = self.get_items("search", catalog=catalog, limit=window, b_start=current_page*effective_window)
             for item in items:
-                # extract the required data for the import
+                # skip object or extract the required data for the import
                 if item["portal_type"] not in SKIP_PORTAL_TYPES:
                     data_dict = self._get_data(item)
 
 
     def _get_data(self, item):
-        """
+        """ From a fetched item return a dictionary prepared for being inserted into the import soup. This means
+         that the returned dictionary will only contain the data fields specified in SOUPER_REQUIRED_FIELDS and
+         also that the keys of the returned dictionary will have been mapped the keys that the import soup expects
 
-        :param item:
-        :return:
+        :param item: dictionary with item data as obtained from the json API
+        :type item: dict
+        :return: dictionary with the required data and expected key names
+        :rtype: dict
         """
         data_dict = {}
         for key, mapped_key in SOUPER_REQUIRED_FIELDS.items():
