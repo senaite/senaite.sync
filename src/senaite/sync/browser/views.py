@@ -377,20 +377,16 @@ class Sync(BrowserView):
         """
         logger.info("*** IMPORT USERS {} ***".format(domain))
 
-        storage = self.get_storage(domain=domain)
-        userstore = storage["users"]
-
-        for username, userdata in userstore.items():
-
+        for user in self.yield_items("users"):
+            username = user.get("username")
             if ploneapi.user.get(username):
                 logger.info("Skipping existing user {}".format(username))
                 continue
-            email = userdata.get("email", "")
-            roles = userdata.get("roles", ())
-            # TODO handle groups
-            # groups = userdata.get("groups",  groups=groups)())
+            email = user.get("email", "")
+            roles = user.get("roles", ())
             logger.info("Creating user {}".format(username))
-            message = _("Created new user {} with password {}".format(username, username))
+            message = _("Created new user {} with password {}".format(
+                        username, username))
             # create new user with the same password as the username
             ploneapi.user.create(email=email,
                                  username=username,
