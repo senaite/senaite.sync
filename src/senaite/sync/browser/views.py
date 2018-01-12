@@ -43,7 +43,7 @@ SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "path": "path",
                          "portal_type": "obj_type"}
 
-SKIP_PORTAL_TYPES = ["Document"]
+SKIP_PORTAL_TYPES = ["SKIP", "Document"]
 
 
 
@@ -268,6 +268,7 @@ class Sync(BrowserView):
         self.session = None
 
         self.uids_to_reindex = []
+        self.ordered_list = []
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
@@ -347,11 +348,12 @@ class Sync(BrowserView):
 
             domain = self.url
             # Fetch all users from the source
-            self.fetch_users(domain)
+            self.import_users(domain)
             # Start the fetch process beginning from the portal object
-            self.fetch_data(domain, uid="0")
+            # self.fetch_data(domain, uid="0")
+            self._fetch_data('new_one')
             # Fetch registry records that contain the word bika or senaite
-            self.fetch_registry_records(domain, keys=["bika", "senaite"])
+            # self.fetch_registry_records(domain, keys=["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
 
         # always render the template
@@ -721,7 +723,7 @@ class Sync(BrowserView):
             for child_child in child_children:
                 self.fetch_data(domain=domain, uid=child_child.get("uid"))
 
-    def _fetch_data(self, catalog='uid_catalog', window=10, overlap=1):
+    def _fetch_data(self, domain_name, window=10, overlap=0):
         """Fetch data from a specified catalog in the source URL
 
         :param catalog: Catalog where the search is to be performed. Supported catalogs are listed
@@ -733,8 +735,9 @@ class Sync(BrowserView):
         :type overlap: int
         :return:
         """
+        sh = SoupHandler(domain_name)
         # Dummy query to get overall number of items in the specified catalog
-        catalog_data = self.get_json("search", catalog=catalog, limit=1)
+        catalog_data = self.get_json("search", catalog='uid_catalog', limit=1)
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
         effective_window = window-overlap
@@ -742,11 +745,21 @@ class Sync(BrowserView):
         # Retrieve data from catalog in batches with size equal to window,
         # format it and insert it into the import soup
         for current_page in xrange(number_of_pages):
-            items = self.get_items("search", catalog=catalog, limit=window, b_start=current_page*effective_window)
+            start_from = (current_page * window) - overlap
+            items = self.get_items("search", catalog='uid_catalog',
+                                   limit=window, b_start=start_from)
             for item in items:
                 # skip object or extract the required data for the import
-                if item["portal_type"] not in SKIP_PORTAL_TYPES:
-                    data_dict = self._get_data(item)
+                if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
+                    continue
+                data_dict = self._get_data(item)
+                rec_id = sh.insert(data_dict)
+                self.ordered_list.insert(0, [data_dict['remote_uid'],
+                                             rec_id])
+
+            logger.info("{} of {} pages fetched...".format(current_page,
+                                                           number_of_pages))
+        logger.info("*** FETCHING DONE ***")
 
 
     def _get_data(self, item):
@@ -983,6 +996,9 @@ class SoupHandler:
         self.portal = api.get_portal()
         self.soup = self._set_soup()
 
+    def get_soup(self):
+        return self.soup
+
     def _set_soup(self):
         """
         """
@@ -1010,10 +1026,7 @@ class SoupHandler:
         record.attrs['path'] = data['path']
         record.attrs['obj_type'] = data['obj_type']
         record.attrs['local_uid'] = data.get('local_uid', "")
-        try:
-            r_id = self.soup.add(record)
-        except AttributeError:
-            r_id = self.soup.add(record)
+        r_id = self.soup.add(record)
         logger.info("Record {} inserted: {}".format(r_id, data))
         return r_id
 
@@ -1023,11 +1036,14 @@ class SoupHandler:
         :param data:
         :return:
         """
-        r_uid_q = Eq('remote_uid', data.get("remote_uid", "_"))
-        l_uid_q = Eq('local_uid', data.get("local_uid", "_"))
-        p_q = Eq('path', data.get("path", "_"))
+        r_uid = data.get("remote_uid", False) or '-1'
+        l_uid = data.get("local_uid", False) or '-1'
+        path = data.get("path", False) or '-1'
+        r_uid_q = Eq('remote_uid', r_uid)
+        l_uid_q = Eq('local_uid', l_uid)
+        p_q = Eq('path', path)
         ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, p_q))]
-        return ret is not []
+        return ret != []
 
     def get_record_by_id(self, rec_id):
         try:
@@ -1091,8 +1107,10 @@ class SoupHandler:
 
         def storage(self, soup_name):
             if soup_name not in self.context:
-                self.context[soup_name] = SoupData()
-
+                try:
+                    self.context[soup_name] = SoupData()
+                except AttributeError:
+                    pass
             return self.context[soup_name]
 
     provideAdapter(StorageLocator, adapts=[Interface])
