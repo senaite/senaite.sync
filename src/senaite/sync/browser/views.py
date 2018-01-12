@@ -39,6 +39,11 @@ from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
 SYNC_CREDENTIALS = "senaite.sync.credentials"
+SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
+                         "parent_path": "parent_path",
+                         "path": "path",
+                         "local_uid": "local_uid"}
+
 
 
 class SyncError(Exception):
@@ -718,6 +723,41 @@ class Sync(BrowserView):
 
             for child_child in child_children:
                 self.fetch_data(domain=domain, uid=child_child.get("uid"))
+
+    def _fetch_data(self, domain, catalog='uid_catalog', window=10, overlap=1):
+        """Fetch data from source URL
+
+        :param domain:
+        :param catalog:
+        :param window:
+        :param overlap:
+        :return:
+        """
+        # Dummy query to get overall number of items in the specified catalog
+        catalog_data = self.get_json("search", catalog=catalog, limit=1)
+        # Knowing the catalog length compute the number of pages we will need
+        # with the desired window size and overlap
+        effective_window = window-overlap
+        number_of_pages = (catalog_data["count"]/effective_window) + 1
+        # Start retrieving the data
+        for current_page in xrange(number_of_pages):
+            items = self.get_items("search", catalog=catalog, limit=window, b_start=current_page*effective_window)
+            for item in items:
+                # extract the required data for the import
+                data_dict = self._get_data(item)
+
+
+    def _get_data(self, item):
+        """
+
+        :param item:
+        :return:
+        """
+        data_dict = {}
+        for key, mapped_key in SOUPER_REQUIRED_FIELDS.items():
+            if key in item.keys():
+                data_dict[mapped_key] = item.get(key)
+        return data_dict
 
     def store(self, domain, key, value, overwrite=False):
         """Store a dictionary in the domain's storage
