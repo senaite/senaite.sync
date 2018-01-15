@@ -41,8 +41,7 @@ SYNC_STORAGE = "senaite.sync"
 SYNC_CREDENTIALS = "senaite.sync.credentials"
 SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "path": "path",
-                         "portal_type": "portal_type",
-                         "obj_id": "id"}
+                         "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
 
@@ -755,14 +754,53 @@ class Sync(BrowserView):
                     continue
                 data_dict = self._get_data(item)
                 rec_id = self.sh.insert(data_dict)
-                self.ordered_r_uids.insert(0, [data_dict['remote_uid'],
-                                               rec_id])
+                self.ordered_r_uids.insert(0, [data_dict['remote_uid']])
 
             logger.info("{} of {} pages fetched...".format(current_page,
                                                            number_of_pages))
         logger.info("*** FETCHING DONE ***")
 
-    def create_parents(self, path):
+    def _import_data(self, domain_name):
+        """
+
+        :param domain:
+        :return:
+        """
+        logger.info("*** IMPORT DATA NEW METHOD {} ***".format(domain_name))
+        credentials = get_credentials_storage(self.portal).get(domain_name)
+
+        # initialize a new session with the stored credentials for later requests
+        username = credentials.get("ac_username")
+        password = credentials.get("ac_password")
+        self.session = self.get_session(username, password)
+        logger.info("Initialized a new session for user {}".format(username))
+
+        for r_uid in self.ordered_r_uids:
+            row = self.sh.find_unique("remote_uid", r_uid)
+            obj = self._do_obj_creation(row)
+
+
+
+        logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
+
+    def _do_obj_creation(self, row):
+        """
+
+        :param row:
+        :return:
+        """
+        path = row.get("path")
+        self._create_parents(path)
+        container = self._get_parent_path(path)
+        obj_data = {
+            "id": self._get_id_from_path(path),
+            "portal_type": row.get("portal_type")}
+        obj = self.create_object_slug(container, obj_data)
+        local_uid = api.get_uid(obj)
+        self.sh.update_by_path(path, local_uid=local_uid)
+        return obj
+
+    def _create_parents(self, path):
         """
 
         :param path:
@@ -779,10 +817,10 @@ class Sync(BrowserView):
         parent = self.sh.find_unique("path", p_path)
         grand_parent = self._get_parent_path(p_path)
         parent_data = {
-            "id": parent.get("obj_id"),
+            "id": self._get_id_from_path(p_path),
             "portal_type": parent.get("portal_type")}
-        parent_obj = self.create_object_slug(parent_data,
-                                             self.translate_path(grand_parent))
+        parent_obj = self.create_object_slug(self.translate_path(grand_parent),
+                                             parent_data,)
         p_local_uid = api.get_uid(parent_obj)
         self.sh.update_by_path(p_path, local_uid=p_local_uid)
         return True
@@ -799,6 +837,15 @@ class Sync(BrowserView):
             path = path[:-1]
         parts = path.split("/")
         return "/".join(parts[:-1])
+
+    def _get_id_from_path(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        parts = path.split("/")
+        return parts[-1]
 
 
     def _get_data(self, item):
@@ -1098,11 +1145,13 @@ class SoupHandler:
         ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, p_q))]
         return ret != []
 
-    def get_record_by_id(self, rec_id):
+    def get_record_by_id(self, rec_id, as_dict=False):
         try:
             record = self.soup.get(rec_id)
         except KeyError:
             return None
+        if as_dict:
+            record = record_to_dict(record)
         return record
 
     def find_unique(self, column, value):
