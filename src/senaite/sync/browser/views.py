@@ -41,7 +41,8 @@ SYNC_STORAGE = "senaite.sync"
 SYNC_CREDENTIALS = "senaite.sync.credentials"
 SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "path": "path",
-                         "portal_type": "obj_type"}
+                         "portal_type": "obj_type",
+                         "obj_id": "id"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
 
