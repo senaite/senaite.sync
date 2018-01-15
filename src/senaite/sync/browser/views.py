@@ -777,6 +777,20 @@ class Sync(BrowserView):
                 data_dict[mapped_key] = item.get(key)
         return data_dict
 
+    def get_data_from_uids(self, uids=None):
+        """Get the data of a list of uids
+
+        :param uids: list of uids whose data is wanted
+        :return: dictionary mapping uids to its json data
+        """
+        retrieved_data = {}
+        if not uids:
+            return retrieved_data
+        for uid in uids:
+            uid_data = self.get_json(uid, complete=True, children=False, workflow=True)
+            retrieved_data[uid] = uid_data
+        return retrieved_data
+
     def store(self, domain, key, value, overwrite=False):
         """Store a dictionary in the domain's storage
         """
