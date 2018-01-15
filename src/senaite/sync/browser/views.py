@@ -41,7 +41,7 @@ SYNC_STORAGE = "senaite.sync"
 SYNC_CREDENTIALS = "senaite.sync.credentials"
 SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "path": "path",
-                         "portal_type": "portal_type"}
+                         "portal_type": "portal_type",
                          "obj_id": "id"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
@@ -769,17 +769,23 @@ class Sync(BrowserView):
         :return:
         """
         p_path = self._get_parent_path(path)
-        if len(p_path.split["/"]) < 3:
-            self.create_parents(p_path)
-
+        if p_path == "/":
+            return True
+        local_path = self.translate_path(p_path)
+        existing = self.portal.unrestrictedTraverse(str(local_path), None)
+        if existing:
+            return
+        self.create_parents(p_path)
         parent = self.sh.find_unique("path", p_path)
-        parent_portal_type = parent.get("portal_type")
-        parent_id = parent.get("obj_id")
         grand_parent = self._get_parent_path(p_path)
-        parent_obj = _createObjectByType(parent_portal_type, grand_parent,
-                                         parent_id)
-        local_uid = api.get_uid(parent_obj)
-        self.sh.update_by_path(p_path, local_uid=local_uid)
+        parent_data = {
+            "id": parent.get("obj_id"),
+            "portal_type": parent.get("portal_type")}
+        parent_obj = self.create_object_slug(parent_data,
+                                             self.translate_path(grand_parent))
+        p_local_uid = api.get_uid(parent_obj)
+        self.sh.update_by_path(p_path, local_uid=p_local_uid)
+        return True
 
     def _get_parent_path(self, path):
         """
