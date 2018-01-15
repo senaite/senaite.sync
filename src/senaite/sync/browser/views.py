@@ -41,7 +41,7 @@ SYNC_STORAGE = "senaite.sync"
 SYNC_CREDENTIALS = "senaite.sync.credentials"
 SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "path": "path",
-                         "portal_type": "obj_type"}
+                         "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
 
@@ -268,7 +268,7 @@ class Sync(BrowserView):
         self.session = None
 
         self.uids_to_reindex = []
-        self.ordered_list = []
+        self.ordered_r_uids = []
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
@@ -735,7 +735,7 @@ class Sync(BrowserView):
         :type overlap: int
         :return:
         """
-        sh = SoupHandler(domain_name)
+        self.sh = SoupHandler(domain_name)
         # Dummy query to get overall number of items in the specified catalog
         catalog_data = self.get_json("search", catalog='uid_catalog', limit=1)
         # Knowing the catalog length compute the number of pages we will need
@@ -753,13 +753,45 @@ class Sync(BrowserView):
                 if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
                     continue
                 data_dict = self._get_data(item)
-                rec_id = sh.insert(data_dict)
-                self.ordered_list.insert(0, [data_dict['remote_uid'],
-                                             rec_id])
+                rec_id = self.sh.insert(data_dict)
+                self.ordered_r_uids.insert(0, [data_dict['remote_uid'],
+                                               rec_id])
 
             logger.info("{} of {} pages fetched...".format(current_page,
                                                            number_of_pages))
         logger.info("*** FETCHING DONE ***")
+
+    def create_parents(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        p_path = self._get_parent_path(path)
+        if len(p_path.split["/"]) < 3:
+            self.create_parents(p_path)
+
+        parent = self.sh.find_unique("path", p_path)
+        parent_portal_type = parent.get("portal_type")
+        parent_id = parent.get("obj_id")
+        grand_parent = self._get_parent_path(p_path)
+        parent_obj = _createObjectByType(parent_portal_type, grand_parent,
+                                         parent_id)
+        local_uid = api.get_uid(parent_obj)
+        self.sh.update_by_path(p_path, local_uid=local_uid)
+
+    def _get_parent_path(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        if path == "/":
+            return "/"
+        if path.endswith("/"):
+            path = path[:-1]
+        parts = path.split("/")
+        return "/".join(parts[:-1])
 
 
     def _get_data(self, item):
@@ -1019,12 +1051,12 @@ class SoupHandler:
         :return:
         """
         if self._already_exists(data):
-            logger.error("Trying to insert existing record... {}".format(data))
+            logger.warn("Trying to insert existing record... {}".format(data))
             return False
         record = Record()
         record.attrs['remote_uid'] = data['remote_uid']
         record.attrs['path'] = data['path']
-        record.attrs['obj_type'] = data['obj_type']
+        record.attrs['portal_type'] = data['portal_type']
         record.attrs['local_uid'] = data.get('local_uid', "")
         r_id = self.soup.add(record)
         logger.info("Record {} inserted: {}".format(r_id, data))
@@ -1122,6 +1154,6 @@ def record_to_dict(record):
         'remote_uid': record.attrs.get('remote_uid', ""),
         'local_uid': record.attrs.get('local_uid', ""),
         'path': record.attrs.get('path', ""),
-        'obj_type': record.attrs.get('obj_type', "")
+        'portal_type': record.attrs.get('portal_type', "")
     }
     return ret
