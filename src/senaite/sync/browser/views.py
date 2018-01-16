@@ -780,6 +780,8 @@ class Sync(BrowserView):
             obj = self._do_obj_creation(row)
             obj_data = self.get_json(row.get("path"))
             self._create_dependencies(obj, obj_data)
+            self._update_object_with_data(obj, obj_data)
+            logger.info("*** obj is ready to use {} ***".format(row["path"]))
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
 
@@ -812,6 +814,11 @@ class Sync(BrowserView):
         local_path = self.translate_path(p_path)
         existing = self.portal.unrestrictedTraverse(str(local_path), None)
         if existing:
+            p_local_uid = self.sh.find_unique("path", p_path).get("local_uid",
+                                                                  None)
+            if not p_local_uid:
+                p_local_uid = api.get_uid(existing)
+                self.sh.update_by_path(p_path, local_uid=p_local_uid)
             return
         self.create_parents(p_path)
         parent = self.sh.find_unique("path", p_path)
@@ -880,6 +887,88 @@ class Sync(BrowserView):
             self._do_obj_creation(dep_row)
 
         return True
+
+    def _update_object_with_data(self, obj, data):
+        """Update an existing object with data
+        """
+        # Proxy Fields must be set after its dependency object is already set.
+        # Thus, we will store all the ProxyFields and set them in the end
+        proxy_fields = []
+
+        for fieldname, field in api.get_fields(obj).items():
+
+            if fieldname in self.fields_to_skip:
+                continue
+
+            fm = IFieldManager(field)
+            value = data.get(fieldname)
+
+            # handle JSON data reference fields
+            if isinstance(value, dict) and value.get("uid"):
+                # dereference the referenced object
+                local_uid = self.sh.get_local_uid(value.get("uid"))
+                value = api.get_object_by_uid(local_uid)
+
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    # If it is list of json data dict of objects, add local
+                    # uid to that dictionary. This local_uid can be used in
+                    # Field Managers.
+                    if isinstance(item, dict):
+                        for k, v in item.iteritems():
+                            if 'uid' in k:
+                                local_uid = self.sh.get_local_uid(v)
+                                item[k] = local_uid
+
+            # handle file fields
+            if field.type in ("file", "image", "blob"):
+                if data.get(fieldname) is not None:
+                    fileinfo = data.get(fieldname)
+                    url = fileinfo.get("download")
+                    filename = fileinfo.get("filename")
+                    data["filename"] = filename
+                    response = requests.get(url)
+                    value = response.content
+
+            # Leave the Proxy Fields for later
+            if isinstance(fm, ProxyFieldManager):
+                proxy_fields.append({'field_name': fieldname,
+                                     'fm': fm, 'value': value})
+                continue
+
+            logger.info("Setting value={} on field={} of object={}".format(
+                repr(value), fieldname, api.get_id(obj)))
+            try:
+                fm.set(obj, value)
+            except:
+                logger.error(
+                    "Could not set field '{}' with value '{}'".format(
+                        fieldname, value))
+
+        # All reference fields are set. We can set the proxy fields now.
+        for pf in proxy_fields:
+            field_name = pf.get("field_name")
+            fm = pf.get("fm")
+            value = pf.get("value")
+            logger.info("Setting value={} on field={} of object={}".format(
+                repr(value), field_name, api.get_id(obj)))
+            try:
+                fm.set(obj, value)
+            except:
+                logger.error(
+                    "Could not set field '{}' with value '{}'".format(
+                        field_name,
+                        value))
+
+        # Set the workflow states
+        wf_info = data.get("workflow_info", [])
+        for wf_dict in wf_info:
+            wf_id = wf_dict.get("workflow")
+            review_history = wf_dict.get("review_history")
+            self.import_review_history(obj, wf_id, review_history)
+
+        # finally reindex the object
+        obj.reindexObject()
 
     def _get_data(self, item):
         """ From a fetched item return a dictionary prepared for being inserted into the import soup. This means
@@ -1191,6 +1280,12 @@ class SoupHandler:
         recs = [r for r in self.soup.query(Eq(column, value))]
         if recs:
             return record_to_dict(recs[0])
+        return None
+
+    def get_local_uid(self, r_uid):
+        recs = [r for r in self.soup.query(Eq("remote_uid", r_uid))]
+        if recs and len(recs)==1:
+            return record_to_dict(recs[0])["local_uid"]
         return None
 
     def update_by_remote_uid(self, remote_uid, **kwargs):
