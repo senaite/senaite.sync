@@ -778,8 +778,8 @@ class Sync(BrowserView):
         for r_uid in self.ordered_r_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
             obj = self._do_obj_creation(row)
-
-
+            obj_data = self.get_json(row.get("path"))
+            self._create_dependencies(obj, obj_data)
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
 
@@ -847,6 +847,39 @@ class Sync(BrowserView):
         parts = path.split("/")
         return parts[-1]
 
+    def _create_dependencies(self, obj, data):
+        """
+
+        :param obj:
+        :param row:
+        :return:
+        """
+
+        dependencies = []
+
+        for fieldname, field in api.get_fields(obj).items():
+
+            if fieldname in self.fields_to_skip:
+                continue
+
+            value = data.get(fieldname)
+
+            # handle JSON data reference fields
+            if isinstance(value, dict) and value.get("uid"):
+                # dereference the referenced object
+                dependencies.append(value.get("uid"))
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    if isinstance(item, dict):
+                        for k, v in item.iteritems():
+                            if 'uid' in k:
+                                dependencies.append(v)
+
+        for r_uid in dependencies:
+            dep_row = self.sh.find_unique("remote_uid", r_uid)
+            self._do_obj_creation(dep_row)
+
+        return True
 
     def _get_data(self, item):
         """ From a fetched item return a dictionary prepared for being inserted into the import soup. This means
