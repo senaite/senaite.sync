@@ -352,6 +352,7 @@ class Sync(BrowserView):
             # Start the fetch process beginning from the portal object
             # self.fetch_data(domain, uid="0")
             self._fetch_data('new_one')
+            self._import_data('new_one')
             # Fetch registry records that contain the word bika or senaite
             # self.fetch_registry_records(domain, keys=["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
@@ -767,19 +768,16 @@ class Sync(BrowserView):
         :return:
         """
         logger.info("*** IMPORT DATA NEW METHOD {} ***".format(domain_name))
-        credentials = get_credentials_storage(self.portal).get(domain_name)
-
-        # initialize a new session with the stored credentials for later requests
-        username = credentials.get("ac_username")
-        password = credentials.get("ac_password")
-        self.session = self.get_session(username, password)
-        logger.info("Initialized a new session for user {}".format(username))
 
         for r_uid in self.ordered_r_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
+            logger.info("*** obj:{} ***".format(row["path"]))
             obj = self._do_obj_creation(row)
-            obj_data = self.get_json(row.get("path"))
-            self._create_dependencies(obj, obj_data)
+            obj_data = self.get_json(row.get("remote_uid"))
+            try:
+                self._create_dependencies(obj, obj_data)
+            except:
+                import pdb; pdb.set_trace()
             self._update_object_with_data(obj, obj_data)
             logger.info("*** obj is ready to use {} ***".format(row["path"]))
 
@@ -792,8 +790,18 @@ class Sync(BrowserView):
         :return:
         """
         path = row.get("path")
+        existing = self.portal.unrestrictedTraverse(str(path), None)
+        if existing:
+            local_uid = self.sh.find_unique("path", path).get("local_uid",
+                                                                  None)
+            if not local_uid:
+                local_uid = api.get_uid(existing)
+                self.sh.update_by_path(path, local_uid=local_uid)
+            return existing
+
         self._create_parents(path)
-        container = self._get_parent_path(path)
+        parent = self.translate_path(self._get_parent_path(path))
+        container = self.portal.unrestrictedTraverse(str(parent), None)
         obj_data = {
             "id": self._get_id_from_path(path),
             "portal_type": row.get("portal_type")}
@@ -820,14 +828,14 @@ class Sync(BrowserView):
                 p_local_uid = api.get_uid(existing)
                 self.sh.update_by_path(p_path, local_uid=p_local_uid)
             return
-        self.create_parents(p_path)
+        self._create_parents(p_path)
         parent = self.sh.find_unique("path", p_path)
-        grand_parent = self._get_parent_path(p_path)
+        grand_parent = self.translate_path(self._get_parent_path(p_path))
+        container = self.portal.unrestrictedTraverse(str(grand_parent), None)
         parent_data = {
             "id": self._get_id_from_path(p_path),
             "portal_type": parent.get("portal_type")}
-        parent_obj = self.create_object_slug(self.translate_path(grand_parent),
-                                             parent_data,)
+        parent_obj = self.create_object_slug(container, parent_data)
         p_local_uid = api.get_uid(parent_obj)
         self.sh.update_by_path(p_path, local_uid=p_local_uid)
         return True
