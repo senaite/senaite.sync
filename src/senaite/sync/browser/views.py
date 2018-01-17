@@ -905,9 +905,6 @@ class Sync(BrowserView):
             if fieldname in self.fields_to_skip:
                 continue
 
-            if fieldname == 'Analyses' and 'WS-001' in repr(obj):
-                import pdb;pdb.set_trace()
-
             fm = IFieldManager(field)
             value = data.get(fieldname)
 
