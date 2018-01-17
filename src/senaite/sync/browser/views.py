@@ -22,8 +22,6 @@ from zope.globalrequest import getRequest
 from zope.component import getUtility
 from zope.component.interfaces import IFactory
 
-from souper.soup import get_soup as souper_get_soup
-
 from plone import protect
 from plone import api as ploneapi
 from plone.registry.interfaces import IRegistry
@@ -774,11 +772,9 @@ class Sync(BrowserView):
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("*** obj:{} ***".format(row["path"]))
             obj = self._do_obj_creation(row)
-            obj_data = self.get_json(row.get("remote_uid"))
-            try:
-                self._create_dependencies(obj, obj_data)
-            except:
-                import pdb; pdb.set_trace()
+            obj_data = self.get_json(row.get("remote_uid"), complete=True,
+                                     workflow=True)
+            self._create_dependencies(obj, obj_data)
             self._update_object_with_data(obj, obj_data)
             logger.info("*** obj is ready to use {} ***".format(row["path"]))
 
@@ -908,6 +904,9 @@ class Sync(BrowserView):
 
             if fieldname in self.fields_to_skip:
                 continue
+
+            if fieldname == 'Analyses' and 'WS-001' in repr(obj):
+                import pdb;pdb.set_trace()
 
             fm = IFieldManager(field)
             value = data.get(fieldname)

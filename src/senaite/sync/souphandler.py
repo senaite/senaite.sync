@@ -1,4 +1,8 @@
 
+
+from senaite import api
+from senaite.sync import logger
+
 from zope.interface import Interface
 from zope.component import provideAdapter
 from souper.interfaces import IStorageLocator
@@ -7,6 +11,8 @@ from zope.interface import implementer
 from souper.interfaces import ICatalogFactory
 from zope.component.interfaces import ComponentLookupError
 from souper.soup import NodeAttributeIndexer
+from souper.soup import get_soup as souper_get_soup
+from zope.component import getUtility
 from zope.component import provideUtility
 from repoze.catalog.catalog import Catalog
 from repoze.catalog.indexes.field import CatalogFieldIndex
