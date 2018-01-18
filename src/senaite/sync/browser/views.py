@@ -43,6 +43,7 @@ SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
+PRIORITIZED_PORTAL_TYPES = ["Client", "ClientFolder"]
 
 
 
@@ -772,10 +773,12 @@ class Sync(BrowserView):
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("*** obj:{} ***".format(row["path"]))
             obj = self._do_obj_creation(row)
+            self._create_family_members(row)
             obj_data = self.get_json(row.get("remote_uid"), complete=True,
                                      workflow=True)
             self._create_dependencies(obj, obj_data)
             self._update_object_with_data(obj, obj_data)
+            # Update Dependencies
             logger.info("*** obj is ready to use {} ***".format(row["path"]))
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
@@ -790,7 +793,7 @@ class Sync(BrowserView):
         existing = self.portal.unrestrictedTraverse(str(path), None)
         if existing:
             local_uid = self.sh.find_unique("path", path).get("local_uid",
-                                                                  None)
+                                                              None)
             if not local_uid:
                 local_uid = api.get_uid(existing)
                 self.sh.update_by_path(path, local_uid=local_uid)
@@ -836,6 +839,32 @@ class Sync(BrowserView):
         p_local_uid = api.get_uid(parent_obj)
         self.sh.update_by_path(p_path, local_uid=p_local_uid)
         return True
+
+    def _create_family_members(self, row):
+        """
+
+        :param row:
+        :return:
+        """
+        root_path = self._get_family_root(row)
+        children = self.sh.get_children(root_path)
+        for child in children:
+            self._do_obj_creation(child)
+
+    def _get_family_root(self, row):
+        """
+
+        :param path:
+        :return:
+        """
+        path = row.get("path")
+        if path.endswith("/"):
+            path = path[:-1]
+        if row.get("portal_type") in PRIORITIZED_PORTAL_TYPES:
+            return path
+        parent_path = self._get_parent_path(path)
+        parent = self.sh.find_unique("path", parent_path)
+        return self._get_family_root(parent)
 
     def _get_parent_path(self, path):
         """
