@@ -768,20 +768,32 @@ class Sync(BrowserView):
         :return:
         """
         logger.info("*** IMPORT DATA NEW METHOD {} ***".format(domain_name))
-
+        self.uids_to_reindex = []
         for r_uid in self.ordered_r_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
-            logger.info("*** obj:{} ***".format(row["path"]))
-            obj = self._do_obj_creation(row)
-            self._create_family_members(row)
-            obj_data = self.get_json(row.get("remote_uid"), complete=True,
-                                     workflow=True)
-            self._create_dependencies(obj, obj_data)
-            self._update_object_with_data(obj, obj_data)
-            # Update Dependencies
-            logger.info("*** obj is ready to use {} ***".format(row["path"]))
+            logger.info("*** creating {} ***".format(row["path"]))
+            self._handle_obj(row)
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
+
+    def _handle_obj(self, row, skip_family=False):
+        """
+
+        :param row:
+        :return:
+        """
+        r_uid = row.get("remote_uid")
+        # Row can be updated
+        row = self.sh.find_unique("remote_uid", r_uid)
+        obj = self._do_obj_creation(row)
+        if not skip_family:
+            self._create_family_members(row)
+        obj_data = self.get_json(row.get("remote_uid"), complete=True,
+                                 workflow=True)
+        self._create_dependencies(obj, obj_data)
+        self._update_object_with_data(obj, obj_data)
+        self.sh.mark_update(row.get("remote_uid"))
+        return True
 
     def _do_obj_creation(self, row):
         """
@@ -847,9 +859,12 @@ class Sync(BrowserView):
         :return:
         """
         root_path = self._get_family_root(row)
-        children = self.sh.get_children(root_path)
+        children = [child for child in self.sh.get_children(root_path)
+                    if child.get("updated") == "0"]
         for child in children:
-            self._do_obj_creation(child)
+            self._handle_obj(child, skip_family=True)
+
+        return True
 
     def _get_family_root(self, row):
         """
@@ -918,7 +933,7 @@ class Sync(BrowserView):
 
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
-            self._do_obj_creation(dep_row)
+            self._handle_obj(dep_row)
 
         return True
 

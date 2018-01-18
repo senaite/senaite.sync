@@ -61,6 +61,7 @@ class SoupHandler:
         record.attrs['path'] = data['path']
         record.attrs['portal_type'] = data['portal_type']
         record.attrs['local_uid'] = data.get('local_uid', "")
+        record.attrs['updated'] = data.get('updated', "0")
         r_id = self.soup.add(record)
         logger.info("Record {} inserted: {}".format(r_id, data))
         return r_id
@@ -129,6 +130,16 @@ class SoupHandler:
         self.soup.reindex([recs[0]])
         return True
 
+    def mark_update(self, remote_uid):
+        recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
+        if not recs:
+            logger.error("Could not find any record with remote_uid: '{}'"
+                         .format(remote_uid))
+            return False
+        recs[0].attrs["updated"] = "1"
+        self.soup.reindex([recs[0]])
+        return True
+
     def _create_domain_catalog(self):
         """
         :return:
@@ -171,6 +182,7 @@ def record_to_dict(record):
         'remote_uid': record.attrs.get('remote_uid', ""),
         'local_uid': record.attrs.get('local_uid', ""),
         'path': record.attrs.get('path', ""),
+        'updated': record.attrs.get('updated', "0"),
         'portal_type': record.attrs.get('portal_type', "")
     }
     return ret
