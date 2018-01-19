@@ -43,8 +43,6 @@ SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
-PRIORITIZED_PORTAL_TYPES = ["Client", "ClientFolder"]
-
 
 
 class SyncError(Exception):
@@ -269,6 +267,7 @@ class Sync(BrowserView):
 
         self.uids_to_reindex = []
         self.ordered_r_uids = []
+        self._queue = []
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
@@ -771,28 +770,31 @@ class Sync(BrowserView):
         self.uids_to_reindex = []
         for r_uid in self.ordered_r_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
-            logger.info("*** creating {} ***".format(row["path"]))
+            logger.info("Creating {}".format(row["path"]))
             self._handle_obj(row)
+            for uid in self.uids_to_reindex:
+                api.get_object_by_uid(uid).reindexObject()
+            self.uids_to_reindex = []
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
 
-    def _handle_obj(self, row, skip_family=False):
+    def _handle_obj(self, row):
         """
 
         :param row:
         :return:
         """
         r_uid = row.get("remote_uid")
-        # Row can be updated
-        row = self.sh.find_unique("remote_uid", r_uid)
+        self._queue.append(r_uid)
+        if row.get("updated", "0") == "1":
+            return True
         obj = self._do_obj_creation(row)
-        if not skip_family:
-            self._create_family_members(row)
-        obj_data = self.get_json(row.get("remote_uid"), complete=True,
+        obj_data = self.get_json(r_uid, complete=True,
                                  workflow=True)
         self._create_dependencies(obj, obj_data)
         self._update_object_with_data(obj, obj_data)
-        self.sh.mark_update(row.get("remote_uid"))
+        self.sh.mark_update(r_uid)
+        self._queue.remove(r_uid)
         return True
 
     def _do_obj_creation(self, row):
@@ -852,35 +854,6 @@ class Sync(BrowserView):
         self.sh.update_by_path(p_path, local_uid=p_local_uid)
         return True
 
-    def _create_family_members(self, row):
-        """
-
-        :param row:
-        :return:
-        """
-        root_path = self._get_family_root(row)
-        children = [child for child in self.sh.get_children(root_path)
-                    if child.get("updated") == "0"]
-        for child in children:
-            self._handle_obj(child, skip_family=True)
-
-        return True
-
-    def _get_family_root(self, row):
-        """
-
-        :param path:
-        :return:
-        """
-        path = row.get("path")
-        if path.endswith("/"):
-            path = path[:-1]
-        if row.get("portal_type") in PRIORITIZED_PORTAL_TYPES:
-            return path
-        parent_path = self._get_parent_path(path)
-        parent = self.sh.find_unique("path", parent_path)
-        return self._get_family_root(parent)
-
     def _get_parent_path(self, path):
         """
 
@@ -933,7 +906,8 @@ class Sync(BrowserView):
 
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
-            self._handle_obj(dep_row)
+            if dep_row.get("updated") == "0" and r_uid not in self._queue:
+                self._handle_obj(dep_row)
 
         return True
 
@@ -1017,7 +991,7 @@ class Sync(BrowserView):
             self.import_review_history(obj, wf_id, review_history)
 
         # finally reindex the object
-        obj.reindexObject()
+        self.uids_to_reindex.append(api.get_uid(obj))
 
     def _get_data(self, item):
         """ From a fetched item return a dictionary prepared for being inserted into the import soup. This means
