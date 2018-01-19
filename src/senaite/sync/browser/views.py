@@ -181,25 +181,25 @@ class AutoSync(BrowserView):
             self.request.form["ac_password"] = value["ac_password"]
             response = Sync(self.context, self.request)
             response()
-
-            # Second step is importing fetched data
-            self.request.form["fetchform"] = False
-            self.request.form["fetch"] = False
-
-            logger.info("Importing data for: {} ".format(key))
-            self.request.form["dataform"] = 1
-            self.request.form["import"] = 1
-            self.request.form["domain"] = value["url"]
-            response = Sync(self.context, self.request)
-            response()
-
-            # The last step is clearing fetched data from the storage to avoid
-            # increase of the memory
-            logger.info("Clearing storage data for: {} ".format(key))
-            self.request.form["import"] = False
-            self.request.form["clear_storage"] = 1
-            response = Sync(self.context, self.request)
-            response()
+            #
+            # # Second step is importing fetched data
+            # self.request.form["fetchform"] = False
+            # self.request.form["fetch"] = False
+            #
+            # logger.info("Importing data for: {} ".format(key))
+            # self.request.form["dataform"] = 1
+            # self.request.form["import"] = 1
+            # self.request.form["domain"] = value["url"]
+            # response = Sync(self.context, self.request)
+            # response()
+            #
+            # # The last step is clearing fetched data from the storage to avoid
+            # # increase of the memory
+            # logger.info("Clearing storage data for: {} ".format(key))
+            # self.request.form["import"] = False
+            # self.request.form["clear_storage"] = 1
+            # response = Sync(self.context, self.request)
+            # response()
 
         logger.info("**** AUTO SYNC FINISHED ****")
         return "Done..."
