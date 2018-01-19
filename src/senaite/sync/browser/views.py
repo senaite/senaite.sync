@@ -776,6 +776,9 @@ class Sync(BrowserView):
                 api.get_object_by_uid(uid).reindexObject()
             self.uids_to_reindex = []
 
+            # Sub-transaction
+            transaction.get().commit(True)
+
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
 
     def _handle_obj(self, row):
