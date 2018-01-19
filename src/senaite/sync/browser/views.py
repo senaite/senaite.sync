@@ -43,6 +43,7 @@ SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP", "Document"]
+TRANSACTION_INTERVAL = 1000
 
 
 class SyncError(Exception):
@@ -268,6 +269,7 @@ class Sync(BrowserView):
         self.uids_to_reindex = []
         self.ordered_r_uids = []
         self._queue = []
+        self._non_commited_objects = 0
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
@@ -774,10 +776,11 @@ class Sync(BrowserView):
             self._handle_obj(row)
             for uid in self.uids_to_reindex:
                 api.get_object_by_uid(uid).reindexObject()
+            self._non_commited_objects += len(self.uids_to_reindex)
             self.uids_to_reindex = []
-
-            # Sub-transaction
-            transaction.get().commit(True)
+            if self._non_commited_objects > TRANSACTION_INTERVAL:
+                transaction.commit()
+                self._non_commited_objects = 0
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
 
