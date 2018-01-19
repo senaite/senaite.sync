@@ -196,6 +196,9 @@ class Sync(BrowserView):
             records = registry_store[key]
             for record in records.keys():
                 logger.info("Updating record {} with value {}".format(record, records.get(record)))
+                if record not in current_registry.records:
+                    logger.warn("Current Registry has no record named {}".format(record))
+                    continue
                 current_registry[record] = records.get(record)
 
     def import_users(self, domain):
