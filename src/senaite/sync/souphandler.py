@@ -96,12 +96,6 @@ class SoupHandler:
             return record_to_dict(recs[0])
         return None
 
-    def get_children(self, path):
-        recs = [r for r in self.soup.query(Contains("path", path))]
-        if recs:
-            return map(record_to_dict, recs)
-        return []
-
     def get_local_uid(self, r_uid):
         recs = [r for r in self.soup.query(Eq("remote_uid", r_uid))]
         if recs and len(recs)==1:
@@ -138,6 +132,17 @@ class SoupHandler:
             return False
         recs[0].attrs["updated"] = "1"
         self.soup.reindex([recs[0]])
+        return True
+
+    def reset_updated_flags(self):
+        """
+
+        :return:
+        """
+        for intid in self.soup.data:
+            rec = self.soup.get(intid)
+            rec.attrs["updated"] = "0"
+            self.soup.reindex(rec)
         return True
 
     def _create_domain_catalog(self):

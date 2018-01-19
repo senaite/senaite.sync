@@ -770,6 +770,7 @@ class Sync(BrowserView):
         """
         logger.info("*** IMPORT DATA NEW METHOD {} ***".format(domain_name))
         self.uids_to_reindex = []
+        import pdb; pdb.set_trace()
         for r_uid in self.ordered_r_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("Creating {}".format(row["path"]))
@@ -781,6 +782,8 @@ class Sync(BrowserView):
             if self._non_commited_objects > TRANSACTION_INTERVAL:
                 transaction.commit()
                 self._non_commited_objects = 0
+
+        self.sh.reset_updated_flags()
 
         logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
 
