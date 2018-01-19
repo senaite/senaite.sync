@@ -174,9 +174,11 @@ class Sync(BrowserView):
         # import the records that were found
         for key in registry_store.keys():
             records = registry_store[key]
-            for record in records.keys():
+            for record in records:
                 logger.info("Updating record {} with value {}".format(record, records.get(record)))
-                current_registry[record] = records.get(record)
+                record_value = records.get(record)
+                if record in current_registry.records and record_value is not None:
+                    current_registry[record] = records.get(record)
 
     def import_users(self, domain):
         """Import the users from the storage identified by domain
