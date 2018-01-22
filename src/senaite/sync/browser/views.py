@@ -488,6 +488,8 @@ class Sync(BrowserView):
 
         for setting_dict in retrieved_settings:
             for key in setting_dict.keys():
+                if not setting_dict[key]:
+                    continue
                 settings_store[key] = setting_dict[key]
 
     def fetch_registry_records(self, domain, keys=None):
