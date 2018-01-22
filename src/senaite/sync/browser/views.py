@@ -151,6 +151,7 @@ class Sync(BrowserView):
                 return self.template()
 
             domain = self.url
+            self.fetch_settings(domain)
             # Fetch all users from the source
             self.fetch_users(domain)
             # Start the fetch process beginning from the portal object
@@ -471,6 +472,28 @@ class Sync(BrowserView):
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
 
+    def fetch_settings(self, domain, keys=None):
+        """Fetch source instance settings by keyword
+        """
+        logger.info(" FETCH SETTINGS {} ***".format(domain))
+        storage = self.get_storage(domain=domain)
+        settings_store = storage["settings"]
+
+        if keys is None:
+            retrieved_settings = self.get_settings_by_key()
+        else:
+            retrieved_settings = []
+            for key in keys:
+                retrieved_settings += self.get_settings_by_key(key)
+
+        for setting_dict in retrieved_settings:
+            for key in setting_dict.keys():
+                settings_store[key] = setting_dict[key]
+
+        import pdb; pdb.set_trace()
+
+
+
     def fetch_registry_records(self, domain, keys=None):
         """Fetch configuration registry records of interest (those associated
         to the keywords passed) from source instance
@@ -575,6 +598,14 @@ class Sync(BrowserView):
             return self.get_items("registry")
 
         return self.get_items("registry/{}".format(key))
+
+    def get_settings_by_key(self, key=None):
+        """ Return the settings from the source instance associated
+         to the keyword. If key is None it will return all the settings
+        """
+        if key is None:
+            return self.get_items("settings")
+        return self.get_items("/settings/{}".format(key))
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
@@ -682,6 +713,7 @@ class Sync(BrowserView):
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
+            self.storage[domain]["settings"] = OOBTree()
         return self.storage[domain]
 
     def reindex_updated_objects(self):
