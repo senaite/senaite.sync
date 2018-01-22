@@ -725,7 +725,7 @@ class Sync(BrowserView):
             for child_child in child_children:
                 self.fetch_data(domain=domain, uid=child_child.get("uid"))
 
-    def _fetch_data(self, domain_name, window=10, overlap=0):
+    def _fetch_data(self, domain_name, window=1000, overlap=0):
         """Fetch data from a specified catalog in the source URL
 
         :param catalog: Catalog where the search is to be performed. Supported catalogs are listed
