@@ -779,7 +779,7 @@ class Sync(BrowserView):
             self._non_commited_objects += len(self.uids_to_reindex)
             self.uids_to_reindex = []
             if self._non_commited_objects > TRANSACTION_INTERVAL:
-                transaction.commit()
+                transaction.savepoint(optimistic=True)
                 self._non_commited_objects = 0
 
         self.sh.reset_updated_flags()
