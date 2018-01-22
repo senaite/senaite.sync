@@ -163,6 +163,11 @@ class Sync(BrowserView):
         # always render the template
         return self.template()
 
+    def import_settings(self, domain):
+        """Import the settings from the storage identified by domain
+        """
+        pass
+
     def import_registry_records(self, domain):
         """Import the registry records from the storage identified by domain
         """
