@@ -296,9 +296,16 @@ class Sync(BrowserView):
         # Handle "Import" action
         if form.get("import", False):
             domain = form.get("domain", None)
-            self.import_registry_records(domain)
-            self.import_users(domain)
-            self.import_data(domain)
+            # initialize the session
+            storage = self.get_storage(domain)
+            self.url = domain
+            self.username = storage["credentials"]["username"]
+            self.password = storage["credentials"]["password"]
+            self.session = self.get_session(self.username, self.password)
+            self._import_data('new_one')
+            # self.import_registry_records(domain)
+            # self.import_users(domain)
+            # self.import_data(domain)
             logger.info("*** END OF DATA IMPORT {} ***".format(domain))
             return self.template()
 
@@ -353,7 +360,6 @@ class Sync(BrowserView):
             # Start the fetch process beginning from the portal object
             # self.fetch_data(domain, uid="0")
             self._fetch_data('new_one')
-            self._import_data('new_one')
             # Fetch registry records that contain the word bika or senaite
             # self.fetch_registry_records(domain, keys=["bika", "senaite"])
             logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
@@ -737,6 +743,8 @@ class Sync(BrowserView):
         :type overlap: int
         :return:
         """
+        storage = self.get_storage(domain=domain_name)
+        ordered_uids = storage["ordered_uids"]
         self.sh = SoupHandler(domain_name)
         # Dummy query to get overall number of items in the specified catalog
         catalog_data = self.get_json("search", catalog='uid_catalog', limit=1)
@@ -756,10 +764,11 @@ class Sync(BrowserView):
                     continue
                 data_dict = self._get_data(item)
                 rec_id = self.sh.insert(data_dict)
-                self.ordered_r_uids.insert(0, [data_dict['remote_uid']])
+                ordered_uids.insert(0, [data_dict['remote_uid']])
 
             logger.info("{} of {} pages fetched...".format(current_page,
                                                            number_of_pages))
+        transaction.commit()
         logger.info("*** FETCHING DONE ***")
 
     def _import_data(self, domain_name):
@@ -769,8 +778,11 @@ class Sync(BrowserView):
         :return:
         """
         logger.info("*** IMPORT DATA NEW METHOD {} ***".format(domain_name))
+        self.sh = SoupHandler(domain_name)
         self.uids_to_reindex = []
-        for r_uid in self.ordered_r_uids:
+        storage = self.get_storage(domain=domain_name)
+        ordered_uids = storage["ordered_uids"]
+        for r_uid in ordered_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("Creating {}".format(row["path"]))
             self._handle_obj(row)
@@ -1185,6 +1197,7 @@ class Sync(BrowserView):
             self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
+            self.storage[domain]["ordered_uids"] = []
         return self.storage[domain]
 
     def reindex_updated_objects(self):
