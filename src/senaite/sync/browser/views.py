@@ -490,10 +490,6 @@ class Sync(BrowserView):
             for key in setting_dict.keys():
                 settings_store[key] = setting_dict[key]
 
-        import pdb; pdb.set_trace()
-
-
-
     def fetch_registry_records(self, domain, keys=None):
         """Fetch configuration registry records of interest (those associated
         to the keywords passed) from source instance
