@@ -812,7 +812,8 @@ class Sync(BrowserView):
         :return:
         """
         path = row.get("path")
-        existing = self.portal.unrestrictedTraverse(str(path), None)
+        existing = self.portal.unrestrictedTraverse(
+                            str(self.translate_path(path)), None)
         if existing:
             local_uid = self.sh.find_unique("path", path).get("local_uid",
                                                               None)
