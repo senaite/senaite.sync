@@ -927,6 +927,10 @@ class Sync(BrowserView):
 
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
+            if dep_row is None:
+                logger.error("Reference UID {} not found for {}: ".format(
+                                        r_uid, repr(obj)))
+                continue
             if dep_row.get("updated") == "0" and r_uid not in self._queue:
                 self._handle_obj(dep_row)
 
