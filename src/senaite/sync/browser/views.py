@@ -20,11 +20,13 @@ from zope.interface import implements
 from zope.annotation.interfaces import IAnnotations
 from zope.globalrequest import getRequest
 from zope.component import getUtility
+from zope.component import getAdapter
 from zope.component.interfaces import IFactory
 
 from plone import protect
 from plone import api as ploneapi
 from plone.registry.interfaces import IRegistry
+import plone.app.controlpanel as cp
 
 from senaite import api
 from senaite.jsonapi.interfaces import IFieldManager
@@ -99,6 +101,7 @@ class Sync(BrowserView):
         # Handle "Import" action
         if form.get("import", False):
             domain = form.get("domain", None)
+            self.import_settings(domain)
             self.import_registry_records(domain)
             self.import_users(domain)
             self.import_data(domain)
@@ -166,7 +169,64 @@ class Sync(BrowserView):
     def import_settings(self, domain):
         """Import the settings from the storage identified by domain
         """
-        pass
+        logger.info("*** IMPORT SETTINGS {} ***".format(domain))
+
+        storage = self.get_storage(domain=domain)
+        settings_store = storage["settings"]
+        for key in settings_store:
+            self.set_settings(key, settings_store[key])
+
+    def set_settings(self, key, data):
+        """Set settings by key
+        """
+        key_to_ischema = {
+            'mail': [cp.mail.IMailSchema],
+            'calendar': [cp.calendar.ICalendarSchema],
+            'ram': [cp.ram.IRAMCacheSchema],
+            'language': [cp.language.ILanguageSelectionSchema],
+            'editing': [cp.editing.IEditingSchema],
+            'usergroups': [cp.usergroups.IUserGroupsSettingsSchema,
+                           cp.usergroups.ISecuritySchema, ],
+            'search': [cp.search.ISearchSchema],
+            'filter': [cp.filter.IFilterAttributesSchema,
+                       cp.filter.IFilterEditorSchema,
+                       cp.filter.IFilterSchema,
+                       cp.filter.IFilterTagsSchema],
+            'maintenance': [cp.maintenance.IMaintenanceSchema],
+            'markup': [cp.markup.IMarkupSchema,
+                       cp.markup.ITextMarkupSchema,
+                       cp.markup.IWikiMarkupSchema, ],
+            'navigation': [cp.navigation.INavigationSchema],
+            'security': [cp.security.ISecuritySchema],
+            'site': [cp.site.ISiteSchema],
+            'skins': [cp.skins.ISkinsSchema],
+        }
+        # Get the Schema interface of the settings being imported
+        ischemas = key_to_ischema[key]
+        for ischema_name in data.keys():
+            ischema = None
+            for candidate_schema in ischemas:
+                if candidate_schema.getName() == ischema_name:
+                    ischema = candidate_schema
+            schema = getAdapter(api.get_portal(), ischema)
+            # Once we have the schema set the data
+            schema_import_data = data.get(ischema_name)
+            for schema_field in schema_import_data:
+                if schema_import_data[schema_field]:
+                    self.set_attr_from_json(schema, schema_field, schema_import_data[schema_field])
+
+    def set_attr_from_json(self, schema, attribute, data):
+        """Set schema attribute from JSON data. Since JSON converts tuples to lists
+           we have to perform a preventive check before setting the value to see if the
+           expected value is a tuple or a list. In the case it is a tuple we cast the list
+           to tuple
+        """
+        if hasattr(schema, attribute) and data:
+            current_value = getattr(schema, attribute)
+            if type(current_value) == tuple:
+                setattr(schema, attribute, tuple(data))
+            else:
+                setattr(schema, attribute, data)
 
     def import_registry_records(self, domain):
         """Import the registry records from the storage identified by domain
