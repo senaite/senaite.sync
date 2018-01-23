@@ -768,6 +768,8 @@ class Sync(BrowserView):
 
             logger.info("{} of {} pages fetched...".format(current_page,
                                                            number_of_pages))
+            transaction.savepoint(optimistic=True)
+
         transaction.commit()
         logger.info("*** FETCHING DONE ***")
 
@@ -791,7 +793,7 @@ class Sync(BrowserView):
             self._non_commited_objects += len(self.uids_to_reindex)
             self.uids_to_reindex = []
             if self._non_commited_objects > TRANSACTION_INTERVAL:
-                transaction.savepoint(optimistic=True)
+                transaction.commit()
                 self._non_commited_objects = 0
 
         self.sh.reset_updated_flags()
