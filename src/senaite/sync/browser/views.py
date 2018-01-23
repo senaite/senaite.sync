@@ -857,6 +857,11 @@ class Sync(BrowserView):
         local_path = self.translate_path(p_path)
         existing = self.portal.unrestrictedTraverse(str(local_path), None)
         if existing:
+            if len(p_path.split("/")) < 3:
+                return
+            p_row = self.sh.find_unique("path", p_path)
+            if p_row is None:
+                return
             p_local_uid = self.sh.find_unique("path", p_path).get("local_uid",
                                                                   None)
             if not p_local_uid:
