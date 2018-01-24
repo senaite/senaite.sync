@@ -39,6 +39,29 @@ from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
 
+CONTROLPANEL_INTERFACE_MAPPING = {
+    'mail': [cp.mail.IMailSchema],
+    'calendar': [cp.calendar.ICalendarSchema],
+    'ram': [cp.ram.IRAMCacheSchema],
+    'language': [cp.language.ILanguageSelectionSchema],
+    'editing': [cp.editing.IEditingSchema],
+    'usergroups': [cp.usergroups.IUserGroupsSettingsSchema,
+                   cp.usergroups.ISecuritySchema, ],
+    'search': [cp.search.ISearchSchema],
+    'filter': [cp.filter.IFilterAttributesSchema,
+               cp.filter.IFilterEditorSchema,
+               cp.filter.IFilterSchema,
+               cp.filter.IFilterTagsSchema],
+    'maintenance': [cp.maintenance.IMaintenanceSchema],
+    'markup': [cp.markup.IMarkupSchema,
+               cp.markup.ITextMarkupSchema,
+               cp.markup.IWikiMarkupSchema, ],
+    'navigation': [cp.navigation.INavigationSchema],
+    'security': [cp.security.ISecuritySchema],
+    'site': [cp.site.ISiteSchema],
+    'skins': [cp.skins.ISkinsSchema],
+}
+
 
 class SyncError(Exception):
     """ Exception Class for Sync Errors
@@ -179,30 +202,8 @@ class Sync(BrowserView):
     def set_settings(self, key, data):
         """Set settings by key
         """
-        key_to_ischema = {
-            'mail': [cp.mail.IMailSchema],
-            'calendar': [cp.calendar.ICalendarSchema],
-            'ram': [cp.ram.IRAMCacheSchema],
-            'language': [cp.language.ILanguageSelectionSchema],
-            'editing': [cp.editing.IEditingSchema],
-            'usergroups': [cp.usergroups.IUserGroupsSettingsSchema,
-                           cp.usergroups.ISecuritySchema, ],
-            'search': [cp.search.ISearchSchema],
-            'filter': [cp.filter.IFilterAttributesSchema,
-                       cp.filter.IFilterEditorSchema,
-                       cp.filter.IFilterSchema,
-                       cp.filter.IFilterTagsSchema],
-            'maintenance': [cp.maintenance.IMaintenanceSchema],
-            'markup': [cp.markup.IMarkupSchema,
-                       cp.markup.ITextMarkupSchema,
-                       cp.markup.IWikiMarkupSchema, ],
-            'navigation': [cp.navigation.INavigationSchema],
-            'security': [cp.security.ISecuritySchema],
-            'site': [cp.site.ISiteSchema],
-            'skins': [cp.skins.ISkinsSchema],
-        }
         # Get the Schema interface of the settings being imported
-        ischemas = key_to_ischema[key]
+        ischemas = CONTROLPANEL_INTERFACE_MAPPING[key]
         for ischema_name in data.keys():
             ischema = None
             for candidate_schema in ischemas:
