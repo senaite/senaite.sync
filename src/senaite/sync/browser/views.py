@@ -615,7 +615,7 @@ class Sync(BrowserView):
             for record in retrieved_records[key][0].keys():
                 registry_store[key][record] = retrieved_records[key][0][record]
 
-    def fetch_data(self, domain_name, window=1000, overlap=0):
+    def fetch_data(self, domain_name, window=1000, overlap=10):
         """Fetch data from a specified catalog in the source URL
 
         :param domain_name: Name of the domain to fetch data for
@@ -640,9 +640,14 @@ class Sync(BrowserView):
             start_from = (current_page * window) - overlap
             items = self.get_items("search", catalog='uid_catalog',
                                    limit=window, b_start=start_from)
+            if not items:
+                logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
+                    start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
                 if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
+                    logger.info("Skipping unnecessary portal type: {}"
+                                .format(item))
                     continue
                 data_dict = self._get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
