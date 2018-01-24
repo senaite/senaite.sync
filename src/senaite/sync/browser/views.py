@@ -42,7 +42,7 @@ SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "path": "path",
                          "portal_type": "portal_type"}
 
-SKIP_PORTAL_TYPES = ["SKIP", "Document"]
+SKIP_PORTAL_TYPES = ["SKIP"]
 TRANSACTION_INTERVAL = 1000
 
 
