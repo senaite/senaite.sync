@@ -492,15 +492,6 @@ class Sync(BrowserView):
         # finally reindex the object
         self.uids_to_reindex.append(api.get_uid(obj))
 
-    def dereference_object(self, uid, uidmap):
-        """Dereference an object by uid
-
-        uidmap is a mapping of remote uid -> local object uid
-        """
-        ref_uid = uidmap.get(uid, None)
-        ref_obj = api.get_object_by_uid(ref_uid, None)
-        return ref_obj
-
     def create_object_slug(self, container, data, *args, **kwargs):
         """Create an content object slug for the given data
         """
@@ -683,6 +674,7 @@ class Sync(BrowserView):
                 transaction.commit()
                 self._non_commited_objects = 0
 
+        storage["ordered_uids"] = []
         self.sh.reset_updated_flags()
 
         logger.info("*** END OF DATA IMPORT {} ***".format(domain_name))
@@ -979,10 +971,6 @@ class Sync(BrowserView):
 
         if not self.storage.get(domain):
             self.storage[domain] = OOBTree()
-            self.storage[domain]["data"] = OOBTree()
-            self.storage[domain]["index"] = OOBTree()
-            self.storage[domain]["users"] = OOBTree()
-            self.storage[domain]["uidmap"] = OOBTree()
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
