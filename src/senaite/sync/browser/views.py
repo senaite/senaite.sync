@@ -463,7 +463,7 @@ class Sync(BrowserView):
             try:
                 fm.set(obj, value)
             except:
-                logger.error(
+                logger.warn(
                     "Could not set field '{}' with value '{}'".format(
                         fieldname, value))
 
@@ -477,7 +477,7 @@ class Sync(BrowserView):
             try:
                 fm.set(obj, value)
             except:
-                logger.error(
+                logger.warn(
                     "Could not set field '{}' with value '{}'".format(
                         field_name,
                         value))
@@ -987,26 +987,6 @@ class Sync(BrowserView):
             self.storage[domain]["registry"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
         return self.storage[domain]
-
-    def reindex_updated_objects(self):
-        """
-        Reindexes updated objects.
-        """
-        total = len(self.uids_to_reindex)
-        logger.info('Reindexing {} objects which were updated...'.format(total))
-        indexed = 0
-        for uid in self.uids_to_reindex:
-            obj = api.get_object_by_uid(uid[0], None)
-            if obj is None:
-                logger.error("Object not found: {} ".format(uid[1]))
-                continue
-            obj.reindexObject()
-            indexed += 1
-            if indexed % 100 == 0:
-                logger.info('{} objects were reindexed, remain {}'.format(
-                                indexed, total-indexed))
-
-        logger.info('Reindexing finished...')
 
     @property
     def storage(self):
