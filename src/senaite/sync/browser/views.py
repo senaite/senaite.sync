@@ -43,7 +43,7 @@ SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
                          "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP"]
-TRANSACTION_INTERVAL = 1000
+COMMIT_INTERVAL = 1000
 
 
 class SyncError(Exception):
@@ -181,25 +181,25 @@ class AutoSync(BrowserView):
             self.request.form["ac_password"] = value["ac_password"]
             response = Sync(self.context, self.request)
             response()
-            #
-            # # Second step is importing fetched data
-            # self.request.form["fetchform"] = False
-            # self.request.form["fetch"] = False
-            #
-            # logger.info("Importing data for: {} ".format(key))
-            # self.request.form["dataform"] = 1
-            # self.request.form["import"] = 1
-            # self.request.form["domain"] = value["url"]
-            # response = Sync(self.context, self.request)
-            # response()
-            #
-            # # The last step is clearing fetched data from the storage to avoid
-            # # increase of the memory
-            # logger.info("Clearing storage data for: {} ".format(key))
-            # self.request.form["import"] = False
-            # self.request.form["clear_storage"] = 1
-            # response = Sync(self.context, self.request)
-            # response()
+
+            # Second step is importing fetched data
+            self.request.form["fetchform"] = False
+            self.request.form["fetch"] = False
+
+            logger.info("Importing data for: {} ".format(key))
+            self.request.form["dataform"] = 1
+            self.request.form["import"] = 1
+            self.request.form["domain"] = value["url"]
+            response = Sync(self.context, self.request)
+            response()
+
+            # The last step is clearing fetched data from the storage to avoid
+            # increase of the memory
+            logger.info("Clearing storage data for: {} ".format(key))
+            self.request.form["import"] = False
+            self.request.form["clear_storage"] = 1
+            response = Sync(self.context, self.request)
+            response()
 
         logger.info("**** AUTO SYNC FINISHED ****")
         return "Done..."
@@ -261,16 +261,20 @@ class Sync(BrowserView):
         self.context = context
         self.request = request
 
+        # VARIABLES TO BE USED IN FETCH AND IMPORT STEPS
         self.domain_name = None
         self.url = None
         self.username = None
         self.password = None
         self.session = None
-
+        # Soup Handler to interact with the domain's soup table
         self.sh = None
+        # A list to keep UID's of an object chunk
         self.uids_to_reindex = []
-        self.ordered_r_uids = []
+        # An 'infinite recursion preventative' list of objects which are
+        # being updated.
         self._queue = []
+        # An Integer to count the number of non-committed objects.
         self._non_commited_objects = 0
 
     def __call__(self):
@@ -608,7 +612,7 @@ class Sync(BrowserView):
                 registry_store[key][record] = retrieved_records[key][0][record]
 
     def fetch_data(self, domain_name, window=1000, overlap=10):
-        """Fetch data from a specified catalog in the source URL
+        """Fetch data from the uid catalog in the source URL
 
         :param domain_name: Name of the domain to fetch data for
         :param window: number of elements to be retrieved with each query to the catalog
@@ -654,56 +658,82 @@ class Sync(BrowserView):
 
     def import_data(self, domain_name):
         """
-
+        For each UID from the fetched data, creates and updates objects
+        step by step.
         :param domain_name: name of the domain to import data for
         :return:
         """
-        logger.info("*** IMPORT DATA STARTED{} ***".format(domain_name))
+        logger.info("*** IMPORT DATA STARTED FOR {} ***".format(domain_name))
+
         self.sh = SoupHandler(domain_name)
         self.uids_to_reindex = []
         storage = self.get_storage(domain=domain_name)
         ordered_uids = storage["ordered_uids"]
+
         for r_uid in ordered_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("Creating {}".format(row["path"]))
             self._handle_obj(row)
+
+            # Handling object means there is a chunk containing several objects
+            # which have been created and updated. Reindex them now.
             for uid in self.uids_to_reindex:
                 api.get_object_by_uid(uid).reindexObject()
             self._non_commited_objects += len(self.uids_to_reindex)
             self.uids_to_reindex = []
-            if self._non_commited_objects > TRANSACTION_INTERVAL:
+
+            # Commit the transaction if necessary
+            if self._non_commited_objects > COMMIT_INTERVAL:
                 transaction.commit()
+                logger.info("OBJECTS IMPORTED: {} / {} ".format(
+                            self._non_commited_objects, len(ordered_uids)))
                 self._non_commited_objects = 0
 
+        # Delete the UID list from the storage.
         storage["ordered_uids"] = []
+        # Mark all objects as non-updated for the next import.
         self.sh.reset_updated_flags()
 
         logger.info("*** END OF DATA IMPORT {} ***".format(domain_name))
 
     def _handle_obj(self, row):
         """
+        With the given dictionary:
+            1. Creates object's slug
+            2. Creates and updates dependencies of the object (which actually
+               means this _handle_obj function will be called for the dependency
+               if the dependency is not updated
+            3. Updates the object
 
-        :param row:
-        :return:
+        :param row: A row dictionary from the souper
+        :type row: dict
         """
         r_uid = row.get("remote_uid")
-        self._queue.append(r_uid)
-        if row.get("updated", "0") == "1":
-            return True
-        obj = self._do_obj_creation(row)
-        obj_data = self.get_json(r_uid, complete=True,
-                                 workflow=True)
-        self._create_dependencies(obj, obj_data)
-        self._update_object_with_data(obj, obj_data)
-        self.sh.mark_update(r_uid)
-        self._queue.remove(r_uid)
+        try:
+            self._queue.append(r_uid)
+            if row.get("updated", "0") == "1":
+                return True
+            obj = self._do_obj_creation(row)
+            obj_data = self.get_json(r_uid, complete=True,
+                                     workflow=True)
+            self._create_dependencies(obj, obj_data)
+            self._update_object_with_data(obj, obj_data)
+            self.sh.mark_update(r_uid)
+            self._queue.remove(r_uid)
+
+        except Exception, e:
+            logger.error('Failed to handle: {} \n {} '.format(row, str(e)))
+
         return True
 
     def _do_obj_creation(self, row):
         """
+        With the given dictionary:
+            1. Finds object's parents, create them and update their local UID's
+            2. Creates plain object and saves its local UID
 
-        :param row:
-        :return:
+        :param row: A row dictionary from the souper
+        :type row: dict
         """
         path = row.get("path")
         existing = self.portal.unrestrictedTraverse(
@@ -729,16 +759,23 @@ class Sync(BrowserView):
 
     def _create_parents(self, path):
         """
-
-        :param path:
+        Creates all non-existing parents and updates local UIDs for the existing
+        ones.
+        :param path: object path in the remote
         :return:
         """
         p_path = self._get_parent_path(path)
         if p_path == "/":
             return True
+
+        # Incoming path was remote path, translate it into local one
         local_path = self.translate_path(p_path)
+
+        # Check if the parent already exists. If yes, make sure it has
+        # 'local_uid' value set in the soup table.
         existing = self.portal.unrestrictedTraverse(str(local_path), None)
         if existing:
+            # Skip if its the portal object.
             if len(p_path.split("/")) < 3:
                 return
             p_row = self.sh.find_unique("path", p_path)
@@ -750,6 +787,9 @@ class Sync(BrowserView):
                 p_local_uid = api.get_uid(existing)
                 self.sh.update_by_path(p_path, local_uid=p_local_uid)
             return
+
+        # Before creating an object's parent, make sure grand parents are
+        # already ready.
         self._create_parents(p_path)
         parent = self.sh.find_unique("path", p_path)
         grand_parent = self.translate_path(self._get_parent_path(p_path))
@@ -758,15 +798,17 @@ class Sync(BrowserView):
             "id": self._get_id_from_path(p_path),
             "portal_type": parent.get("portal_type")}
         parent_obj = self.create_object_slug(container, parent_data)
+
+        # Parent is created, update it in the soup table.
         p_local_uid = api.get_uid(parent_obj)
         self.sh.update_by_path(p_path, local_uid=p_local_uid)
         return True
 
     def _get_parent_path(self, path):
         """
-
-        :param path:
-        :return:
+        Gets the parent path for a given object path.
+        :param path: path of an object
+        :return: parent path of the object
         """
         if path == "/":
             return "/"
@@ -777,7 +819,7 @@ class Sync(BrowserView):
 
     def _get_id_from_path(self, path):
         """
-
+        Extracts the ID from a given path.
         :param path:
         :return:
         """

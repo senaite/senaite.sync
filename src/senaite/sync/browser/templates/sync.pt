@@ -39,7 +39,7 @@
             <span class="required"></span>
             <span i18n:translate=""
                   class="help formHelp">
-              Representative name for the source system.
+              Representative unique name for the source system.
             </span>
           </label>
           <div class="form-group input-group">
