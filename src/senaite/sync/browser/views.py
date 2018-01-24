@@ -720,7 +720,6 @@ class Sync(BrowserView):
             self._update_object_with_data(obj, obj_data)
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
-
         except Exception, e:
             logger.error('Failed to handle: {} \n {} '.format(row, str(e)))
 
@@ -828,10 +827,10 @@ class Sync(BrowserView):
 
     def _create_dependencies(self, obj, data):
         """
-
-        :param obj:
-        :param row:
-        :return:
+        Creates and updates objects' dependencies if they are not in the queue.
+        A dependencies are found as UIDs in object data.
+        :param obj: an object to get dependencies created
+        :param data: object data
         """
 
         dependencies = []
@@ -843,9 +842,7 @@ class Sync(BrowserView):
 
             value = data.get(fieldname)
 
-            # handle JSON data reference fields
             if isinstance(value, dict) and value.get("uid"):
-                # dereference the referenced object
                 dependencies.append(value.get("uid"))
             elif isinstance(value, (list, tuple)):
                 for item in value:
@@ -866,9 +863,11 @@ class Sync(BrowserView):
         return True
 
     def _get_soup_format(self, item):
-        """ From a fetched item return a dictionary prepared for being inserted into the import soup. This means
-         that the returned dictionary will only contain the data fields specified in SOUPER_REQUIRED_FIELDS and
-         also that the keys of the returned dictionary will have been mapped the keys that the import soup expects
+        """ From a fetched item return a dictionary prepared for being inserted
+         into the import soup. This means that the returned dictionary will only
+         contain the data fields specified in SOUPER_REQUIRED_FIELDS and
+         also that the keys of the returned dictionary will have been mapped
+         the keys that the import soup expects.
 
         :param item: dictionary with item data as obtained from the json API
         :type item: dict
