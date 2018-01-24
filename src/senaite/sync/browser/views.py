@@ -261,6 +261,7 @@ class Sync(BrowserView):
         self.context = context
         self.request = request
 
+        self.domain_name = None
         self.url = None
         self.username = None
         self.password = None
@@ -290,28 +291,30 @@ class Sync(BrowserView):
         if not url.startswith("http"):
             url = "http://{}".format(url)
         self.url = url
+        self.domain_name = form.get("domain_name", None)
         self.username = form.get("ac_name", None)
         self.password = form.get("ac_password", None)
 
         # Handle "Import" action
         if form.get("import", False):
-            domain = form.get("domain", None)
+            self.domain_name = form.get("domain_name", None)
             # initialize the session
-            storage = self.get_storage(domain)
-            self.url = domain
+            storage = self.get_storage(self.domain_name)
+            self.url = storage["credentials"]["url"]
             self.username = storage["credentials"]["username"]
             self.password = storage["credentials"]["password"]
             self.session = self.get_session(self.username, self.password)
-            self._import_data('new_one')
-            # self.import_registry_records(domain)
-            # self.import_users(domain)
+            self.import_users(self.domain_name)
+            self.import_registry_records(self.domain_name)
+            self._import_data(self.domain_name)
             # self.import_data(domain)
-            logger.info("*** END OF DATA IMPORT {} ***".format(domain))
+            logger.info("*** END OF DATA IMPORT {} ***".format(
+                        self.domain_name))
             return self.template()
 
         # Handle "Clear this Storage" action
         if form.get("clear_storage", False):
-            domain = form.get("domain", None)
+            domain = form.get("domain_name", None)
             del self.storage[domain]
             message = _("Cleared Storage {}".format(domain))
             self.add_status_message(message, "info")
@@ -327,7 +330,8 @@ class Sync(BrowserView):
         # Handle "Fetch" action
         if form.get("fetch", False):
             # check if all mandatory fields have values
-            if not all([self.url, self.username, self.password]):
+            if not all([self.domain_name, self.url, self.username,
+                        self.password]):
                 message = _("Please fill in all required fields")
                 self.add_status_message(message, "error")
                 return self.template()
@@ -336,7 +340,8 @@ class Sync(BrowserView):
             self.session = self.get_session(self.username, self.password)
 
             # remember the credentials in the storage
-            storage = self.get_storage(self.url)
+            storage = self.get_storage(self.domain_name)
+            storage["credentials"]["url"] = self.url
             storage["credentials"]["username"] = self.username
             storage["credentials"]["password"] = self.password
 
@@ -354,15 +359,13 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
-            domain = self.url
-            # Fetch all users from the source
-            self.import_users(domain)
             # Start the fetch process beginning from the portal object
-            # self.fetch_data(domain, uid="0")
-            self._fetch_data('new_one')
+            self._fetch_data(self.domain_name)
             # Fetch registry records that contain the word bika or senaite
-            # self.fetch_registry_records(domain, keys=["bika", "senaite"])
-            logger.info("*** FETCHING DATA FINISHED {} ***".format(domain))
+            self.fetch_registry_records(self.domain_name,
+                                        keys=["bika", "senaite"])
+            logger.info("*** FETCHING DATA FINISHED {} ***".format(
+                        self.domain_name))
 
         # always render the template
         return self.template()

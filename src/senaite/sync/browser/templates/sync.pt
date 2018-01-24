@@ -30,6 +30,28 @@
         <input type="hidden" name="fetchform" value="1"/>
         <span tal:replace="structure context/@@authenticator/authenticator"/>
 
+        <!-- Domain Name -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="domain_name">
+            Domain Name
+            <span class="required"></span>
+            <span i18n:translate=""
+                  class="help formHelp">
+              Representative name for the source system.
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
+            <input type="text" size="30"
+                   class="form-control"
+                   id="domain_name"
+                   tal:attributes="value view/domain_name|nothing"
+                   name="domain_name"/>
+          </div>
+        </div>
+
         <!-- Base URL -->
         <div class="field form-group field">
           <label i18n:translate=""
@@ -124,11 +146,11 @@
 
             <dt class="collapsibleHeader">
               Data for <span tal:replace="storage"/>
-              (<span tal:replace="python:len(view.storage[storage]['data'].keys())"/> Items)
+              (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
 
             <input type="hidden" name="dataform" value="1"/>
-            <input type="hidden" name="domain" value="" tal:attributes="value storage" />
+            <input type="hidden" name="domain_name" value="" tal:attributes="value storage" />
 
             <dd class="collapsibleContent">
 
