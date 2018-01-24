@@ -828,7 +828,7 @@ class Sync(BrowserView):
     def _create_dependencies(self, obj, data):
         """
         Creates and updates objects' dependencies if they are not in the queue.
-        A dependencies are found as UIDs in object data.
+        Dependencies are found as UIDs in object data.
         :param obj: an object to get dependencies created
         :param data: object data
         """

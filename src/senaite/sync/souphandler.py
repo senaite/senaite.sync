@@ -24,6 +24,7 @@ from repoze.catalog.query import Contains
 
 class SoupHandler:
     """
+    A basic class to interact with soup tables.
     """
 
     def __init__(self, domain_name):
@@ -36,22 +37,21 @@ class SoupHandler:
 
     def _set_soup(self):
         """
+        Make the soup ready.
         """
         soup = souper_get_soup(self.domain_name, self.portal)
         try:
             getUtility(ICatalogFactory, name=self.domain_name)
         except ComponentLookupError:
-            logger.info("****** Setting Soup catalog ********")
             self._create_domain_catalog()
-            logger.info("***** Soup Catalog is set. *****")
 
         return soup
 
     def insert(self, data):
         """
-        :param domain_name:
-        :param data:
-        :return:
+        Inserts a row to the soup table.
+        :param data: row dictionary
+        :return: intid of created record
         """
         if self._already_exists(data):
             logger.warn("Trying to insert existing record... {}".format(data))
@@ -68,9 +68,9 @@ class SoupHandler:
 
     def _already_exists(self, data):
         """
-
-        :param data:
-        :return:
+        Checks if the record already exists.
+        :param data: row dictionary
+        :return: True or False
         """
         r_uid = data.get("remote_uid", False) or '-1'
         l_uid = data.get("local_uid", False) or '-1'
@@ -91,6 +91,12 @@ class SoupHandler:
         return record
 
     def find_unique(self, column, value):
+        """
+        Gets the record row by the given column and value.
+        :param column: column name
+        :param value: column value
+        :return: record dictionary
+        """
         recs = [r for r in self.soup.query(Eq(column, value))]
         if recs:
             return record_to_dict(recs[0])
@@ -98,12 +104,21 @@ class SoupHandler:
         return None
 
     def get_local_uid(self, r_uid):
+        """
+        Get the local uid by remote uid
+        :param r_uid: remote uid of the row
+        :return: local uid from the row
+        """
         recs = [r for r in self.soup.query(Eq("remote_uid", r_uid))]
         if recs and len(recs)==1:
             return record_to_dict(recs[0])["local_uid"]
         return None
 
     def update_by_remote_uid(self, remote_uid, **kwargs):
+        """
+        Update the row by remote_uid column.
+        :param kwargs: columns and their values to be updated.
+        """
         recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
         if not recs:
             logger.error("Could not find any record with remote_uid: '{}'"
@@ -115,6 +130,10 @@ class SoupHandler:
         return True
 
     def update_by_path(self, path, **kwargs):
+        """
+        Update the row by path column.
+        :param kwargs: columns and their values to be updated.
+        """
         recs = [r for r in self.soup.query(Eq('path', path))]
         if not recs:
             logger.error("Could not find any record with path: '{}'"
@@ -126,6 +145,9 @@ class SoupHandler:
         return True
 
     def mark_update(self, remote_uid):
+        """
+        Marks that record's object has been updated.
+        """
         recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
         if not recs:
             logger.error("Could not find any record with remote_uid: '{}'"
@@ -137,7 +159,7 @@ class SoupHandler:
 
     def reset_updated_flags(self):
         """
-
+        Set all updated values to '0'
         :return:
         """
         for intid in self.soup.data:
@@ -167,8 +189,10 @@ class SoupHandler:
     @implementer(IStorageLocator)
     class StorageLocator(object):
         """
+        Compulsory locator class for the soup.
         """
         def __init__(self, context):
+            # Context is the portal object.
             self.context = context
 
         def storage(self, soup_name):
@@ -183,6 +207,11 @@ class SoupHandler:
 
 
 def record_to_dict(record):
+    """
+    Convert the soup record to dictionary
+    :param record: to be converted
+    :return: dictionary with necessary data
+    """
     ret = {
         'rec_int_id': record.intid,
         'remote_uid': record.attrs.get('remote_uid', ""),
