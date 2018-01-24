@@ -19,7 +19,6 @@ from repoze.catalog.indexes.field import CatalogFieldIndex
 from souper.soup import Record
 from repoze.catalog.query import Eq
 from repoze.catalog.query import Or
-from repoze.catalog.query import Contains
 
 
 class SoupHandler:
@@ -170,6 +169,7 @@ class SoupHandler:
 
     def _create_domain_catalog(self):
         """
+        To query and access soup table, create a catalog.
         :return:
         """
         @implementer(ICatalogFactory)

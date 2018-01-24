@@ -9,7 +9,6 @@ import transaction
 from DateTime import DateTime
 from datetime import datetime
 
-from BTrees.OOBTree import OOSet
 from BTrees.OOBTree import OOBTree
 
 from Products.Five import BrowserView
