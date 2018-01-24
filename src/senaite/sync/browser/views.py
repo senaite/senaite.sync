@@ -349,6 +349,7 @@ class Sync(BrowserView):
             # try to get the version of the remote JSON API
             version = self.get_version()
             if not version or not version.get('version'):
+                del self.storage[self.domain_name]
                 message = _("Please install senaite.jsonapi on the source system")
                 self.add_status_message(message, "error")
                 return self.template()
