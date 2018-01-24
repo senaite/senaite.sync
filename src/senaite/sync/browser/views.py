@@ -267,6 +267,7 @@ class Sync(BrowserView):
         self.password = None
         self.session = None
 
+        self.sh = None
         self.uids_to_reindex = []
         self.ordered_r_uids = []
         self._queue = []
@@ -306,7 +307,7 @@ class Sync(BrowserView):
             self.session = self.get_session(self.username, self.password)
             self.import_users(self.domain_name)
             self.import_registry_records(self.domain_name)
-            self._import_data(self.domain_name)
+            self.import_data(self.domain_name)
             # self.import_data(domain)
             logger.info("*** END OF DATA IMPORT {} ***".format(
                         self.domain_name))
@@ -360,7 +361,7 @@ class Sync(BrowserView):
                 return self.template()
 
             # Start the fetch process beginning from the portal object
-            self._fetch_data(self.domain_name)
+            self.fetch_data(self.domain_name)
             # Fetch registry records that contain the word bika or senaite
             self.fetch_registry_records(self.domain_name,
                                         keys=["bika", "senaite"])
@@ -409,95 +410,9 @@ class Sync(BrowserView):
             self.add_status_message(message, "info")
             logger.info(message)
 
-    def import_data(self, domain):
-        """Import the data from the storage identified by domain
-        """
-        logger.info("*** IMPORT DATA {} ***".format(domain))
-
-        storage = self.get_storage(domain=domain)
-        datastore = storage["data"]
-        indexstore = storage["index"]
-        uidmap = storage["uidmap"]
-        credentials = storage["credentials"]
-
-        # At some points api cannot retrieve objects by UID in the end of
-        # creation process. Thus we keep them in an dictionary to access easily.
-        objmap = {}
-        # We will create objects from top to bottom, but will update from bottom
-        # to up.
-        ordered_uids = []
-
-        # initialize a new session with the stored credentials for later requests
-        username = credentials.get("username")
-        password = credentials.get("password")
-        self.session = self.get_session(username, password)
-        logger.info("Initialized a new session for user {}".format(username))
-
-        # Get UIDs grouped by their parent path
-        ppaths = indexstore.get("by_parent_path")
-        if ppaths is None:
-            message = _("No parent path info found in the import data. "
-                        "Please install senaite.jsonapi>=1.1.1 on the source instance "
-                        "and clear&refetch this storage")
-            self.add_status_message(message, "warning")
-            return
-
-        # Import by paths from top to bottom
-        for ppath in sorted(ppaths):
-            # nothing to do
-            if not ppath:
-                continue
-
-            logger.info("Importing items for parent path {}".format(ppath))
-            uids = ppaths[ppath]
-
-            for uid in uids:
-                ordered_uids.append(uid)
-                # get the data for this uid
-                data = datastore[uid]
-                # check if the object exists in this instance
-                remote_path = data.get("path")
-                local_path = self.translate_path(remote_path)
-                existing = self.portal.unrestrictedTraverse(str(local_path), None)
-
-                if existing:
-                    # remember the UID -> object UID mapping for the update step
-                    uidmap[uid] = api.get_uid(existing)
-                else:
-                    # get the container object by path
-                    container_path = self.translate_path(ppath)
-                    container = self.portal.unrestrictedTraverse(str(container_path), None)
-                    # create an object slug in this container
-                    obj = self.create_object_slug(container, data)
-                    # remember the UID -> object UID mapping for the update step
-                    uidmap[uid] = api.get_uid(obj)
-
-        # When creation process is done, commit the transaction to avoid
-        # ReferenceField relation problems.
-        transaction.commit()
-
-        # UIDs were added from up to bottom. Reverse the list to update objects
-        # from bottom to up.
-        ordered_uids.reverse()
-
-        # Update all objects with the given data
-        for uid in ordered_uids:
-            obj = api.get_object_by_uid(uidmap[uid])
-            if obj is None:
-                logger.warn("Object not found: {} ".format(uid))
-                continue
-            logger.info("Update object {} with import data".format(api.get_path(obj)))
-            self.update_object_with_data(obj, datastore[uid], domain)
-
-        self.reindex_updated_objects()
-
-    def update_object_with_data(self, obj, data, domain):
+    def _update_object_with_data(self, obj, data):
         """Update an existing object with data
         """
-
-        # get the storage and UID map
-        storage = self.get_storage(domain=domain)
-        uidmap = storage["uidmap"]
         # Proxy Fields must be set after its dependency object is already set.
         # Thus, we will store all the ProxyFields and set them in the end
         proxy_fields = []
@@ -513,7 +428,9 @@ class Sync(BrowserView):
             # handle JSON data reference fields
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
-                value = self.dereference_object(value.get("uid"), uidmap)
+                local_uid = self.sh.get_local_uid(value.get("uid"))
+                value = api.get_object_by_uid(local_uid)
+
             elif isinstance(value, (list, tuple)):
                 for item in value:
                     # If it is list of json data dict of objects, add local
@@ -522,7 +439,7 @@ class Sync(BrowserView):
                     if isinstance(item, dict):
                         for k, v in item.iteritems():
                             if 'uid' in k:
-                                local_uid = uidmap.get(v)
+                                local_uid = self.sh.get_local_uid(v)
                                 item[k] = local_uid
 
             # handle file fields
@@ -573,8 +490,7 @@ class Sync(BrowserView):
             self.import_review_history(obj, wf_id, review_history)
 
         # finally reindex the object
-        obj.reindexObject()
-        # self.uids_to_reindex.append([api.get_uid(obj), repr(obj)])
+        self.uids_to_reindex.append(api.get_uid(obj))
 
     def dereference_object(self, uid, uidmap):
         """Dereference an object by uid
@@ -699,47 +615,10 @@ class Sync(BrowserView):
             for record in retrieved_records[key][0].keys():
                 registry_store[key][record] = retrieved_records[key][0][record]
 
-    def fetch_users(self, domain):
-        """Fetch all users from the source URL
-        """
-        logger.info("*** FETCH USERS {} ***".format(domain))
-        storage = self.get_storage(domain=domain)
-        userstore = storage["users"]
-
-        for user in self.yield_items("users"):
-            username = user.get("username")
-            userstore[username] = user
-
-    def fetch_data(self, domain, uid="0"):
-        """Fetch the data from the source URL
-        """
-        # Fetch the object by uid
-        parent = self.get_json(uid, complete=True, children=True, workflow=True)
-        children = parent.pop("children", [])
-        self.store(domain, uid, parent)
-
-        # Fetch the children of this object
-        for child in children:
-            child_uid = child.get("uid")
-            if not child_uid:
-                message = "Item '{}' has no UID key".format(child)
-                self.add_status_message(message, "warn")
-                continue
-
-            child_item = self.get_json(child_uid, complete=True, children=True,
-                                       workflow=True)
-            child_children = child_item.pop("children", [])
-            self.store(self.url, child_uid, child_item)
-
-            for child_child in child_children:
-                self.fetch_data(domain=domain, uid=child_child.get("uid"))
-
-    def _fetch_data(self, domain_name, window=1000, overlap=0):
+    def fetch_data(self, domain_name, window=1000, overlap=0):
         """Fetch data from a specified catalog in the source URL
 
-        :param catalog: Catalog where the search is to be performed. Supported catalogs are listed
-        in senaite.jsonapi.catalog
-        :type catalog: string
+        :param domain_name: Name of the domain to fetch data for
         :param window: number of elements to be retrieved with each query to the catalog
         :type window: int
         :param overlap: overlap between windows
@@ -765,7 +644,7 @@ class Sync(BrowserView):
                 # skip object or extract the required data for the import
                 if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
                     continue
-                data_dict = self._get_data(item)
+                data_dict = self._get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
                 ordered_uids.insert(0, [data_dict['remote_uid']])
 
@@ -776,13 +655,13 @@ class Sync(BrowserView):
         transaction.commit()
         logger.info("*** FETCHING DONE ***")
 
-    def _import_data(self, domain_name):
+    def import_data(self, domain_name):
         """
 
-        :param domain:
+        :param domain_name: name of the domain to import data for
         :return:
         """
-        logger.info("*** IMPORT DATA NEW METHOD {} ***".format(domain_name))
+        logger.info("*** IMPORT DATA STARTED{} ***".format(domain_name))
         self.sh = SoupHandler(domain_name)
         self.uids_to_reindex = []
         storage = self.get_storage(domain=domain_name)
@@ -801,7 +680,7 @@ class Sync(BrowserView):
 
         self.sh.reset_updated_flags()
 
-        logger.info("*** END OF DATA IMPORT{} ***".format(domain_name))
+        logger.info("*** END OF DATA IMPORT {} ***".format(domain_name))
 
     def _handle_obj(self, row):
         """
@@ -946,89 +825,7 @@ class Sync(BrowserView):
 
         return True
 
-    def _update_object_with_data(self, obj, data):
-        """Update an existing object with data
-        """
-        # Proxy Fields must be set after its dependency object is already set.
-        # Thus, we will store all the ProxyFields and set them in the end
-        proxy_fields = []
-
-        for fieldname, field in api.get_fields(obj).items():
-
-            if fieldname in self.fields_to_skip:
-                continue
-
-            fm = IFieldManager(field)
-            value = data.get(fieldname)
-
-            # handle JSON data reference fields
-            if isinstance(value, dict) and value.get("uid"):
-                # dereference the referenced object
-                local_uid = self.sh.get_local_uid(value.get("uid"))
-                value = api.get_object_by_uid(local_uid)
-
-            elif isinstance(value, (list, tuple)):
-                for item in value:
-                    # If it is list of json data dict of objects, add local
-                    # uid to that dictionary. This local_uid can be used in
-                    # Field Managers.
-                    if isinstance(item, dict):
-                        for k, v in item.iteritems():
-                            if 'uid' in k:
-                                local_uid = self.sh.get_local_uid(v)
-                                item[k] = local_uid
-
-            # handle file fields
-            if field.type in ("file", "image", "blob"):
-                if data.get(fieldname) is not None:
-                    fileinfo = data.get(fieldname)
-                    url = fileinfo.get("download")
-                    filename = fileinfo.get("filename")
-                    data["filename"] = filename
-                    response = requests.get(url)
-                    value = response.content
-
-            # Leave the Proxy Fields for later
-            if isinstance(fm, ProxyFieldManager):
-                proxy_fields.append({'field_name': fieldname,
-                                     'fm': fm, 'value': value})
-                continue
-
-            logger.info("Setting value={} on field={} of object={}".format(
-                repr(value), fieldname, api.get_id(obj)))
-            try:
-                fm.set(obj, value)
-            except:
-                logger.error(
-                    "Could not set field '{}' with value '{}'".format(
-                        fieldname, value))
-
-        # All reference fields are set. We can set the proxy fields now.
-        for pf in proxy_fields:
-            field_name = pf.get("field_name")
-            fm = pf.get("fm")
-            value = pf.get("value")
-            logger.info("Setting value={} on field={} of object={}".format(
-                repr(value), field_name, api.get_id(obj)))
-            try:
-                fm.set(obj, value)
-            except:
-                logger.error(
-                    "Could not set field '{}' with value '{}'".format(
-                        field_name,
-                        value))
-
-        # Set the workflow states
-        wf_info = data.get("workflow_info", [])
-        for wf_dict in wf_info:
-            wf_id = wf_dict.get("workflow")
-            review_history = wf_dict.get("review_history")
-            self.import_review_history(obj, wf_id, review_history)
-
-        # finally reindex the object
-        self.uids_to_reindex.append(api.get_uid(obj))
-
-    def _get_data(self, item):
+    def _get_soup_format(self, item):
         """ From a fetched item return a dictionary prepared for being inserted into the import soup. This means
          that the returned dictionary will only contain the data fields specified in SOUPER_REQUIRED_FIELDS and
          also that the keys of the returned dictionary will have been mapped the keys that the import soup expects
@@ -1056,34 +853,6 @@ class Sync(BrowserView):
             uid_data = self.get_json(uid, complete=True, children=False, workflow=True)
             retrieved_data[uid] = uid_data
         return retrieved_data
-
-    def store(self, domain, key, value, overwrite=False):
-        """Store a dictionary in the domain's storage
-        """
-        # Get the storage for the current URL
-        storage = self.get_storage(domain=domain)
-        datastore = storage["data"]
-        indexstore = storage["index"]
-
-        # already fetched
-        if key in datastore and not overwrite:
-            logger.info("Skipping existing key {}".format(key))
-            return
-
-        # Create some indexes
-        for index in ["portal_type", "parent_id", "parent_path"]:
-            index_key = "by_{}".format(index)
-            if not indexstore.get(index_key):
-                indexstore[index_key] = OOBTree()
-            indexvalue = value.get(index)
-            # Check if the index value, e.g. the portal_type="Sample", is
-            # already known as a key in the index.
-            if not indexstore[index_key].get(indexvalue):
-                indexstore[index_key][indexvalue] = OOSet()
-            indexstore[index_key][indexvalue].add(key)
-
-        # store the data
-        datastore[key] = value
 
     def get_version(self):
         """Return the remote JSON API version
