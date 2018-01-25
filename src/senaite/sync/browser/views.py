@@ -601,6 +601,8 @@ class Sync(BrowserView):
                             if 'uid' in k:
                                 dependencies.append(v)
 
+        logger.info("Dependencies of {} are : {} ".format(repr(obj),
+                                                          dependencies))
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
             if dep_row is None:
@@ -608,7 +610,11 @@ class Sync(BrowserView):
                                         r_uid, repr(obj)))
                 continue
             if dep_row.get("updated") == "0" and r_uid not in self._queue:
+                logger.info("Resolving Dependency {} for {} ".format(
+                            dep_row, repr(obj)))
                 self._handle_obj(dep_row)
+                logger.info("Resolved Dependency {} for {} ".format(
+                            dep_row, repr(obj)))
 
         return True
 
