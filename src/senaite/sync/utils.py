@@ -1,4 +1,8 @@
 
+from BTrees.OOBTree import OOBTree
+
+from zope.annotation.interfaces import IAnnotations
+
 from senaite import api
 from DateTime import DateTime
 from datetime import datetime
