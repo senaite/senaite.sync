@@ -544,21 +544,25 @@ class Sync(BrowserView):
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
-        existing = self.portal.unrestrictedTraverse(str(local_path), None)
-        if existing:
-            # Skip if its the portal object.
-            if len(p_path.split("/")) < 3:
+        try:
+            existing = self.portal.unrestrictedTraverse(str(local_path), None)
+            if existing:
+                # Skip if its the portal object.
+                if len(p_path.split("/")) < 3:
+                    return
+                p_row = self.sh.find_unique("path", p_path)
+                if p_row is None:
+                    return
+                p_local_uid = self.sh.find_unique("path", p_path).get("local_uid",
+                                                                      None)
+                if not p_local_uid:
+                    p_local_uid = api.get_uid(existing)
+                    self.sh.update_by_path(p_path, local_uid=p_local_uid)
                 return
-            p_row = self.sh.find_unique("path", p_path)
-            if p_row is None:
-                return
-            p_local_uid = self.sh.find_unique("path", p_path).get("local_uid",
-                                                                  None)
-            if not p_local_uid:
-                p_local_uid = api.get_uid(existing)
-                self.sh.update_by_path(p_path, local_uid=p_local_uid)
+        except TypeError, e:
+            logger.warn("ERROR WHILE ACCESSING AN EXISTING OBJECT: {} "
+                        .format(str(e)))
             return
-
         # Before creating an object's parent, make sure grand parents are
         # already ready.
         self._create_parents(p_path)
