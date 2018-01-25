@@ -109,13 +109,14 @@ class SoupHandler:
         :return: local uid from the row
         """
         recs = [r for r in self.soup.query(Eq("remote_uid", r_uid))]
-        if recs and len(recs)==1:
+        if recs and len(recs) == 1:
             return record_to_dict(recs[0])["local_uid"]
         return None
 
     def update_by_remote_uid(self, remote_uid, **kwargs):
         """
         Update the row by remote_uid column.
+        :param remote_uid: UID of the object in the source
         :param kwargs: columns and their values to be updated.
         """
         recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
@@ -131,6 +132,7 @@ class SoupHandler:
     def update_by_path(self, path, **kwargs):
         """
         Update the row by path column.
+        :param path: path of the record
         :param kwargs: columns and their values to be updated.
         """
         recs = [r for r in self.soup.query(Eq('path', path))]

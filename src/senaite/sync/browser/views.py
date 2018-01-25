@@ -6,8 +6,6 @@ import urllib
 import urlparse
 import requests
 import transaction
-from DateTime import DateTime
-from datetime import datetime
 
 from BTrees.OOBTree import OOBTree
 
@@ -31,15 +29,12 @@ from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
+import senaite.sync.utils as u
 
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
-SYNC_CREDENTIALS = "senaite.sync.credentials"
-SOUPER_REQUIRED_FIELDS ={"uid": "remote_uid",
-                         "path": "path",
-                         "portal_type": "portal_type"}
 
 SKIP_PORTAL_TYPES = ["SKIP"]
 COMMIT_INTERVAL = 1000
@@ -60,191 +55,6 @@ class SyncError(Exception):
 
     def __str__(self):
         return self.message
-
-
-class EditAutoSync(BrowserView):
-    """
-    View for editing domains and their data which will be used for
-    Auto Synchronization. From this view, user cannot run fetch or import step,
-    but can only add/remove remote instance (domain) parameters.
-    """
-    implements(ISync)
-
-    template = ViewPageTemplateFile("templates/edit_sync_domains.pt")
-
-    def __init__(self, context, request):
-        super(BrowserView, self).__init__(context, request)
-        self.context = context
-        self.request = request
-
-    def __call__(self):
-        protect.CheckAuthenticator(self.request.form)
-
-        self.portal = api.get_portal()
-        self.request.set('disable_plone.rightcolumn', 1)
-        self.request.set('disable_border', 1)
-
-        # Handle form submit
-        form = self.request.form
-        if form.get("add_domain", False):
-            self.add_new_credential(form)
-        elif form.get("remove_domain", False):
-            name = form.get("domain_name")
-            self.remove_domain(name)
-
-        return self.template()
-
-    def get_domains(self):
-        """
-        This function returns all the domains registered for Auto Sync.
-        :return: dictionary of the domains.
-        """
-        storage = get_credentials_storage(self.portal)
-        return storage
-
-    def add_new_credential(self, data):
-        """
-        Adds new domain parameters to the credentials storage.
-        :param data: parameters dict of the new domain.
-        :return:
-        """
-        if not isinstance(data, dict):
-            return
-
-        required_indexes = ["domain_name", "url", "ac_username", "ac_password"]
-        credentials = {}
-        for i in required_indexes:
-            if not data.get(i, False):
-                return
-            credentials[i] = data[i]
-
-        name = credentials.get("domain_name")
-        storage = get_credentials_storage(self.portal)
-        # Domain names must be unique
-        if storage.get(name, False):
-            return
-
-        # store the data
-        storage[name] = credentials
-        logger.info("New credentials were added for: {}".format(name))
-
-    def remove_domain(self, domain_name):
-        """
-        Removes selected domain from the credentials storage.
-        :param domain_name: name of the domain to be removed
-        :return:
-        """
-        storage = get_credentials_storage(self.portal)
-        if storage.get(domain_name, False):
-            del storage[domain_name]
-            logger.info("Domain Removed: {}".format(domain_name))
-
-    def reset(self):
-        """Drop the whole storage of credentials
-        """
-        annotation = self.get_annotation()
-        if annotation.get(SYNC_CREDENTIALS) is not None:
-            del annotation[SYNC_CREDENTIALS]
-
-
-class AutoSync(BrowserView):
-    """
-    A View to be called by clock server periodically in order to run Auto Sync.
-    With an authentication required, it will go through all the domains
-    registered in the system and run 1. Fetch, 2. Import, 3. Clear steps for
-    each of them.
-    """
-    implements(ISync)
-
-    def __init__(self, context, request):
-        super(BrowserView, self).__init__(context, request)
-        self.context = context
-        self.request = request
-
-    def __call__(self):
-        protect.CheckAuthenticator(self.request.form)
-        self.portal = api.get_portal()
-
-        # Credentials storage must be filled beforehand. Users with enough
-        # privileges can add domains from 'edit_auto_sync' view.
-        storage = get_credentials_storage(self.portal)
-        logger.info("**** AUTO SYNC STARTED ****")
-
-        for key, value in storage.items():
-            # First step is fetching data for the domain
-            logger.info("Fetching data for: {} ".format(key))
-            self.request.form["fetchform"] = 1
-            self.request.form["fetch"] = 1
-            self.request.form["url"] = value["url"]
-            self.request.form["ac_name"] = value["ac_username"]
-            self.request.form["ac_password"] = value["ac_password"]
-            response = Sync(self.context, self.request)
-            response()
-
-            # Second step is importing fetched data
-            self.request.form["fetchform"] = False
-            self.request.form["fetch"] = False
-
-            logger.info("Importing data for: {} ".format(key))
-            self.request.form["dataform"] = 1
-            self.request.form["import"] = 1
-            self.request.form["domain"] = value["url"]
-            response = Sync(self.context, self.request)
-            response()
-
-            # The last step is clearing fetched data from the storage to avoid
-            # increase of the memory
-            logger.info("Clearing storage data for: {} ".format(key))
-            self.request.form["import"] = False
-            self.request.form["clear_storage"] = 1
-            response = Sync(self.context, self.request)
-            response()
-
-        logger.info("**** AUTO SYNC FINISHED ****")
-        return "Done..."
-
-
-def get_annotation(portal):
-    """Annotation storage on the portal object
-    """
-    if portal is None:
-        portal = api.get_portal()
-    return IAnnotations(portal)
-
-
-def get_credentials_storage(portal):
-    """
-    Credentials for domains to be used for Auto Sync are stored in a different
-    annotation. Required parameters for each domain are following:
-        -domain_name:   Unique name for the domain,
-        -url:           URL of the remote instance,
-        -ac_username:   Username to log in the remote instance,
-        -ac_password:   Unique name for the domain,
-
-    Credentials are saved in a OOBTree with the structure as in the example:
-    E.g:
-        {
-            'server_1': {
-                        'url': 'http://localhost:8080/Plone/',
-                        'ac_username': 'lab_man',
-                        'ac_password': 'lab_man',
-                        'domain_name': 'server_1',
-                        },
-            'client_1': {
-                        'url': 'http://localhost:9090/Plone/',
-                        'ac_username': 'admin',
-                        'ac_password': 'admin',
-                        'domain_name': 'client_1',
-                        },
-        }
-
-    :param portal: Portal object.
-    :return:
-    """
-    annotation = get_annotation(portal)
-    if not annotation.get(SYNC_CREDENTIALS):
-        annotation[SYNC_CREDENTIALS] = OOBTree()
-    return annotation[SYNC_CREDENTIALS]
 
 
 class Sync(BrowserView):
@@ -311,9 +121,6 @@ class Sync(BrowserView):
             self.import_users(self.domain_name)
             self.import_registry_records(self.domain_name)
             self.import_data(self.domain_name)
-            # self.import_data(domain)
-            logger.info("*** END OF DATA IMPORT {} ***".format(
-                        self.domain_name))
             return self.template()
 
         # Handle "Clear this Storage" action
@@ -414,7 +221,47 @@ class Sync(BrowserView):
             self.add_status_message(message, "info")
             logger.info(message)
 
-    def _update_object_with_data(self, obj, data):
+    def import_data(self, domain_name):
+        """
+        For each UID from the fetched data, creates and updates objects
+        step by step.
+        :param domain_name: name of the domain to import data for
+        :return:
+        """
+        logger.info("*** IMPORT DATA STARTED FOR {} ***".format(domain_name))
+
+        self.sh = SoupHandler(domain_name)
+        self.uids_to_reindex = []
+        storage = self.get_storage(domain=domain_name)
+        ordered_uids = storage["ordered_uids"]
+
+        for r_uid in ordered_uids:
+            row = self.sh.find_unique("remote_uid", r_uid)
+            logger.info("Creating {}".format(row["path"]))
+            self._handle_obj(row)
+
+            # Handling object means there is a chunk containing several objects
+            # which have been created and updated. Reindex them now.
+            for uid in self.uids_to_reindex:
+                api.get_object_by_uid(uid).reindexObject()
+            self._non_commited_objects += len(self.uids_to_reindex)
+            self.uids_to_reindex = []
+
+            # Commit the transaction if necessary
+            if self._non_commited_objects > COMMIT_INTERVAL:
+                transaction.commit()
+                logger.info("OBJECTS IMPORTED: {} / {} ".format(
+                            self._non_commited_objects, len(ordered_uids)))
+                self._non_commited_objects = 0
+
+        # Delete the UID list from the storage.
+        storage["ordered_uids"] = []
+        # Mark all objects as non-updated for the next import.
+        self.sh.reset_updated_flags()
+
+        logger.info("*** END OF DATA IMPORT {} ***".format(domain_name))
+
+    def update_object_with_data(self, obj, data):
         """Update an existing object with data
         """
         # Proxy Fields must be set after its dependency object is already set.
@@ -541,45 +388,12 @@ class Sync(BrowserView):
             logger.error("%s: Cannot find workflow id %s" % (content, wf_id))
 
         for rh in sorted(review_history, key=lambda k: k['time']):
-            if not self.review_history_imported(content, rh, wf_def):
+            if not u.review_history_imported(content, rh, wf_def):
                 portal_workflow.setStatusOf(wf_id, content,
-                                            self.to_review_history_format(rh))
+                                            u.to_review_history_format(rh))
 
         wf_def.updateRoleMappingsFor(content)
         return
-
-    def to_review_history_format(self, review_history):
-        """
-        Format review history dictionary
-        :param review_history: Review State Dictionary
-        :return: formatted dictionary
-        """
-
-        raw = review_history.get("time")
-        if isinstance(raw, basestring):
-            parsed = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
-            review_history['time'] = DateTime(parsed)
-        return review_history
-
-    def review_history_imported(self, obj, review_history, wf_tool=None):
-        """
-        Check if review History info is already imported for given workflow.
-        :param obj: the object to be checked
-        :param review_history: Review State Dictionary
-        :param wf_tool: Objects Workflow tool. Will be set to 'portal_worklow'
-                if is None.
-        :return: formatted dictionary
-        """
-        if wf_tool is None:
-            wf_tool = api.get_tool('portal_workflow')
-
-        state = review_history.get('review_state')
-        current_rh = wf_tool.getInfoFor(obj, 'review_history', '')
-        for rh in current_rh:
-            if rh.get('review_state') == state:
-                return True
-
-        return False
 
     def translate_path(self, path):
         """Translate the physical path to a local path
@@ -644,56 +458,15 @@ class Sync(BrowserView):
                     logger.info("Skipping unnecessary portal type: {}"
                                 .format(item))
                     continue
-                data_dict = self._get_soup_format(item)
+                data_dict = u.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
-                ordered_uids.insert(0, [data_dict['remote_uid']])
+                ordered_uids.insert(0, data_dict['remote_uid'])
 
             logger.info("{} of {} pages fetched...".format(current_page,
                                                            number_of_pages))
-            transaction.savepoint(optimistic=True)
 
         transaction.commit()
         logger.info("*** FETCHING DONE ***")
-
-    def import_data(self, domain_name):
-        """
-        For each UID from the fetched data, creates and updates objects
-        step by step.
-        :param domain_name: name of the domain to import data for
-        :return:
-        """
-        logger.info("*** IMPORT DATA STARTED FOR {} ***".format(domain_name))
-
-        self.sh = SoupHandler(domain_name)
-        self.uids_to_reindex = []
-        storage = self.get_storage(domain=domain_name)
-        ordered_uids = storage["ordered_uids"]
-
-        for r_uid in ordered_uids:
-            row = self.sh.find_unique("remote_uid", r_uid)
-            logger.info("Creating {}".format(row["path"]))
-            self._handle_obj(row)
-
-            # Handling object means there is a chunk containing several objects
-            # which have been created and updated. Reindex them now.
-            for uid in self.uids_to_reindex:
-                api.get_object_by_uid(uid).reindexObject()
-            self._non_commited_objects += len(self.uids_to_reindex)
-            self.uids_to_reindex = []
-
-            # Commit the transaction if necessary
-            if self._non_commited_objects > COMMIT_INTERVAL:
-                transaction.commit()
-                logger.info("OBJECTS IMPORTED: {} / {} ".format(
-                            self._non_commited_objects, len(ordered_uids)))
-                self._non_commited_objects = 0
-
-        # Delete the UID list from the storage.
-        storage["ordered_uids"] = []
-        # Mark all objects as non-updated for the next import.
-        self.sh.reset_updated_flags()
-
-        logger.info("*** END OF DATA IMPORT {} ***".format(domain_name))
 
     def _handle_obj(self, row):
         """
@@ -716,7 +489,7 @@ class Sync(BrowserView):
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
             self._create_dependencies(obj, obj_data)
-            self._update_object_with_data(obj, obj_data)
+            self.update_object_with_data(obj, obj_data)
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
@@ -745,10 +518,10 @@ class Sync(BrowserView):
             return existing
 
         self._create_parents(path)
-        parent = self.translate_path(self._get_parent_path(path))
+        parent = self.translate_path(u.get_parent_path(path))
         container = self.portal.unrestrictedTraverse(str(parent), None)
         obj_data = {
-            "id": self._get_id_from_path(path),
+            "id": u.get_id_from_path(path),
             "portal_type": row.get("portal_type")}
         obj = self.create_object_slug(container, obj_data)
         local_uid = api.get_uid(obj)
@@ -762,7 +535,7 @@ class Sync(BrowserView):
         :param path: object path in the remote
         :return:
         """
-        p_path = self._get_parent_path(path)
+        p_path = u.get_parent_path(path)
         if p_path == "/":
             return True
 
@@ -790,10 +563,10 @@ class Sync(BrowserView):
         # already ready.
         self._create_parents(p_path)
         parent = self.sh.find_unique("path", p_path)
-        grand_parent = self.translate_path(self._get_parent_path(p_path))
+        grand_parent = self.translate_path(u.get_parent_path(p_path))
         container = self.portal.unrestrictedTraverse(str(grand_parent), None)
         parent_data = {
-            "id": self._get_id_from_path(p_path),
+            "id": u.get_id_from_path(p_path),
             "portal_type": parent.get("portal_type")}
         parent_obj = self.create_object_slug(container, parent_data)
 
@@ -801,28 +574,6 @@ class Sync(BrowserView):
         p_local_uid = api.get_uid(parent_obj)
         self.sh.update_by_path(p_path, local_uid=p_local_uid)
         return True
-
-    def _get_parent_path(self, path):
-        """
-        Gets the parent path for a given object path.
-        :param path: path of an object
-        :return: parent path of the object
-        """
-        if path == "/":
-            return "/"
-        if path.endswith("/"):
-            path = path[:-1]
-        parts = path.split("/")
-        return "/".join(parts[:-1])
-
-    def _get_id_from_path(self, path):
-        """
-        Extracts the ID from a given path.
-        :param path:
-        :return:
-        """
-        parts = path.split("/")
-        return parts[-1]
 
     def _create_dependencies(self, obj, data):
         """
@@ -860,23 +611,6 @@ class Sync(BrowserView):
                 self._handle_obj(dep_row)
 
         return True
-
-    def _get_soup_format(self, item):
-        """ From a fetched item return a dictionary prepared for being inserted
-         into the import soup. This means that the returned dictionary will only
-         contain the data fields specified in SOUPER_REQUIRED_FIELDS and
-         also that the keys of the returned dictionary will have been mapped
-         the keys that the import soup expects.
-
-        :param item: dictionary with item data as obtained from the json API
-        :type item: dict
-        :return: dictionary with the required data and expected key names
-        :rtype: dict
-        """
-        data_dict = {}
-        for key, mapped_key in SOUPER_REQUIRED_FIELDS.items():
-                data_dict[mapped_key] = item.get(key)
-        return data_dict
 
     def get_data_from_uids(self, uids=None):
         """Get the data of a list of uids
