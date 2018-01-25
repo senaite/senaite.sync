@@ -119,7 +119,7 @@ class Sync(BrowserView):
             self.password = storage["credentials"]["password"]
             self.session = self.get_session(self.username, self.password)
             self.import_users(self.domain_name)
-            self.import_registry_records(self.domain_name)
+            # self.import_registry_records(self.domain_name)
             self.import_data(self.domain_name)
             return self.template()
 
