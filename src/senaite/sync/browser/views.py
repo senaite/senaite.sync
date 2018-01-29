@@ -482,9 +482,9 @@ class Sync(BrowserView):
         """
         r_uid = row.get("remote_uid")
         try:
-            self._queue.append(r_uid)
             if row.get("updated", "0") == "1":
                 return True
+            self._queue.append(r_uid)
             obj = self._do_obj_creation(row)
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
@@ -493,6 +493,7 @@ class Sync(BrowserView):
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
+            self._queue.remove(r_uid)
             logger.error('Failed to handle: {} \n {} '.format(row, str(e)))
 
         return True
@@ -556,8 +557,9 @@ class Sync(BrowserView):
                 p_local_uid = self.sh.find_unique("path", p_path).get("local_uid",
                                                                       None)
                 if not p_local_uid:
-                    p_local_uid = api.get_uid(existing)
-                    self.sh.update_by_path(p_path, local_uid=p_local_uid)
+                    if hasattr(existing, "UID") and existing.UID():
+                        p_local_uid = existing.UID()
+                        self.sh.update_by_path(p_path, local_uid=p_local_uid)
                 return
         except TypeError, e:
             logger.warn("ERROR WHILE ACCESSING AN EXISTING OBJECT: {} "
@@ -614,11 +616,11 @@ class Sync(BrowserView):
                                         r_uid, repr(obj)))
                 continue
             if dep_row.get("updated") == "0" and r_uid not in self._queue:
-                logger.info("Resolving Dependency {} for {} ".format(
-                            dep_row, repr(obj)))
+                logger.info("Resolving Dependency of {} with {} ".format(
+                            repr(obj), dep_row))
                 self._handle_obj(dep_row)
-                logger.info("Resolved Dependency {} for {} ".format(
-                            dep_row, repr(obj)))
+                logger.info("Resolved Dependency of {} with {} ".format(
+                            repr(obj), dep_row))
 
         return True
 
