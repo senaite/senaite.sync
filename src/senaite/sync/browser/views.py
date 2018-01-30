@@ -245,6 +245,7 @@ class Sync(BrowserView):
 
             # Handling object means there is a chunk containing several objects
             # which have been created and updated. Reindex them now.
+            self.uids_to_reindex = list(set(self.uids_to_reindex))
             for uid in self.uids_to_reindex:
                 api.get_object_by_uid(uid).reindexObject()
             self._non_commited_objects += len(self.uids_to_reindex)
