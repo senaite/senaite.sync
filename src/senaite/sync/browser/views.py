@@ -350,7 +350,9 @@ class Sync(BrowserView):
         portal_type = data.get("portal_type")
         types_tool = api.get_tool("portal_types")
         fti = types_tool.getTypeInfo(portal_type)
-
+        if not fti:
+            logger.error("Type Info not found for {}".format(portal_type))
+            return None
         logger.info("Creating {} with ID {} in parent path {}".format(
             portal_type, id, api.get_path(container)))
 
@@ -486,6 +488,9 @@ class Sync(BrowserView):
                 return True
             self._queue.append(r_uid)
             obj = self._do_obj_creation(row)
+            if obj is None:
+                logger.error('Object creation failed: {}'.format(row))
+                return
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
             self._create_dependencies(obj, obj_data)
@@ -525,8 +530,9 @@ class Sync(BrowserView):
             "id": u.get_id_from_path(path),
             "portal_type": row.get("portal_type")}
         obj = self.create_object_slug(container, obj_data)
-        local_uid = api.get_uid(obj)
-        self.sh.update_by_path(path, local_uid=local_uid)
+        if obj is not None:
+            local_uid = api.get_uid(obj)
+            self.sh.update_by_path(path, local_uid=local_uid)
         return obj
 
     def _create_parents(self, path):
