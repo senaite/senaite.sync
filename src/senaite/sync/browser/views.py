@@ -621,12 +621,21 @@ class Sync(BrowserView):
                 logger.error("Reference UID {} not found for {}: ".format(
                                         r_uid, repr(obj)))
                 continue
-            if dep_row.get("updated") == "0" and r_uid not in self._queue:
-                logger.info("Resolving Dependency of {} with {} ".format(
-                            repr(obj), dep_row))
-                self._handle_obj(dep_row)
-                logger.info("Resolved Dependency of {} with {} ".format(
-                            repr(obj), dep_row))
+            # If Dependency is not being processed, handle it.
+            if r_uid not in self._queue:
+                # No need to handle already updated objects
+                if dep_row.get("updated") == "0":
+                    logger.info("Resolving Dependency of {} with {} ".format(
+                                repr(obj), dep_row))
+                    self._handle_obj(dep_row)
+                    logger.info("Resolved Dependency of {} with {} ".format(
+                                repr(obj), dep_row))
+                # Reindex dependency just in case it has a field uses
+                # BackReference of this object.
+                else:
+                    logger.info("Reindexing already updated object... {}"
+                                .format(dep_row.get("local_uid")))
+                    self.uids_to_reindex.append(dep_row.get("local_uid"))
 
         return True
 
