@@ -12,6 +12,7 @@ from BTrees.OOBTree import OOBTree
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from Products.CMFPlone.utils import _createObjectByType
+from senaite.sync.importstep import ImportStep
 from senaite.sync.syncerror import SyncError
 
 from zope.interface import implements
@@ -95,16 +96,20 @@ class Sync(BrowserView):
 
         # Handle "Import" action
         if form.get("import", False):
-            self.domain_name = form.get("domain_name", None)
+            domain_name = form.get("domain_name", None)
             # initialize the session
             storage = self.get_storage(self.domain_name)
-            self.url = storage["credentials"]["url"]
-            self.username = storage["credentials"]["username"]
-            self.password = storage["credentials"]["password"]
-            self.session = self.get_session(self.username, self.password)
-            self.import_users(self.domain_name)
-            # self.import_registry_records(self.domain_name)
-            self.import_data(self.domain_name)
+            url = storage["credentials"]["url"]
+            username = storage["credentials"]["username"]
+            password = storage["credentials"]["password"]
+            data = {
+                "url": url,
+                "domain_name": domain_name,
+                "ac_name": username,
+                "ac_password": password,
+            }
+            step = ImportStep(data)
+            step.run()
             return self.template()
 
         # Handle "Clear this Storage" action

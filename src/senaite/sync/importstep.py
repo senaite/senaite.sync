@@ -46,6 +46,7 @@ class ImportStep(SyncStep):
 
         :return:
         """
+        self.session = self.get_session()
         self._import_registry_records()
         self._import_users()
         self._import_data()
@@ -76,10 +77,10 @@ class ImportStep(SyncStep):
         logger.info("*** Registry Records Imported: {}***".format(
             self.domain_name))
 
-    def _import_users(self, domain):
+    def _import_users(self):
         """Import the users from the storage identified by domain
         """
-        logger.info("*** Importing Users: {} ***".format(domain))
+        logger.info("*** Importing Users: {} ***".format(self.domain_name))
 
         for user in self.yield_items("users"):
             username = user.get("username")
@@ -98,7 +99,7 @@ class ImportStep(SyncStep):
                                  roles=roles,)
             logger.info(message)
 
-        logger.info("*** Users Were Imported: {} ***".format(domain))
+        logger.info("*** Users Were Imported: {} ***".format(self.domain_name))
 
     def _import_data(self):
         """

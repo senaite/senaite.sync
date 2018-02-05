@@ -81,6 +81,7 @@ class FetchStep(SyncStep):
         logger.info("*** FETCHING DATA: {} ***".format(
             self.domain_name))
         storage = self.get_storage()
+        storage["ordered_uids"] = []
         ordered_uids = storage["ordered_uids"]
         self.sh = SoupHandler(self.domain_name)
         # Dummy query to get overall number of items in the specified catalog
