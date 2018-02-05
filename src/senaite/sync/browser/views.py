@@ -375,72 +375,6 @@ class Sync(BrowserView):
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
 
-    def fetch_registry_records(self, domain, keys=None):
-        """Fetch configuration registry records of interest (those associated
-        to the keywords passed) from source instance
-        """
-        logger.info("*** FETCH REGISTRY RECORDS {} ***".format(domain))
-        storage = self.get_storage(domain=domain)
-        registry_store = storage["registry"]
-        retrieved_records = {}
-
-        if keys is None:
-            retrieved_records["all"] = self.get_registry_records_by_key()
-        else:
-            for key in keys:
-                retrieved_records[key] = self.get_registry_records_by_key(key)
-
-        for key in retrieved_records.keys():
-            if not retrieved_records[key]:
-                continue
-            registry_store[key] = OOBTree()
-            for record in retrieved_records[key][0].keys():
-                registry_store[key][record] = retrieved_records[key][0][record]
-
-    def fetch_data(self, domain_name, window=1000, overlap=10):
-        """Fetch data from the uid catalog in the source URL
-
-        :param domain_name: Name of the domain to fetch data for
-        :param window: number of elements to be retrieved with each query to the catalog
-        :type window: int
-        :param overlap: overlap between windows
-        :type overlap: int
-        :return:
-        """
-        storage = self.get_storage(domain=domain_name)
-        ordered_uids = storage["ordered_uids"]
-        self.sh = SoupHandler(domain_name)
-        # Dummy query to get overall number of items in the specified catalog
-        catalog_data = self.get_json("search", catalog='uid_catalog', limit=1)
-        # Knowing the catalog length compute the number of pages we will need
-        # with the desired window size and overlap
-        effective_window = window-overlap
-        number_of_pages = (catalog_data["count"]/effective_window) + 1
-        # Retrieve data from catalog in batches with size equal to window,
-        # format it and insert it into the import soup
-        for current_page in xrange(number_of_pages):
-            start_from = (current_page * window) - overlap
-            items = self.get_items("search", catalog='uid_catalog',
-                                   limit=window, b_start=start_from)
-            if not items:
-                logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
-                    start_from, start_from+window))
-            for item in items:
-                # skip object or extract the required data for the import
-                if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
-                    logger.info("Skipping unnecessary portal type: {}"
-                                .format(item))
-                    continue
-                data_dict = u.get_soup_format(item)
-                rec_id = self.sh.insert(data_dict)
-                ordered_uids.insert(0, data_dict['remote_uid'])
-
-            logger.info("{} of {} pages fetched...".format(current_page,
-                                                           number_of_pages))
-
-        transaction.commit()
-        logger.info("*** FETCHING DONE ***")
-
     def _handle_obj(self, row):
         """
         With the given dictionary:
@@ -623,26 +557,6 @@ class Sync(BrowserView):
             uid_data = self.get_json(uid, complete=True, children=False, workflow=True)
             retrieved_data[uid] = uid_data
         return retrieved_data
-
-    def get_version(self):
-        """Return the remote JSON API version
-        """
-        return self.get_json("version")
-
-    def get_authenticated_user(self):
-        """Return the current logged in remote user
-        """
-        return self.get_first_item("users/current")
-
-    def get_registry_records_by_key(self, key=None):
-        """Return the values of the registry records
-        associated to the specified keyword in the source instance.
-        If keyword is None it returns the whole registry
-        """
-        if key is None:
-            return self.get_items("registry")
-
-        return self.get_items("registry/{}".format(key))
 
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
