@@ -10,7 +10,7 @@ from BTrees.OOBTree import OOBTree
 from zope.annotation.interfaces import IAnnotations
 from senaite import api
 from senaite.sync import logger
-from senaite.sync.browser.views import SyncError
+from senaite.sync.syncerror import SyncError
 
 SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
@@ -21,19 +21,14 @@ class SyncStep:
 
     """
 
-    def __init__(self):
+    def __init__(self, data):
         # VARIABLES TO BE USED IN FETCH AND IMPORT STEPS
-        self.domain_name = None
-        self.url = None
-        self.username = None
-        self.password = None
-        self.session = None
+
         # Soup Handler to interact with the domain's soup table
         self.sh = None
-
-    def __call__(self, data):
+        self.session = None
         self.portal = api.get_portal()
-        self.url = data.get("domain_name", None)
+        self.url = data.get("url", None)
         self.domain_name = data.get("domain_name", None)
         self.username = data.get("ac_name", None)
         self.password = data.get("ac_password", None)

@@ -12,10 +12,10 @@ from BTrees.OOBTree import OOBTree
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from Products.CMFPlone.utils import _createObjectByType
+from senaite.sync.syncerror import SyncError
 
 from zope.interface import implements
 from zope.annotation.interfaces import IAnnotations
-from zope.globalrequest import getRequest
 from zope.component import getUtility
 from zope.component.interfaces import IFactory
 
@@ -30,6 +30,7 @@ from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
 import senaite.sync.utils as u
+from senaite.sync.fetchstep import FetchStep
 
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 
@@ -38,23 +39,6 @@ SYNC_STORAGE = "senaite.sync"
 
 SKIP_PORTAL_TYPES = ["SKIP"]
 COMMIT_INTERVAL = 1000
-
-
-class SyncError(Exception):
-    """ Exception Class for Sync Errors
-    """
-
-    def __init__(self, status, message):
-        self.message = message
-        self.status = status
-        self.setStatus(status)
-
-    def setStatus(self, status):
-        request = getRequest()
-        request.response.setStatus(status)
-
-    def __str__(self):
-        return self.message
 
 
 class Sync(BrowserView):
@@ -147,37 +131,20 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
-            # initialize the session
-            self.session = self.get_session(self.username, self.password)
+            data = {
+                "url": form.get("url", None),
+                "domain_name": form.get("domain_name", None),
+                "ac_name": form.get("ac_name", None),
+                "ac_password": form.get("ac_password", None),
+            }
 
-            # remember the credentials in the storage
-            storage = self.get_storage(self.domain_name)
-            storage["credentials"]["url"] = self.url
-            storage["credentials"]["username"] = self.username
-            storage["credentials"]["password"] = self.password
-
-            # try to get the version of the remote JSON API
-            version = self.get_version()
-            if not version or not version.get('version'):
-                del self.storage[self.domain_name]
-                message = _("Please install senaite.jsonapi on the source system")
+            fs = FetchStep(data)
+            verified, message = fs.verify()
+            if verified:
+                fs.run()
+                self.add_status_message(message, "info")
+            else:
                 self.add_status_message(message, "error")
-                return self.template()
-
-            # try to get the current logged in user
-            user = self.get_authenticated_user()
-            if not user or user.get("authenticated") is False:
-                message = _("Wrong username/password")
-                self.add_status_message(message, "error")
-                return self.template()
-
-            # Start the fetch process beginning from the portal object
-            self.fetch_data(self.domain_name)
-            # Fetch registry records that contain the word bika or senaite
-            self.fetch_registry_records(self.domain_name,
-                                        keys=["bika", "senaite"])
-            logger.info("*** FETCHING DATA FINISHED {} ***".format(
-                        self.domain_name))
 
         # always render the template
         return self.template()

@@ -18,20 +18,24 @@ SKIP_PORTAL_TYPES = ["SKIP"]
 
 class FetchStep(SyncStep):
     """
-
+    Fetch step of data migration.
     """
 
     def run(self):
         """
-
         :return:
         """
+        logger.info("*** FETCH STARTED {} ***".format(
+                                                self.domain_name))
         self._fetch_registry_records(keys=["bika", "senaite"])
         self._fetch_data()
+        logger.info("*** FETCH FINISHED {} ***".format(
+                                                self.domain_name))
         return
 
     def verify(self):
         """
+        Verifies if the credentials are valid to start a new session.
         :return:
         """
         self.session = self.get_session()
@@ -74,6 +78,8 @@ class FetchStep(SyncStep):
         :type overlap: int
         :return:
         """
+        logger.info("*** FETCHING DATA: {} ***".format(
+            self.domain_name))
         storage = self.get_storage()
         ordered_uids = storage["ordered_uids"]
         self.sh = SoupHandler(self.domain_name)
@@ -102,17 +108,19 @@ class FetchStep(SyncStep):
                 rec_id = self.sh.insert(data_dict)
                 ordered_uids.insert(0, data_dict['remote_uid'])
 
-            logger.info("{} of {} pages fetched...".format(current_page,
+            logger.info("{} of {} pages fetched...".format(current_page+1,
                                                            number_of_pages))
+        logger.info("*** FETCHING DATA FINISHED: {} ***".format(
+            self.domain_name))
 
         transaction.commit()
-        logger.info("*** FETCHING DONE ***")
 
     def _fetch_registry_records(self, keys=None):
         """Fetch configuration registry records of interest (those associated
         to the keywords passed) from source instance
         """
-        logger.info("*** FETCH REGISTRY RECORDS {} ***".format())
+        logger.info("*** Fetching Registry Records: {} ***".format(
+            self.domain_name))
         storage = self.get_storage()
         registry_store = storage["registry"]
         retrieved_records = {}
@@ -129,6 +137,8 @@ class FetchStep(SyncStep):
             registry_store[key] = OOBTree()
             for record in retrieved_records[key][0].keys():
                 registry_store[key][record] = retrieved_records[key][0][record]
+        logger.info("*** Registry Records Fetched: {} ***".format(
+            self.domain_name))
 
     def _get_registry_records_by_key(self, key=None):
         """Return the values of the registry records

@@ -31,8 +31,8 @@ class ImportStep(SyncStep):
     """
     fields_to_skip = ['excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
-    def __init__(self):
-        SyncStep.__init__(self)
+    def __init__(self, data):
+        SyncStep.__init__(self, data)
         # A list to keep UID's of an object chunk
         self.uids_to_reindex = []
         # An 'infinite recursion preventative' list of objects which are
@@ -54,7 +54,8 @@ class ImportStep(SyncStep):
     def _import_registry_records(self):
         """Import the registry records from the storage identified by domain
         """
-        logger.info("***IMPORT REGISTRY RECORDS {}***".format(self.domain_name))
+        logger.info("***Importing Registry Records: {}***".format(
+            self.domain_name))
 
         storage = self.get_storage()
         registry_store = storage["registry"]
@@ -72,10 +73,13 @@ class ImportStep(SyncStep):
                     continue
                 current_registry[record] = records.get(record)
 
+        logger.info("*** Registry Records Imported: {}***".format(
+            self.domain_name))
+
     def _import_users(self, domain):
         """Import the users from the storage identified by domain
         """
-        logger.info("*** IMPORT USERS {} ***".format(domain))
+        logger.info("*** Importing Users: {} ***".format(domain))
 
         for user in self.yield_items("users"):
             username = user.get("username")
@@ -94,13 +98,15 @@ class ImportStep(SyncStep):
                                  roles=roles,)
             logger.info(message)
 
+        logger.info("*** Users Were Imported: {} ***".format(domain))
+
     def _import_data(self):
         """
         For each UID from the fetched data, creates and updates objects
         step by step.
         :return:
         """
-        logger.info("*** IMPORT DATA STARTED : {} ***".format(self.domain_name))
+        logger.info("*** IMPORT DATA STARTED: {} ***".format(self.domain_name))
 
         self.sh = SoupHandler(self.domain_name)
         self.uids_to_reindex = []
@@ -109,7 +115,7 @@ class ImportStep(SyncStep):
 
         for r_uid in ordered_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
-            logger.info("Creating {}".format(row["path"]))
+            logger.info("Handling: {} ".format(row["path"]))
             self._handle_obj(row)
 
             # Handling object means there is a chunk containing several objects
@@ -123,7 +129,7 @@ class ImportStep(SyncStep):
             # Commit the transaction if necessary
             if self._non_commited_objects > COMMIT_INTERVAL:
                 transaction.commit()
-                logger.info("OBJECTS IMPORTED: {} / {} ".format(
+                logger.info("Committed: {} / {} ".format(
                             self._non_commited_objects, len(ordered_uids)))
                 self._non_commited_objects = 0
 
@@ -132,7 +138,7 @@ class ImportStep(SyncStep):
         # Mark all objects as non-updated for the next import.
         self.sh.reset_updated_flags()
 
-        logger.info("*** END OF DATA IMPORT {} ***".format(self.domain_name))
+        logger.info("*** END OF DATA IMPORT: {} ***".format(self.domain_name))
 
     def _handle_obj(self, row):
         """
