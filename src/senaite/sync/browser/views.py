@@ -41,15 +41,6 @@ class Sync(BrowserView):
         self.username = None
         self.password = None
         self.session = None
-        # Soup Handler to interact with the domain's soup table
-        self.sh = None
-        # A list to keep UID's of an object chunk
-        self.uids_to_reindex = []
-        # An 'infinite recursion preventative' list of objects which are
-        # being updated.
-        self._queue = []
-        # An Integer to count the number of non-committed objects.
-        self._non_commited_objects = 0
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
