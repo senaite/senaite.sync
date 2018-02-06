@@ -233,5 +233,8 @@ def delete_soup(portal, domain_name):
     :return:
     """
     soup = souper_get_soup(domain_name, portal)
-    soup.clear()
+    try:
+        soup.clear()
+    except ComponentLookupError:
+        pass
     return True
