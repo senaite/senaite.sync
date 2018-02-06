@@ -20,11 +20,7 @@ from senaite.sync import _
 from senaite.sync.fetchstep import FetchStep
 from senaite.sync.souphandler import delete_soup
 
-API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
-
-SKIP_PORTAL_TYPES = ["SKIP"]
-COMMIT_INTERVAL = 1000
 
 
 class Sync(BrowserView):
@@ -33,7 +29,6 @@ class Sync(BrowserView):
     implements(ISync)
 
     template = ViewPageTemplateFile("templates/sync.pt")
-    fields_to_skip = ['excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
     def __init__(self, context, request):
         super(BrowserView, self).__init__(context, request)
@@ -106,13 +101,6 @@ class Sync(BrowserView):
             self.add_status_message(message, "info")
             return self.template()
 
-        # Handle "Clear all Storages" action
-        if form.get("clear", False):
-            self.flush_storage()
-            message = _("Cleared Data Storage")
-            self.add_status_message(message, "info")
-            return self.template()
-
         # Handle "Fetch" action
         if form.get("fetch", False):
             # check if all mandatory fields have values
@@ -173,10 +161,3 @@ class Sync(BrowserView):
         if annotation.get(SYNC_STORAGE) is None:
             annotation[SYNC_STORAGE] = OOBTree()
         return annotation[SYNC_STORAGE]
-
-    def flush_storage(self):
-        """Drop the whole storage
-        """
-        annotation = self.get_annotation()
-        if annotation.get(SYNC_STORAGE) is not None:
-            del annotation[SYNC_STORAGE]

@@ -128,12 +128,6 @@
                i18n:attributes="value"
                value="Fetch"/>
 
-        <input class="btn btn-warning btn-sm allowMultiSubmit"
-               type="submit"
-               name="clear"
-               i18n:attributes="value"
-               value="Clear all Storages"/>
-
       </form>
 
       <!-- Storage View -->
@@ -162,6 +156,7 @@
 
               <input class="btn btn-default btn-sm"
                      type="submit"
+                     onclick="return confirm('Are you sure you want to delete all the fetched data?');"
                      name="clear_storage"
                      i18n:attributes="value"
                      value="Clear this Storage"/>
