@@ -18,6 +18,7 @@ from senaite import api
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
 from senaite.sync.fetchstep import FetchStep
+from senaite.sync.souphandler import delete_soup
 
 API_BASE_URL = "API/senaite/v1"
 SYNC_STORAGE = "senaite.sync"
@@ -100,6 +101,7 @@ class Sync(BrowserView):
         if form.get("clear_storage", False):
             domain = form.get("domain_name", None)
             del self.storage[domain]
+            delete_soup(self.portal, domain)
             message = _("Cleared Storage {}".format(domain))
             self.add_status_message(message, "info")
             return self.template()

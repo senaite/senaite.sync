@@ -223,3 +223,15 @@ def record_to_dict(record):
         'portal_type': record.attrs.get('portal_type', "")
     }
     return ret
+
+
+def delete_soup(portal, domain_name):
+    """
+    Clears soup data.
+    :param portal: portal object
+    :param domain_name:
+    :return:
+    """
+    soup = souper_get_soup(domain_name, portal)
+    soup.clear()
+    return True
