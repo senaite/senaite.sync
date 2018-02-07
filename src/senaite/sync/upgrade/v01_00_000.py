@@ -6,6 +6,7 @@
 
 from Acquisition import aq_inner
 from Acquisition import aq_parent
+from zope.annotation.interfaces import IAnnotations
 
 from bika.lims.upgrade import upgradestep
 
@@ -16,4 +17,7 @@ profile = 'profile-{senaite.sync}:default'
 @upgradestep('senaite.sync', version)
 def upgrade(tool):
     portal = aq_parent(aq_inner(tool))
+    annotation = IAnnotations(portal)
+    if annotation.get("senaite.sync") is not None:
+        del annotation["senaite.sync"]
     return True
