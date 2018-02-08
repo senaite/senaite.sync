@@ -222,26 +222,23 @@ class ImportStep(SyncStep):
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
-        try:
-            existing = self.portal.unrestrictedTraverse(str(local_path), None)
-            if existing:
-                # Skip if its the portal object.
-                if len(p_path.split("/")) < 3:
-                    return
-                p_row = self.sh.find_unique("path", p_path)
-                if p_row is None:
-                    return
-                p_local_uid = self.sh.find_unique("path", p_path).get(
-                                                        "local_uid", None)
-                if not p_local_uid:
-                    if hasattr(existing, "UID") and existing.UID():
-                        p_local_uid = existing.UID()
-                        self.sh.update_by_path(p_path, local_uid=p_local_uid)
+
+        existing = self.portal.unrestrictedTraverse(str(local_path), None)
+        if existing:
+            # Skip if its the portal object.
+            if len(p_path.split("/")) < 3:
                 return
-        except TypeError, e:
-            logger.warn("ERROR WHILE ACCESSING AN EXISTING OBJECT: {} "
-                        .format(str(e)))
+            p_row = self.sh.find_unique("path", p_path)
+            if p_row is None:
+                return
+            p_local_uid = self.sh.find_unique("path", p_path).get(
+                                                    "local_uid", None)
+            if not p_local_uid:
+                if hasattr(existing, "UID") and existing.UID():
+                    p_local_uid = existing.UID()
+                    self.sh.update_by_path(p_path, local_uid=p_local_uid)
             return
+
         # Before creating an object's parent, make sure grand parents are
         # already ready.
         self._create_parents(p_path)
