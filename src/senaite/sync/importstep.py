@@ -286,27 +286,38 @@ class ImportStep(SyncStep):
 
         logger.info("Dependencies of {} are : {} ".format(repr(obj),
                                                           dependencies))
+        dependencies = list(set(dependencies))
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
-            if dep_row is None:
-                logger.error("Reference UID {} not found for {}: ".format(
-                                        r_uid, repr(obj)))
+            # Some objects may be missing in fetched table because of their
+            # unwanted portal type.
+            if self.content_types:
+                if dep_row is None:
+                    # If dependency doesn't exist in fetched data table,
+                    # just try to create its object for the first time
+                    dep_item = self.get_json(r_uid)
+                    data_dict = utils.get_soup_format(dep_item)
+                    rec_id = self.sh.insert(data_dict)
+                    dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
+                    self._do_obj_creation(dep_row)
                 continue
-            # If Dependency is not being processed, handle it.
-            if r_uid not in self._queue:
-                # No need to handle already updated objects
-                if dep_row.get("updated") == "0":
-                    logger.info("Resolving Dependency of {} with {} ".format(
-                                repr(obj), dep_row))
-                    self._handle_obj(dep_row)
-                    logger.info("Resolved Dependency of {} with {} ".format(
-                                repr(obj), dep_row))
-                # Reindex dependency just in case it has a field uses
-                # BackReference of this object.
-                else:
-                    logger.info("Reindexing already updated object... {}"
-                                .format(dep_row.get("local_uid")))
-                    self.uids_to_reindex.append(dep_row.get("local_uid"))
+
+            if dep_row is None:
+                logger.error("Remote UID not found in fetched data: {}".
+                             format(r_uid))
+                continue
+
+            # If Dependency is being processed, skip it.
+            if r_uid in self._queue:
+                continue
+
+            # No need to handle already updated objects
+            if dep_row.get("updated") == "0":
+                self._handle_obj(dep_row)
+            # Reindex dependency just in case it has a field that uses
+            # BackReference of this object.
+            else:
+                self.uids_to_reindex.append(dep_row.get("local_uid"))
 
         return True
 
