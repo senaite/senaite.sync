@@ -21,6 +21,10 @@ class FetchStep(SyncStep):
     Fetch step of data migration.
     """
 
+    def __init__(self, data):
+        SyncStep.__init__(self, data)
+        self.content_types = data.get("content_types", None)
+
     def run(self):
         """
         :return:
@@ -85,17 +89,25 @@ class FetchStep(SyncStep):
         ordered_uids = storage["ordered_uids"]
         self.sh = SoupHandler(self.domain_name)
         # Dummy query to get overall number of items in the specified catalog
-        catalog_data = self.get_json("search", catalog='uid_catalog', limit=1)
+        query = {
+            "url_or_endpoint": "search",
+            "catalog": 'uid_catalog',
+            "limit": 1
+        }
+        if self.content_types:
+            query["portal_type"] = self.content_types
+        cd = self.get_json(**query)
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
         effective_window = window-overlap
-        number_of_pages = (catalog_data["count"]/effective_window) + 1
+        number_of_pages = (cd["count"]/effective_window) + 1
         # Retrieve data from catalog in batches with size equal to window,
         # format it and insert it into the import soup
         for current_page in xrange(number_of_pages):
             start_from = (current_page * window) - overlap
-            items = self.get_items("search", catalog='uid_catalog',
-                                   limit=window, b_start=start_from)
+            query["limit"] = window
+            query["b_from"] = start_from
+            items = self.get_items(**query)
             if not items:
                 logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
                     start_from, start_from+window))
@@ -107,6 +119,7 @@ class FetchStep(SyncStep):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
+                # Insert parents too.
                 ordered_uids.insert(0, data_dict['remote_uid'])
 
             logger.info("{} of {} pages fetched...".format(current_page+1,
