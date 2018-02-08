@@ -122,6 +122,28 @@
           </div>
         </div>
 
+        <!-- Content Types -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="content_types">
+            Content Types
+            <span i18n:translate=""
+                  class="help formHelp">
+              If filled, only indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+            <input type="text"
+                   size="45"
+                   class="form-control"
+                   id="content_types"
+                   tal:attributes="value view/content_types|nothing"
+                   name="content_types"/>
+          </div>
+        </div>
+
         <input class="btn btn-success btn-sm allowMultiSubmit"
                type="submit"
                name="fetch"
