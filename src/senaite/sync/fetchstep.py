@@ -119,8 +119,8 @@ class FetchStep(SyncStep):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
-                # Insert parents too.
                 ordered_uids.insert(0, data_dict['remote_uid'])
+                self._fetch_missing_parents(item)
 
             logger.info("{} of {} pages fetched...".format(current_page+1,
                                                            number_of_pages))
@@ -163,3 +163,27 @@ class FetchStep(SyncStep):
             return self.get_items("registry")
 
         return self.get_items("registry/{}".format(key))
+
+    def _fetch_missing_parents(self, item):
+        """
+        If data was fetched with portal type filter, this method will be used
+        to fill the missing parents for fetched objects.
+        :return:
+        """
+        if not self.content_types:
+            return
+
+        parent_path = item.get("parent_path")
+        # Skip if the parent is portal object
+        if len(parent_path.split("/")) < 3:
+            return
+        # Skip if already exists
+        if self.sh.find_unique("path", parent_path):
+            return
+
+        logger.info("Inserting missing parent: {}".format(parent_path))
+        parent = self.get_first_item(item.get("parent_url"))
+        par_dict = utils.get_soup_format(parent)
+        self.sh.insert(par_dict)
+        # Recursively import grand parents too
+        self._fetch_missing_parents(parent)

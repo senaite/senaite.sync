@@ -101,7 +101,7 @@ class Sync(BrowserView):
 
             ct = form.get("content_types", None)
             if ct:
-                content_types = [t.title() for t in ct.split(",") if t]
+                content_types = [t for t in ct.split(",") if t]
             else:
                 content_types = None
             data = {

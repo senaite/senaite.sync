@@ -99,7 +99,6 @@ class SoupHandler:
         recs = [r for r in self.soup.query(Eq(column, value))]
         if recs:
             return record_to_dict(recs[0])
-        logger.error("NOT FOUND ANY RECORD: {} - {} ".format(column, value))
         return None
 
     def get_local_uid(self, r_uid):
