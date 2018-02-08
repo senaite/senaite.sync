@@ -60,15 +60,17 @@ class Sync(BrowserView):
         if form.get("import", False):
             domain_name = form.get("domain_name", None)
             # initialize the session
-            storage = self.get_storage(self.domain_name)
+            storage = self.get_storage(domain_name)
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
+            content_types = storage["credentials"]["content_types"]
             data = {
                 "url": url,
                 "domain_name": domain_name,
                 "ac_name": username,
                 "ac_password": password,
+                "content_types": content_types,
             }
             step = ImportStep(data)
             step.run()

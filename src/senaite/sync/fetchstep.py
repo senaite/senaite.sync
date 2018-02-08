@@ -21,10 +21,6 @@ class FetchStep(SyncStep):
     Fetch step of data migration.
     """
 
-    def __init__(self, data):
-        SyncStep.__init__(self, data)
-        self.content_types = data.get("content_types", None)
-
     def run(self):
         """
         :return:
@@ -60,6 +56,7 @@ class FetchStep(SyncStep):
         storage["credentials"]["url"] = self.url
         storage["credentials"]["username"] = self.username
         storage["credentials"]["password"] = self.password
+        storage["credentials"]["content_types"] = self.content_types
         message = "Fetching Data started for {}".format(self.domain_name)
         return True, message
 

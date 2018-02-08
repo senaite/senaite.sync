@@ -32,6 +32,7 @@ class SyncStep:
         self.domain_name = data.get("domain_name", None)
         self.username = data.get("ac_name", None)
         self.password = data.get("ac_password", None)
+        self.content_types = data.get("content_types", None)
 
         if not any([self.domain_name, self.url, self.username, self.password]):
             self.fail("Missing parameter in Sync Step: {}".format(data))
