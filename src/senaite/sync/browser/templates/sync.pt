@@ -30,6 +30,28 @@
         <input type="hidden" name="fetchform" value="1"/>
         <span tal:replace="structure context/@@authenticator/authenticator"/>
 
+        <!-- Domain Name -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="domain_name">
+            Domain Name
+            <span class="required"></span>
+            <span i18n:translate=""
+                  class="help formHelp">
+              Representative unique name for the source system.
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
+            <input type="text" size="30"
+                   class="form-control"
+                   id="domain_name"
+                   tal:attributes="value view/domain_name|nothing"
+                   name="domain_name"/>
+          </div>
+        </div>
+
         <!-- Base URL -->
         <div class="field form-group field">
           <label i18n:translate=""
@@ -106,12 +128,6 @@
                i18n:attributes="value"
                value="Fetch"/>
 
-        <input class="btn btn-warning btn-sm allowMultiSubmit"
-               type="submit"
-               name="clear"
-               i18n:attributes="value"
-               value="Clear all Storages"/>
-
       </form>
 
       <!-- Storage View -->
@@ -124,11 +140,11 @@
 
             <dt class="collapsibleHeader">
               Data for <span tal:replace="storage"/>
-              (<span tal:replace="python:len(view.storage[storage]['data'].keys())"/> Items)
+              (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
 
             <input type="hidden" name="dataform" value="1"/>
-            <input type="hidden" name="domain" value="" tal:attributes="value storage" />
+            <input type="hidden" name="domain_name" value="" tal:attributes="value storage" />
 
             <dd class="collapsibleContent">
 
@@ -140,103 +156,10 @@
 
               <input class="btn btn-default btn-sm"
                      type="submit"
+                     onclick="return confirm('Are you sure you want to delete all the fetched data?');"
                      name="clear_storage"
                      i18n:attributes="value"
                      value="Clear this Storage"/>
-
-              <h3>Users</h3>
-              <table class="table listing collapsibleContent">
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th>Roles</th>
-                    <th>Groups</th>
-                    <th>API URL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr tal:define="data python:view.storage[storage]['users']"
-                      tal:repeat="key python:data.keys()">
-                    <td>
-                      <span tal:content="python:data[key].get('username')"></span>
-                    </td>
-                    <td>
-                      <tal:roles repeat="role python:data[key].get('roles')">
-                        <span tal:content="role"/>&nbsp;
-                      </tal:roles>
-                    </td>
-                    <td>
-                      <tal:roles repeat="group python:data[key].get('groups')">
-                        <span tal:content="group"/>&nbsp;
-                      </tal:roles>
-                    </td>
-                    <td>
-                      <a href="#"
-                         tal:attributes="href python:data[key].get('api_url')">
-                        Link
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>Configuration registry</h3>
-              <table class="table listing collapsibleContent">
-                <thead>
-                  <tr>
-                    <th>Keyword</th>
-                    <th>Records and Values</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr tal:define="data python:view.storage[storage]['registry']"
-                      tal:repeat="key python:data.keys()">
-                    <td>
-                      <span tal:content="python:key"></span>
-                    </td>
-                    <td>
-                      <tal:values repeat="value python:data[key]">
-                        <span tal:content="value"/>&nbsp;
-                      </tal:values>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>Content</h3>
-              <table class="table listing collapsibleContent">
-                <thead>
-                  <tr>
-                    <th>UID</th>
-                    <th>ID</th>
-                    <th>Path</th>
-                    <th>URL</th>
-                    <th>API URL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr tal:define="data python:view.storage[storage]['data']"
-                      tal:repeat="key python:data.keys()">
-                    <td tal:content="key"></td>
-                    <td>
-                      <span tal:content="python:data[key].get('id')"></span>
-                    </td>
-                    <td>
-                      <span tal:content="python:data[key].get('path')"></span>
-                    </td>
-                    <td>
-                      <a href="#"
-                         tal:attributes="href python:data[key].get('url')">
-                        Link
-                      </a>
-                    </td>
-                    <td>
-                      <a href="#"
-                         tal:attributes="href python:data[key].get('api_url')">
-                        Link
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </dd>
           </dl>
         </form>
