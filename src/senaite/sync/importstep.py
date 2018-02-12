@@ -286,22 +286,27 @@ class ImportStep(SyncStep):
         dependencies = list(set(dependencies))
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
-            # Some objects may be missing in fetched table because of their
-            # unwanted portal type.
-            if self.content_types:
-                if dep_row is None:
-                    # If dependency doesn't exist in fetched data table,
-                    # just try to create its object for the first time
-                    dep_item = self.get_json(r_uid)
-                    data_dict = utils.get_soup_format(dep_item)
-                    rec_id = self.sh.insert(data_dict)
-                    dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
-                    self._do_obj_creation(dep_row)
-                continue
-
             if dep_row is None:
-                logger.error("Remote UID not found in fetched data: {}".
-                             format(r_uid))
+                # If dependency doesn't exist in fetched data table,
+                # just try to create its object for the first time
+                dep_item = self.get_json(r_uid)
+                if not dep_item:
+                    logger.error("Remote UID not found in fetched data: {}".
+                                 format(r_uid))
+                    continue
+                data_dict = utils.get_soup_format(dep_item)
+
+                # Some objects may be missing in fetched table because of their
+                # unwanted portal type. In this case we ONLY create them.
+                if self.content_types:
+                    data_dict['updated'] = '1'
+
+                rec_id = self.sh.insert(data_dict)
+                dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
+                if self.content_types:
+                    self._do_obj_creation(dep_row)
+                else:
+                    self._handle_obj(dep_row)
                 continue
 
             # If Dependency is being processed, skip it.
