@@ -370,9 +370,6 @@ class ImportStep(SyncStep):
                 proxy_fields.append({'field_name': fieldname,
                                      'fm': fm, 'value': value})
                 continue
-
-            logger.info("Setting value={} on field={} of object={}".format(
-                repr(value), fieldname, api.get_id(obj)))
             try:
                 fm.set(obj, value)
             except:
