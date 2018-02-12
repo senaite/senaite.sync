@@ -387,8 +387,6 @@ class ImportStep(SyncStep):
             field_name = pf.get("field_name")
             fm = pf.get("fm")
             value = pf.get("value")
-            logger.info("Setting value={} on field={} of object={}".format(
-                repr(value), field_name, api.get_id(obj)))
             try:
                 fm.set(obj, value)
             except:
