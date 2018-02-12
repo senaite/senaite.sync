@@ -7,6 +7,7 @@ import transaction
 
 from Products.CMFPlone.utils import _createObjectByType
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
+from senaite.jsonapi.fieldmanagers import ComputedFieldManager
 from senaite.sync.syncstep import SyncStep
 
 from zope.component import getUtility
@@ -337,6 +338,10 @@ class ImportStep(SyncStep):
 
             fm = IFieldManager(field)
             value = data.get(fieldname)
+
+            # Computed Fields don't have set methods.
+            if isinstance(fm, ComputedFieldManager):
+                continue
 
             # handle JSON data reference fields
             if isinstance(value, dict) and value.get("uid"):
