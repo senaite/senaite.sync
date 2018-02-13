@@ -113,6 +113,7 @@ class ImportStep(SyncStep):
         self.uids_to_reindex = []
         storage = self.get_storage()
         ordered_uids = storage["ordered_uids"]
+        
         for item_count, r_uid in enumerate(ordered_uids):
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("Handling: {} ".format(row["path"]))
