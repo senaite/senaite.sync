@@ -340,7 +340,10 @@ class ImportStep(SyncStep):
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
                 local_uid = self.sh.get_local_uid(value.get("uid"))
-                value = api.get_object_by_uid(local_uid)
+                if local_uid:
+                    value = api.get_object_by_uid(local_uid)
+                else:
+                    value = None
 
             elif isinstance(value, (list, tuple)):
                 for item in value:
