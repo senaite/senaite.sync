@@ -86,11 +86,11 @@ class ImportStep(SyncStep):
         for user in self.yield_items("users"):
             username = user.get("username")
             if ploneapi.user.get(username):
-                logger.info("Skipping existing user {}".format(username))
+                logger.debug("Skipping existing user {}".format(username))
                 continue
             email = user.get("email", "")
             roles = user.get("roles", ())
-            logger.info("Creating user {}".format(username))
+            logger.debug("Creating user {}".format(username))
             message = _("Created new user {} with password {}".format(
                         username, username))
             # create new user with the same password as the username
