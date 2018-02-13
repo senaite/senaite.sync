@@ -124,7 +124,15 @@ class ImportStep(SyncStep):
             # which have been created and updated. Reindex them now.
             self.uids_to_reindex = list(set(self.uids_to_reindex))
             for uid in self.uids_to_reindex:
-                api.get_object_by_uid(uid).reindexObject()
+                # It is possible that the object has a method (not a Field
+                # in its Schema) which is used as an index and it fails.
+                # TODO: Make sure reindexing won't fail!
+                try:
+                    api.get_object_by_uid(uid).reindexObject()
+                except Exception, e:
+                    rec = self.sh.find_unique("local_uid", uid)
+                    logger.error("Error while reindexing {} - {}"
+                                 .format(rec, e))
             self._non_commited_objects += len(self.uids_to_reindex)
             self.uids_to_reindex = []
 
