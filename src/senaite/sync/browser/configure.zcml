@@ -9,4 +9,18 @@
       permission="cmf.ManagePortal"
       />
 
+  <browser:page
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="do_auto_sync"
+      class=".autosync.AutoSync"
+      permission="cmf.ManagePortal"
+      />
+
+  <browser:page
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="edit_auto_sync"
+      class=".autosync.EditAutoSync"
+      permission="cmf.ManagePortal"
+      />
+
 </configure>

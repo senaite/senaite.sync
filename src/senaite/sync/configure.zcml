@@ -1,12 +1,22 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:five="http://namespaces.zope.org/five"
-    i18n_domain="senaite">
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="senaite.sync">
 
   <five:registerPackage package="." initialize=".initialize"/>
 
   <!-- include packages -->
   <include package=".browser" />
+  <include package=".upgrade"/>
+
+  <!-- Installation Profile -->
+  <genericsetup:registerProfile
+      name="default"
+      title="SENAITE SYNC"
+      directory="profiles/default"
+      description="SENAITE SYNC Extension Profile"
+      provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
   <!-- AT FIELD MANAGERS
        Field level interface to get and set values and get a JSON compatible
