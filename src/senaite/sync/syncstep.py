@@ -77,7 +77,7 @@ class SyncStep:
         """Fetch the given url or endpoint and return a parsed JSON object
         """
         api_url = self.get_api_url(url_or_endpoint, **kw)
-        logger.info("get_json::url={}".format(api_url))
+        logger.debug("get_json::url={}".format(api_url))
         try:
             response = self.session.get(api_url)
         except Exception as e:
@@ -176,7 +176,7 @@ class SyncStep:
         # Skip if already exists
         if self.sh.find_unique("path", parent_path):
             return
-        logger.info("Inserting missing parent: {}".format(parent_path))
+        logger.debug("Inserting missing parent: {}".format(parent_path))
         parent = self.get_first_item(item.get("parent_url"))
         par_dict = utils.get_soup_format(parent)
         self.sh.insert(par_dict)

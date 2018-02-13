@@ -53,7 +53,7 @@ class SoupHandler:
         :return: intid of created record
         """
         if self._already_exists(data):
-            logger.info("Trying to insert existing record... {}".format(data))
+            logger.debug("Trying to insert existing record... {}".format(data))
             return False
         record = Record()
         record.attrs['remote_uid'] = data['remote_uid']

@@ -67,7 +67,7 @@ class ImportStep(SyncStep):
         for key in registry_store.keys():
             records = registry_store[key]
             for record in records.keys():
-                logger.info("Updating record {} with value {}".format(
+                logger.debug("Updating record {} with value {}".format(
                             record, records.get(record)))
                 if record not in current_registry.records:
                     logger.warn("Current Registry has no record named {}"
@@ -98,7 +98,7 @@ class ImportStep(SyncStep):
                                  username=username,
                                  password=username,
                                  roles=roles,)
-            logger.info(message)
+            logger.debug(message)
 
         logger.info("*** Users Were Imported: {} ***".format(self.domain_name))
 
@@ -117,7 +117,7 @@ class ImportStep(SyncStep):
 
         for r_uid in ordered_uids:
             row = self.sh.find_unique("remote_uid", r_uid)
-            logger.info("Handling: {} ".format(row["path"]))
+            logger.debug("Handling: {} ".format(row["path"]))
             self._handle_obj(row)
 
             # Handling object means there is a chunk containing several objects
@@ -139,8 +139,8 @@ class ImportStep(SyncStep):
             # Commit the transaction if necessary
             if self._non_commited_objects > COMMIT_INTERVAL:
                 transaction.commit()
-                logger.info("Committed: {} / {} ".format(
-                            self._non_commited_objects, len(ordered_uids)))
+                logger.info("Committing {} objects."
+                            .format(self._non_commited_objects))
                 self._non_commited_objects = 0
 
         # Delete the UID list from the storage.
@@ -180,7 +180,7 @@ class ImportStep(SyncStep):
             self._queue.remove(r_uid)
         except Exception, e:
             self._queue.remove(r_uid)
-            logger.error('Failed to handle: {} \n {} '.format(row, str(e)))
+            logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
         return True
 
@@ -291,7 +291,7 @@ class ImportStep(SyncStep):
                             if 'uid' in k:
                                 dependencies.append(v)
 
-        logger.info("Dependencies of {} are : {} ".format(repr(obj),
+        logger.debug("Dependencies of {} are : {} ".format(repr(obj),
                                                           dependencies))
         dependencies = list(set(dependencies))
         for r_uid in dependencies:
@@ -382,7 +382,7 @@ class ImportStep(SyncStep):
             try:
                 fm.set(obj, value)
             except:
-                logger.warn(
+                logger.debug(
                     "Could not set field '{}' with value '{}'".format(
                         fieldname, value))
 
@@ -394,7 +394,7 @@ class ImportStep(SyncStep):
             try:
                 fm.set(obj, value)
             except:
-                logger.warn(
+                logger.debug(
                     "Could not set field '{}' with value '{}'".format(
                         field_name,
                         value))
@@ -419,7 +419,7 @@ class ImportStep(SyncStep):
         if not fti:
             logger.error("Type Info not found for {}".format(portal_type))
             return None
-        logger.info("Creating {} with ID {} in parent path {}".format(
+        logger.debug("Creating {} with ID {} in parent path {}".format(
             portal_type, id, api.get_path(container)))
 
         if fti.product:
@@ -455,7 +455,7 @@ class ImportStep(SyncStep):
             if wf_id == wf_def.getId():
                 break
         else:
-            logger.error("%s: Cannot find workflow id %s" % (content, wf_id))
+            logger.warn("%s: Cannot find workflow id %s" % (content, wf_id))
 
         for rh in sorted(review_history, key=lambda k: k['time']):
             if not utils.review_history_imported(content, rh, wf_def):

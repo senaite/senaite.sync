@@ -111,8 +111,8 @@ class FetchStep(SyncStep):
             for item in items:
                 # skip object or extract the required data for the import
                 if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
-                    logger.info("Skipping unnecessary portal type: {}"
-                                .format(item))
+                    logger.debug("Skipping unnecessary portal type: {}"
+                                 .format(item))
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
