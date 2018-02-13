@@ -113,6 +113,7 @@ class ImportStep(SyncStep):
         self.uids_to_reindex = []
         storage = self.get_storage()
         ordered_uids = storage["ordered_uids"]
+        total_object_count = len(ordered_uids)
         
         for item_count, r_uid in enumerate(ordered_uids):
             row = self.sh.find_unique("remote_uid", r_uid)
@@ -131,9 +132,9 @@ class ImportStep(SyncStep):
             if self._non_commited_objects > COMMIT_INTERVAL:
                 transaction.commit()
                 logger.info("Committed: {} / {} ".format(
-                            self._non_commited_objects, len(ordered_uids)))
+                            self._non_commited_objects, total_object_count))
                 self._non_commited_objects = 0
-            logger.info("Imported: {} / {}".format(item_count+1, len(ordered_uids)))
+            logger.info("Imported: {} / {}".format(item_count+1, total_object_count))
         # Delete the UID list from the storage.
         storage["ordered_uids"] = []
         # Mark all objects as non-updated for the next import.
