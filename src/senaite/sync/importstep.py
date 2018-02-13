@@ -142,7 +142,7 @@ class ImportStep(SyncStep):
 
         logger.info("*** END OF DATA IMPORT: {} ***".format(self.domain_name))
 
-    def _handle_obj(self, row):
+    def _handle_obj(self, row, handle_dependencies=True):
         """
         With the given dictionary:
             1. Creates object's slug
@@ -165,7 +165,8 @@ class ImportStep(SyncStep):
                 return
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
-            self._create_dependencies(obj, obj_data)
+            if handle_dependencies:
+                self._create_dependencies(obj, obj_data)
             self._update_object_with_data(obj, obj_data)
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
@@ -296,18 +297,10 @@ class ImportStep(SyncStep):
                                  format(r_uid))
                     continue
                 data_dict = utils.get_soup_format(dep_item)
-
-                # Some objects may be missing in fetched table because of their
-                # unwanted portal type. In this case we ONLY create them.
-                if self.content_types:
-                    data_dict['updated'] = '1'
-
                 rec_id = self.sh.insert(data_dict)
                 dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
-                if self.content_types:
-                    self._do_obj_creation(dep_row)
-                else:
-                    self._handle_obj(dep_row)
+                self._fetch_missing_parents(dep_item)
+                self._handle_obj(dep_row, handle_dependencies=False)
                 continue
 
             # If Dependency is being processed, skip it.
