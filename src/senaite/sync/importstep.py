@@ -92,7 +92,9 @@ class ImportStep(SyncStep):
         """Set settings by key
         """
         # Get the Schema interface of the settings being imported
-        ischemas = CONTROLPANEL_INTERFACE_MAPPING[key]
+        ischemas = CONTROLPANEL_INTERFACE_MAPPING.get(key)
+        if not ischemas:
+            return
         for ischema_name in data.keys():
             ischema = None
             for candidate_schema in ischemas:
