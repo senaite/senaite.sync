@@ -114,7 +114,7 @@ class ImportStep(SyncStep):
         storage = self.get_storage()
         ordered_uids = storage["ordered_uids"]
         total_object_count = len(ordered_uids)
-        
+
         for item_count, r_uid in enumerate(ordered_uids):
             row = self.sh.find_unique("remote_uid", r_uid)
             logger.info("Handling: {} ".format(row["path"]))
