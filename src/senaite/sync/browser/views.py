@@ -41,6 +41,9 @@ class Sync(BrowserView):
         self.username = None
         self.password = None
         self.session = None
+        self.import_settings = False
+        self.import_registry = False
+        self.import_users = False
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
