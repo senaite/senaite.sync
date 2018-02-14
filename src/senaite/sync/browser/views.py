@@ -101,11 +101,10 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
-            ct = form.get("content_types", None)
-            if ct:
-                content_types = [t.strip() for t in ct.split(",") if t]
-            else:
-                content_types = None
+            content_types = form.get("content_types", None)
+            if content_types is not None:
+                content_types = [t.strip() for t in content_types.split(",")
+                                 if t]
             data = {
                 "url": url,
                 "domain_name": domain_name,

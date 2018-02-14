@@ -159,4 +159,4 @@ class FetchStep(SyncStep):
         if key is None:
             return self.get_items("registry")
 
-        return self.get_items("registry/{}".format(key))
+        return self.get_items("/".join(["registry", key]))
