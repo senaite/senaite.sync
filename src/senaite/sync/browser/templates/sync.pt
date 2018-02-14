@@ -124,10 +124,6 @@
 
         <!-- Import configuration -->
         <div class="field form-group field">
-          <label i18n:translate=""
-                 class="form-control-label">
-            Import configuration
-          </label>
           <div class="panel-group">
             <div class="panel panel-default">
               <div class="panel-heading">
