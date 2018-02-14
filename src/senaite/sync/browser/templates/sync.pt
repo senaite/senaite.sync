@@ -185,6 +185,7 @@
               </ul>
             </div>
           </div>
+        </div>
 
         <input class="btn btn-success btn-sm allowMultiSubmit"
                type="submit"
