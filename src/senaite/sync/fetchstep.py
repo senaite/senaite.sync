@@ -56,7 +56,7 @@ class FetchStep(SyncStep):
         storage["credentials"]["url"] = self.url
         storage["credentials"]["username"] = self.username
         storage["credentials"]["password"] = self.password
-        storage["credentials"]["content_types"] = self.content_types
+        storage["content_types"] = self.content_types
         message = "Fetching Data started for {}".format(self.domain_name)
         return True, message
 

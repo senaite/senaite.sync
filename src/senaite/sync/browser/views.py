@@ -64,7 +64,7 @@ class Sync(BrowserView):
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
-            content_types = storage["credentials"]["content_types"]
+            content_types = storage["content_types"]
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -145,6 +145,7 @@ class Sync(BrowserView):
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
+            self.storage[domain]["content_types"] = []
         return self.storage[domain]
 
     @property
