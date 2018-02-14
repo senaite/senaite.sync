@@ -28,6 +28,7 @@ class FetchStep(SyncStep):
         logger.info("*** FETCH STARTED {} ***".format(
                                                 self.domain_name))
         self._fetch_registry_records(keys=["bika", "senaite"])
+        self._fetch_settings()
         self._fetch_data()
         logger.info("*** FETCH FINISHED {} ***".format(
                                                 self.domain_name))
@@ -115,6 +116,34 @@ class FetchStep(SyncStep):
             self.domain_name))
 
         transaction.commit()
+
+    def _fetch_settings(self, keys=None):
+        """Fetch source instance settings by keyword
+        """
+        logger.info("*** Fetching Settings: {} ***".format(self.domain_name))
+        storage = self.get_storage()
+        settings_store = storage["settings"]
+
+        if keys is None:
+            retrieved_settings = self._get_settings_by_key()
+        else:
+            retrieved_settings = []
+            for key in keys:
+                retrieved_settings += self._get_settings_by_key(key)
+
+        for setting_dict in retrieved_settings:
+            for key in setting_dict.keys():
+                if not setting_dict[key]:
+                    continue
+                settings_store[key] = setting_dict[key]
+
+    def _get_settings_by_key(self, key=None):
+        """ Return the settings from the source instance associated
+         to the keyword. If key is None it will return all the settings
+        """
+        if key is None:
+            return self.get_items("settings")
+        return self.get_items("/settings/{}".format(key))
 
     def _fetch_registry_records(self, keys=None):
         """Fetch configuration registry records of interest (those associated

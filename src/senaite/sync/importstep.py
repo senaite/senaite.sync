@@ -10,10 +10,12 @@ from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 from senaite.sync.syncstep import SyncStep
 
 from zope.component import getUtility
+from zope.component import getAdapter
 from zope.component.interfaces import IFactory
 
 from plone import api as ploneapi
 from plone.registry.interfaces import IRegistry
+import plone.app.controlpanel as cp
 
 from senaite import api
 from senaite.jsonapi.interfaces import IFieldManager
@@ -23,6 +25,29 @@ from senaite.sync.souphandler import SoupHandler
 from senaite.sync import utils
 
 COMMIT_INTERVAL = 1000
+
+CONTROLPANEL_INTERFACE_MAPPING = {
+    'mail': [cp.mail.IMailSchema],
+    'calendar': [cp.calendar.ICalendarSchema],
+    'ram': [cp.ram.IRAMCacheSchema],
+    'language': [cp.language.ILanguageSelectionSchema],
+    'editing': [cp.editing.IEditingSchema],
+    'usergroups': [cp.usergroups.IUserGroupsSettingsSchema,
+                   cp.usergroups.ISecuritySchema, ],
+    'search': [cp.search.ISearchSchema],
+    'filter': [cp.filter.IFilterAttributesSchema,
+               cp.filter.IFilterEditorSchema,
+               cp.filter.IFilterSchema,
+               cp.filter.IFilterTagsSchema],
+    'maintenance': [cp.maintenance.IMaintenanceSchema],
+    'markup': [cp.markup.IMarkupSchema,
+               cp.markup.ITextMarkupSchema,
+               cp.markup.IWikiMarkupSchema, ],
+    'navigation': [cp.navigation.INavigationSchema],
+    'security': [cp.security.ISecuritySchema],
+    'site': [cp.site.ISiteSchema],
+    'skins': [cp.skins.ISkinsSchema],
+}
 
 
 class ImportStep(SyncStep):
@@ -48,9 +73,52 @@ class ImportStep(SyncStep):
         """
         self.session = self.get_session()
         self._import_registry_records()
+        self._import_settings()
         self._import_users()
         self._import_data()
         return
+
+    def _import_settings(self):
+        """Import the settings from the storage identified by domain
+        """
+        logger.info("*** Importing Settings: {} ***".format(self.domain_name))
+
+        storage = self.get_storage()
+        settings_store = storage["settings"]
+        for key in settings_store:
+            self._set_settings(key, settings_store[key])
+
+    def _set_settings(self, key, data):
+        """Set settings by key
+        """
+        # Get the Schema interface of the settings being imported
+        ischemas = CONTROLPANEL_INTERFACE_MAPPING.get(key)
+        if not ischemas:
+            return
+        for ischema_name in data.keys():
+            ischema = None
+            for candidate_schema in ischemas:
+                if candidate_schema.getName() == ischema_name:
+                    ischema = candidate_schema
+            schema = getAdapter(api.get_portal(), ischema)
+            # Once we have the schema set the data
+            schema_import_data = data.get(ischema_name)
+            for schema_field in schema_import_data:
+                if schema_import_data[schema_field]:
+                    self._set_attr_from_json(schema, schema_field, schema_import_data[schema_field])
+
+    def _set_attr_from_json(self, schema, attribute, data):
+        """Set schema attribute from JSON data. Since JSON converts tuples to lists
+           we have to perform a preventive check before setting the value to see if the
+           expected value is a tuple or a list. In the case it is a tuple we cast the list
+           to tuple
+        """
+        if hasattr(schema, attribute) and data:
+            current_value = getattr(schema, attribute)
+            if type(current_value) == tuple:
+                setattr(schema, attribute, tuple(data))
+            else:
+                setattr(schema, attribute, data)
 
     def _import_registry_records(self):
         """Import the registry records from the storage identified by domain
