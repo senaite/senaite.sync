@@ -173,7 +173,6 @@
                         </span>
                       </label>
                       <div class="form-group input-group">
-                        <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
                         <input type="text"
                                size="45"
                                class="form-control"
