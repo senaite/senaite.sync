@@ -105,6 +105,10 @@ class Sync(BrowserView):
             if content_types is not None:
                 content_types = [t.strip() for t in content_types.split(",")
                                  if t]
+                portal_types = api.get_tool("portal_types")
+                content_types = filter(lambda ct: ct in portal_types,
+                                       content_types)
+
             data = {
                 "url": url,
                 "domain_name": domain_name,
