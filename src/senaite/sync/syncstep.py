@@ -143,7 +143,7 @@ class SyncStep:
             self.storage[domain]["credentials"] = OOBTree()
             self.storage[domain]["registry"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
-            self.storage[domain]["content_types"] = []
+            self.storage[domain]["configuration"] = OOBTree()
         return self.storage[domain]
 
     @property
