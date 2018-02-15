@@ -32,6 +32,10 @@ class SyncStep:
         self.domain_name = data.get("domain_name", None)
         self.username = data.get("ac_name", None)
         self.password = data.get("ac_password", None)
+        # Import configuration
+        self.import_settings = data.get("import_settings", False)
+        self.import_users = data.get("import_users", False)
+        self.import_registry = data.get("import_registry", False)
 
         if not any([self.domain_name, self.url, self.username, self.password]):
             self.fail("Missing parameter in Sync Step: {}".format(data))
@@ -142,6 +146,7 @@ class SyncStep:
             self.storage[domain]["registry"] = OOBTree()
             self.storage[domain]["settings"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
+            self.storage[domain]["configuration"] = OOBTree()
         return self.storage[domain]
 
     @property

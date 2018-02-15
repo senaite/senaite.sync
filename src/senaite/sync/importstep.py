@@ -84,6 +84,9 @@ class ImportStep(SyncStep):
         logger.info("*** Importing Settings: {} ***".format(self.domain_name))
 
         storage = self.get_storage()
+        if not storage["configuration"].get("import_settings", False):
+            return
+
         settings_store = storage["settings"]
         for key in settings_store:
             self._set_settings(key, settings_store[key])
@@ -127,6 +130,9 @@ class ImportStep(SyncStep):
             self.domain_name))
 
         storage = self.get_storage()
+        if not storage["configuration"].get("import_registry", False):
+            return
+
         registry_store = storage["registry"]
         current_registry = getUtility(IRegistry)
         # For each of the keywords used to retrieve registry data
@@ -149,6 +155,10 @@ class ImportStep(SyncStep):
         """Import the users from the storage identified by domain
         """
         logger.info("*** Importing Users: {} ***".format(self.domain_name))
+
+        storage = self.get_storage()
+        if not storage["configuration"].get("import_users", False):
+            return
 
         for user in self.yield_items("users"):
             username = user.get("username")

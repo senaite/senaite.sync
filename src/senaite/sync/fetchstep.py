@@ -27,8 +27,10 @@ class FetchStep(SyncStep):
         """
         logger.info("*** FETCH STARTED {} ***".format(
                                                 self.domain_name))
-        self._fetch_registry_records(keys=["bika", "senaite"])
-        self._fetch_settings()
+        if self.import_registry:
+            self._fetch_registry_records(keys=["bika", "senaite"])
+        if self.import_settings:
+            self._fetch_settings()
         self._fetch_data()
         logger.info("*** FETCH FINISHED {} ***".format(
                                                 self.domain_name))
@@ -57,6 +59,11 @@ class FetchStep(SyncStep):
         storage["credentials"]["url"] = self.url
         storage["credentials"]["username"] = self.username
         storage["credentials"]["password"] = self.password
+        # remember import configuration in the storage
+        storage["configuration"]["import_settings"] = self.import_settings
+        storage["configuration"]["import_registry"] = self.import_registry
+        storage["configuration"]["import_users"] = self.import_users
+
         message = "Fetching Data started for {}".format(self.domain_name)
         return True, message
 

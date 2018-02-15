@@ -104,11 +104,18 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
+            import_settings = True if form.get("import_settings") == 'on' else False
+            import_users = True if form.get("import_users") == 'on' else False
+            import_registry = True if form.get("import_registry") == 'on' else False
+
             data = {
                 "url": form.get("url", None),
                 "domain_name": form.get("domain_name", None),
                 "ac_name": form.get("ac_name", None),
                 "ac_password": form.get("ac_password", None),
+                "import_settings": import_settings,
+                "import_users": import_users,
+                "import_registry": import_registry,
             }
 
             fs = FetchStep(data)
@@ -144,6 +151,7 @@ class Sync(BrowserView):
             self.storage[domain]["registry"] = OOBTree()
             self.storage[domain]["settings"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
+            self.storage[domain]["configuration"] = OOBTree()
         return self.storage[domain]
 
     @property
