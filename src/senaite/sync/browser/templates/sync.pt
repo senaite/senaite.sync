@@ -205,6 +205,12 @@
               (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
 
+            <dl class="collapsible">
+              Import settings: <span tal:replace="python:view.storage[storage]['configuration'].get('import_settings')"/>,
+              Import registry: <span tal:replace="python:view.storage[storage]['configuration'].get('import_registry')"/>,
+              Import users: <span tal:replace="python:view.storage[storage]['configuration'].get('import_users')"/>
+            </dl>
+
             <input type="hidden" name="dataform" value="1"/>
             <input type="hidden" name="domain_name" value="" tal:attributes="value storage" />
 
