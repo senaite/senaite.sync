@@ -137,8 +137,7 @@
                     <div>
                       <input type="checkbox"
                              name="import_settings"
-                             id="import_settings"
-	   	                     tal:attributes="checked view/import_settings"/>
+                             id="import_settings"/>
 	     	          <label for="import_settings">Import Settings</label>
 	                </div>
                   </li>
@@ -146,8 +145,7 @@
                     <div>
                       <input type="checkbox"
                              name="import_registry"
-                             id="import_registry"
-	   	                     tal:attributes="checked view/import_registry"/>
+                             id="import_registry"/>
 	     	          <label for="import_settings">Import Registry</label>
 	                </div>
                   </li>
@@ -155,8 +153,7 @@
                     <div>
                       <input type="checkbox"
                              name="import_users"
-                             id="import_users"
-	   	                     tal:attributes="checked view/import_users"/>
+                             id="import_users"/>
 	     	          <label for="import_settings">Import Users</label>
 	                </div>
                   </li>
