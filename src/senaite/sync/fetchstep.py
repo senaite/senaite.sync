@@ -143,7 +143,7 @@ class FetchStep(SyncStep):
         """
         if key is None:
             return self.get_items("settings")
-        return self.get_items("/settings/{}".format(key))
+        return self.get_items("/".join(["settings", key]))
 
     def _fetch_registry_records(self, keys=None):
         """Fetch configuration registry records of interest (those associated
