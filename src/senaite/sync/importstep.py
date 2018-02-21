@@ -408,6 +408,7 @@ class ImportStep(SyncStep):
 
             fm = IFieldManager(field)
             value = data.get(fieldname)
+            kwargs = {}
 
             # Computed Fields don't have set methods.
             if isinstance(fm, ComputedFieldManager):
@@ -439,8 +440,8 @@ class ImportStep(SyncStep):
                     fileinfo = data.get(fieldname)
                     url = fileinfo.get("download")
                     filename = fileinfo.get("filename")
-                    data["filename"] = filename
-                    response = requests.get(url)
+                    kwargs["filename"] = filename
+                    response = self.session.get(url)
                     value = response.content
 
             # Leave the Proxy Fields for later
@@ -449,7 +450,7 @@ class ImportStep(SyncStep):
                                      'fm': fm, 'value': value})
                 continue
             try:
-                fm.set(obj, value)
+                fm.set(obj, value, **kwargs)
             except:
                 logger.debug(
                     "Could not set field '{}' with value '{}'".format(
