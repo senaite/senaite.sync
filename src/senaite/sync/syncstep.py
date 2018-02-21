@@ -57,6 +57,7 @@ class SyncStep(object):
         if path == portal_path:
             return True
 
+        # Can be portal path in remote
         parts = path.split("/")
         if len(parts) < 3:
             return True
