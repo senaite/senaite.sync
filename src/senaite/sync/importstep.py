@@ -7,6 +7,7 @@ import transaction
 
 from Products.CMFPlone.utils import _createObjectByType
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
+from senaite.jsonapi.fieldmanagers import ComputedFieldManager
 from senaite.sync.syncstep import SyncStep
 
 from zope.component import getUtility
@@ -140,7 +141,7 @@ class ImportStep(SyncStep):
         for key in registry_store.keys():
             records = registry_store[key]
             for record in records.keys():
-                logger.info("Updating record {} with value {}".format(
+                logger.debug("Updating record {} with value {}".format(
                             record, records.get(record)))
                 if record not in current_registry.records:
                     logger.warn("Current Registry has no record named {}"
@@ -163,11 +164,11 @@ class ImportStep(SyncStep):
         for user in self.yield_items("users"):
             username = user.get("username")
             if ploneapi.user.get(username):
-                logger.info("Skipping existing user {}".format(username))
+                logger.debug("Skipping existing user {}".format(username))
                 continue
             email = user.get("email", "")
             roles = user.get("roles", ())
-            logger.info("Creating user {}".format(username))
+            logger.debug("Creating user {}".format(username))
             message = _("Created new user {} with password {}".format(
                         username, username))
             # create new user with the same password as the username
@@ -175,7 +176,7 @@ class ImportStep(SyncStep):
                                  username=username,
                                  password=username,
                                  roles=roles,)
-            logger.info(message)
+            logger.debug(message)
 
         logger.info("*** Users Were Imported: {} ***".format(self.domain_name))
 
@@ -195,14 +196,22 @@ class ImportStep(SyncStep):
 
         for item_count, r_uid in enumerate(ordered_uids):
             row = self.sh.find_unique("remote_uid", r_uid)
-            logger.info("Handling: {} ".format(row["path"]))
+            logger.debug("Handling: {} ".format(row["path"]))
             self._handle_obj(row)
 
             # Handling object means there is a chunk containing several objects
             # which have been created and updated. Reindex them now.
             self.uids_to_reindex = list(set(self.uids_to_reindex))
             for uid in self.uids_to_reindex:
-                api.get_object_by_uid(uid).reindexObject()
+                # It is possible that the object has a method (not a Field
+                # in its Schema) which is used as an index and it fails.
+                # TODO: Make sure reindexing won't fail!
+                try:
+                    api.get_object_by_uid(uid).reindexObject()
+                except Exception, e:
+                    rec = self.sh.find_unique("local_uid", uid)
+                    logger.error("Error while reindexing {} - {}"
+                                 .format(rec, e))
             self._non_commited_objects += len(self.uids_to_reindex)
             self.uids_to_reindex = []
 
@@ -220,7 +229,7 @@ class ImportStep(SyncStep):
 
         logger.info("*** END OF DATA IMPORT: {} ***".format(self.domain_name))
 
-    def _handle_obj(self, row):
+    def _handle_obj(self, row, handle_dependencies=True):
         """
         With the given dictionary:
             1. Creates object's slug
@@ -243,13 +252,14 @@ class ImportStep(SyncStep):
                 return
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
-            self._create_dependencies(obj, obj_data)
+            if handle_dependencies:
+                self._create_dependencies(obj, obj_data)
             self._update_object_with_data(obj, obj_data)
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
             self._queue.remove(r_uid)
-            logger.error('Failed to handle: {} \n {} '.format(row, str(e)))
+            logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
         return True
 
@@ -301,26 +311,23 @@ class ImportStep(SyncStep):
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
-        try:
-            existing = self.portal.unrestrictedTraverse(str(local_path), None)
-            if existing:
-                # Skip if its the portal object.
-                if len(p_path.split("/")) < 3:
-                    return
-                p_row = self.sh.find_unique("path", p_path)
-                if p_row is None:
-                    return
-                p_local_uid = self.sh.find_unique("path", p_path).get(
-                                                        "local_uid", None)
-                if not p_local_uid:
-                    if hasattr(existing, "UID") and existing.UID():
-                        p_local_uid = existing.UID()
-                        self.sh.update_by_path(p_path, local_uid=p_local_uid)
+
+        existing = self.portal.unrestrictedTraverse(str(local_path), None)
+        if existing:
+            # Skip if its the portal object.
+            if len(p_path.split("/")) < 3:
                 return
-        except TypeError, e:
-            logger.warn("ERROR WHILE ACCESSING AN EXISTING OBJECT: {} "
-                        .format(str(e)))
+            p_row = self.sh.find_unique("path", p_path)
+            if p_row is None:
+                return
+            p_local_uid = self.sh.find_unique("path", p_path).get(
+                                                    "local_uid", None)
+            if not p_local_uid:
+                if hasattr(existing, "UID") and existing.UID():
+                    p_local_uid = existing.UID()
+                    self.sh.update_by_path(p_path, local_uid=p_local_uid)
             return
+
         # Before creating an object's parent, make sure grand parents are
         # already ready.
         self._create_parents(p_path)
@@ -363,29 +370,37 @@ class ImportStep(SyncStep):
                             if 'uid' in k:
                                 dependencies.append(v)
 
-        logger.info("Dependencies of {} are : {} ".format(repr(obj),
+        logger.debug("Dependencies of {} are : {} ".format(repr(obj),
                                                           dependencies))
+        dependencies = list(set(dependencies))
         for r_uid in dependencies:
             dep_row = self.sh.find_unique("remote_uid", r_uid)
             if dep_row is None:
-                logger.error("Reference UID {} not found for {}: ".format(
-                                        r_uid, repr(obj)))
+                # If dependency doesn't exist in fetched data table,
+                # just try to create its object for the first time
+                dep_item = self.get_json(r_uid)
+                if not dep_item:
+                    logger.error("Remote UID not found in fetched data: {}".
+                                 format(r_uid))
+                    continue
+                data_dict = utils.get_soup_format(dep_item)
+                rec_id = self.sh.insert(data_dict)
+                dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
+                self._fetch_missing_parents(dep_item)
+                self._handle_obj(dep_row, handle_dependencies=False)
                 continue
-            # If Dependency is not being processed, handle it.
-            if r_uid not in self._queue:
-                # No need to handle already updated objects
-                if dep_row.get("updated") == "0":
-                    logger.info("Resolving Dependency of {} with {} ".format(
-                                repr(obj), dep_row))
-                    self._handle_obj(dep_row)
-                    logger.info("Resolved Dependency of {} with {} ".format(
-                                repr(obj), dep_row))
-                # Reindex dependency just in case it has a field uses
-                # BackReference of this object.
-                else:
-                    logger.info("Reindexing already updated object... {}"
-                                .format(dep_row.get("local_uid")))
-                    self.uids_to_reindex.append(dep_row.get("local_uid"))
+
+            # If Dependency is being processed, skip it.
+            if r_uid in self._queue:
+                continue
+
+            # No need to handle already updated objects
+            if dep_row.get("updated") == "0":
+                self._handle_obj(dep_row)
+            # Reindex dependency just in case it has a field that uses
+            # BackReference of this object.
+            else:
+                self.uids_to_reindex.append(dep_row.get("local_uid"))
 
         return True
 
@@ -404,11 +419,18 @@ class ImportStep(SyncStep):
             fm = IFieldManager(field)
             value = data.get(fieldname)
 
+            # Computed Fields don't have set methods.
+            if isinstance(fm, ComputedFieldManager):
+                continue
+
             # handle JSON data reference fields
             if isinstance(value, dict) and value.get("uid"):
                 # dereference the referenced object
                 local_uid = self.sh.get_local_uid(value.get("uid"))
-                value = api.get_object_by_uid(local_uid)
+                if local_uid:
+                    value = api.get_object_by_uid(local_uid)
+                else:
+                    value = None
 
             elif isinstance(value, (list, tuple)):
                 for item in value:
@@ -436,13 +458,10 @@ class ImportStep(SyncStep):
                 proxy_fields.append({'field_name': fieldname,
                                      'fm': fm, 'value': value})
                 continue
-
-            logger.info("Setting value={} on field={} of object={}".format(
-                repr(value), fieldname, api.get_id(obj)))
             try:
                 fm.set(obj, value)
             except:
-                logger.warn(
+                logger.debug(
                     "Could not set field '{}' with value '{}'".format(
                         fieldname, value))
 
@@ -451,12 +470,10 @@ class ImportStep(SyncStep):
             field_name = pf.get("field_name")
             fm = pf.get("fm")
             value = pf.get("value")
-            logger.info("Setting value={} on field={} of object={}".format(
-                repr(value), field_name, api.get_id(obj)))
             try:
                 fm.set(obj, value)
             except:
-                logger.warn(
+                logger.debug(
                     "Could not set field '{}' with value '{}'".format(
                         field_name,
                         value))
@@ -481,7 +498,7 @@ class ImportStep(SyncStep):
         if not fti:
             logger.error("Type Info not found for {}".format(portal_type))
             return None
-        logger.info("Creating {} with ID {} in parent path {}".format(
+        logger.debug("Creating {} with ID {} in parent path {}".format(
             portal_type, id, api.get_path(container)))
 
         if fti.product:
@@ -517,7 +534,7 @@ class ImportStep(SyncStep):
             if wf_id == wf_def.getId():
                 break
         else:
-            logger.error("%s: Cannot find workflow id %s" % (content, wf_id))
+            logger.warn("%s: Cannot find workflow id %s" % (content, wf_id))
 
         for rh in sorted(review_history, key=lambda k: k['time']):
             if not utils.review_history_imported(content, rh, wf_def):

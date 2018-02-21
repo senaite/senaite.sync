@@ -10,6 +10,7 @@ from BTrees.OOBTree import OOBTree
 from zope.annotation.interfaces import IAnnotations
 from senaite import api
 from senaite.sync import logger
+from senaite.sync import utils
 from senaite.sync.syncerror import SyncError
 
 SYNC_STORAGE = "senaite.sync"
@@ -33,6 +34,7 @@ class SyncStep:
         self.username = data.get("ac_name", None)
         self.password = data.get("ac_password", None)
         # Import configuration
+        self.content_types = data.get("content_types", None)
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
         self.import_registry = data.get("import_registry", False)
@@ -79,7 +81,7 @@ class SyncStep:
         """Fetch the given url or endpoint and return a parsed JSON object
         """
         api_url = self.get_api_url(url_or_endpoint, **kw)
-        logger.info("get_json::url={}".format(api_url))
+        logger.debug("get_json::url={}".format(api_url))
         try:
             response = self.session.get(api_url)
         except Exception as e:
@@ -166,3 +168,23 @@ class SyncStep:
         annotation = self.get_annotation()
         if annotation.get(SYNC_STORAGE) is not None:
             del annotation[SYNC_STORAGE]
+
+    def _fetch_missing_parents(self, item):
+        """
+        If data was fetched with portal type filter, this method will be used
+        to fill the missing parents for fetched objects.
+        :return:
+        """
+        parent_path = item.get("parent_path")
+        # Skip if the parent is portal object
+        if len(parent_path.split("/")) < 3:
+            return
+        # Skip if already exists
+        if self.sh.find_unique("path", parent_path):
+            return
+        logger.debug("Inserting missing parent: {}".format(parent_path))
+        parent = self.get_first_item(item.get("parent_url"))
+        par_dict = utils.get_soup_format(parent)
+        self.sh.insert(par_dict)
+        # Recursively import grand parents too
+        self._fetch_missing_parents(parent)
