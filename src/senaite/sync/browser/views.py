@@ -100,6 +100,9 @@ class Sync(BrowserView):
                 self.add_status_message(message, "error")
                 return self.template()
 
+            import_settings = True if form.get("import_settings") == 'on' else False
+            import_users = True if form.get("import_users") == 'on' else False
+            import_registry = True if form.get("import_registry") == 'on' else False
             content_types = form.get("content_types", None)
             if content_types is not None:
                 content_types = [t.strip() for t in content_types.split(",")]
@@ -113,6 +116,9 @@ class Sync(BrowserView):
                 "ac_name": username,
                 "ac_password": password,
                 "content_types": content_types,
+                "import_settings": import_settings,
+                "import_users": import_users,
+                "import_registry": import_registry,
             }
 
             fs = FetchStep(data)

@@ -122,25 +122,65 @@
           </div>
         </div>
 
-        <!-- Content Types -->
+        <!-- Import configuration -->
         <div class="field form-group field">
-          <label i18n:translate=""
-                 class="form-control-label"
-                 for="content_types">
-            Content Types
-            <span i18n:translate=""
-                  class="help formHelp">
-              If filled, only indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
-            </span>
-          </label>
-          <div class="form-group input-group">
-            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-            <input type="text"
-                   size="45"
-                   class="form-control"
-                   id="content_types"
-                   tal:attributes="value view/content_types|nothing"
-                   name="content_types"/>
+          <div class="panel-group">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h4 class="panel-title">
+                 <a data-toggle="collapse" href="#collapse1">Show import configuration</a>
+               </h4>
+              </div>
+              <div id="collapse1" class="panel-collapse collapse">
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <div>
+                      <input type="checkbox"
+                             name="import_settings"
+                             id="import_settings"/>
+	     	          <label for="import_settings">Import Settings</label>
+	                </div>
+                  </li>
+                  <li class="list-group-item">
+                    <div>
+                      <input type="checkbox"
+                             name="import_registry"
+                             id="import_registry"/>
+	     	          <label for="import_settings">Import Registry</label>
+	                </div>
+                  </li>
+                  <li class="list-group-item">
+                    <div>
+                      <input type="checkbox"
+                             name="import_users"
+                             id="import_users"/>
+	     	          <label for="import_settings">Import Users</label>
+	                </div>
+                  </li>
+                  <li class="list-group-item">
+                    <!-- Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="content_types">
+                        Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          If filled, only indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="content_types"
+                               tal:attributes="value view/content_types|nothing"
+                               name="content_types"/>
+                      </div>
+                    </div>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -164,6 +204,12 @@
               Data for <span tal:replace="storage"/>
               (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
+
+            <dl class="collapsible">
+              Import settings: <span tal:replace="python:view.storage[storage]['configuration'].get('import_settings')"/>,
+              Import registry: <span tal:replace="python:view.storage[storage]['configuration'].get('import_registry')"/>,
+              Import users: <span tal:replace="python:view.storage[storage]['configuration'].get('import_users')"/>
+            </dl>
 
             <input type="hidden" name="dataform" value="1"/>
             <input type="hidden" name="domain_name" value="" tal:attributes="value storage" />
