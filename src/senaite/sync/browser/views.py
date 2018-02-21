@@ -95,16 +95,14 @@ class Sync(BrowserView):
             username = form.get("ac_name", None)
             password = form.get("ac_password", None)
             # check if all mandatory fields have values
-            if not all([domain_name, url, username,
-                        password]):
+            if not all([domain_name, url, username, password]):
                 message = _("Please fill in all required fields")
                 self.add_status_message(message, "error")
                 return self.template()
 
             content_types = form.get("content_types", None)
             if content_types is not None:
-                content_types = [t.strip() for t in content_types.split(",")
-                                 if t]
+                content_types = [t.strip() for t in content_types.split(",")]
                 portal_types = api.get_tool("portal_types")
                 content_types = filter(lambda ct: ct in portal_types,
                                        content_types)

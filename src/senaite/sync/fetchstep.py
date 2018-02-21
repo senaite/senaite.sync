@@ -18,7 +18,8 @@ SKIP_PORTAL_TYPES = ["SKIP"]
 
 class FetchStep(SyncStep):
     """
-    Fetch step of data migration.
+    Fetch step of data migration. During this step, the data must be retrieved
+    from the source and saved in 'souper' table for the domain.
     """
 
     def run(self):
