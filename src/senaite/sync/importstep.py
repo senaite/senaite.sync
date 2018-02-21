@@ -197,7 +197,8 @@ class ImportStep(SyncStep):
                 # in its Schema) which is used as an index and it fails.
                 # TODO: Make sure reindexing won't fail!
                 try:
-                    api.get_object_by_uid(uid).reindexObject()
+                    obj = api.get_object_by_uid(uid)
+                    obj.reindexObject()
                 except Exception, e:
                     rec = self.sh.find_unique("local_uid", uid)
                     logger.error("Error while reindexing {} - {}"
@@ -211,7 +212,8 @@ class ImportStep(SyncStep):
                 logger.info("Committed: {} / {} ".format(
                             self._non_commited_objects, total_object_count))
                 self._non_commited_objects = 0
-            logger.info("Imported: {} / {}".format(item_count+1, total_object_count))
+            logger.info("Imported: {} / {}".format(item_count+1,
+                                                   total_object_count))
         # Delete the UID list from the storage.
         storage["ordered_uids"] = []
         # Mark all objects as non-updated for the next import.
@@ -302,10 +304,11 @@ class ImportStep(SyncStep):
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
 
-        existing = self.portal.unrestrictedTraverse(str(local_path), None)
+        existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
+            portal_path = api.get_path(self.portal)
             # Skip if its the portal object.
-            if len(p_path.split("/")) < 3:
+            if p_path == portal_path:
                 return
             p_row = self.sh.find_unique("path", p_path)
             if p_row is None:

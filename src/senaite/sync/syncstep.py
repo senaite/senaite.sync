@@ -173,7 +173,7 @@ class SyncStep:
         """
         parent_path = item.get("parent_path")
         # Skip if the parent is portal object
-        if len(parent_path.split("/")) < 3:
+        if parent_path == api.get_path(self.portal):
             return
         # Skip if already exists
         if self.sh.find_unique("path", parent_path):
