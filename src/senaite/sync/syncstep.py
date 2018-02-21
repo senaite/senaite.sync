@@ -17,9 +17,10 @@ SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
 
 
-class SyncStep:
-    """
-
+class SyncStep(object):
+    """ Synchronization process can be done in multiple steps such as Fetch,
+    Import and etc. This is the class to be extended in 'Step Classes' which
+    contains some necessary functions.
     """
 
     def __init__(self, data):

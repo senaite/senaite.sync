@@ -52,7 +52,8 @@ CONTROLPANEL_INTERFACE_MAPPING = {
 
 
 class ImportStep(SyncStep):
-    """
+    """ Class for the Import step of the Synchronization. It must create and
+    update objects based on previously fetched data.
 
     """
     fields_to_skip = ['excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
