@@ -53,7 +53,7 @@ class SoupHandler:
         :return: intid of created record
         """
         if self._already_exists(data):
-            logger.info("Trying to insert existing record... {}".format(data))
+            logger.debug("Trying to insert existing record... {}".format(data))
             return False
         record = Record()
         record.attrs['remote_uid'] = data['remote_uid']
@@ -99,7 +99,6 @@ class SoupHandler:
         recs = [r for r in self.soup.query(Eq(column, value))]
         if recs:
             return record_to_dict(recs[0])
-        logger.error("NOT FOUND ANY RECORD: {} - {} ".format(column, value))
         return None
 
     def get_local_uid(self, r_uid):
