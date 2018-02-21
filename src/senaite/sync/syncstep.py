@@ -44,7 +44,7 @@ class SyncStep(object):
         """
         portal_id = self.portal.getId()
         remote_portal_id = path.split("/")[1]
-        return path.replace(remote_portal_id, portal_id)
+        return str(path.replace(remote_portal_id, portal_id))
 
     def is_portal_path(self, path):
         """ Check if the given path is the path of any portal object.

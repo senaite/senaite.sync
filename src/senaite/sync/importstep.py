@@ -251,6 +251,7 @@ class ImportStep(SyncStep):
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
+            import pdb; pdb.set_trace()
             self._queue.remove(r_uid)
             logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
@@ -266,8 +267,8 @@ class ImportStep(SyncStep):
         :type row: dict
         """
         path = row.get("path")
-        existing = self.portal.unrestrictedTraverse(
-                            str(self.translate_path(path)), None)
+        existing = self.portal.unrestrictedTraverse(self.translate_path(path),
+                                                    None)
         if existing:
             local_uid = self.sh.find_unique("path", path).get("local_uid",
                                                               None)
