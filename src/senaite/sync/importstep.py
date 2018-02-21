@@ -306,9 +306,8 @@ class ImportStep(SyncStep):
 
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
-            portal_path = api.get_path(self.portal)
             # Skip if its the portal object.
-            if p_path == portal_path:
+            if self.is_portal_path(p_path):
                 return
             p_row = self.sh.find_unique("path", p_path)
             if p_row is None:

@@ -45,6 +45,23 @@ class SyncStep:
         remote_portal_id = path.split("/")[1]
         return path.replace(remote_portal_id, portal_id)
 
+    def is_portal_path(self, path):
+        """ Check if the given path is the path of any portal object.
+        :return:
+        """
+        if not path:
+            return False
+
+        portal_path = api.get_path(self.portal)
+        if path == portal_path:
+            return True
+
+        parts = path.split("/")
+        if len(parts) < 3:
+            return True
+
+        return False
+
     def get_items(self, url_or_endpoint, **kw):
         """Return the 'items' list from a std. JSON API response
         """
@@ -173,7 +190,7 @@ class SyncStep:
         """
         parent_path = item.get("parent_path")
         # Skip if the parent is portal object
-        if parent_path == api.get_path(self.portal):
+        if self.is_portal_path(parent_path):
             return
         # Skip if already exists
         if self.sh.find_unique("path", parent_path):
