@@ -521,6 +521,11 @@ class ImportStep(SyncStep):
             # might be renamed
             # already by an event handler
             obj = container._getOb(obj.getId())
+
+        # Be sure that Creation Flag is Cleared.
+        if obj.checkCreationFlag():
+            obj.unmarkCreationFlag()
+
         return obj
 
     def _import_review_history(self, content, wf_id, review_history, **kw):
