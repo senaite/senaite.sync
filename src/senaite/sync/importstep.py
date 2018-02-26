@@ -342,6 +342,9 @@ class ImportStep(SyncStep):
             "id": utils.get_id_from_path(p_path),
             "portal_type": parent.get("portal_type")}
         parent_obj = self._create_object_slug(container, parent_data)
+        if parent_obj is None:
+            logger.warning("Couldn't create parent of {}".format(path))
+            return False
 
         # Parent is created, update it in the soup table.
         p_local_uid = api.get_uid(parent_obj)
