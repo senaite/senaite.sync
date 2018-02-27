@@ -390,6 +390,10 @@ class ImportStep(SyncStep):
                     logger.error("Remote UID not found in fetched data: {}".
                                  format(r_uid))
                     continue
+                if not utils.is_item_allowed(dep_item):
+                    logger.error("Skipping dependency with unknown portal type:"
+                                 " {}".format(dep_item))
+                    continue
                 data_dict = utils.get_soup_format(dep_item)
                 rec_id = self.sh.insert(data_dict)
                 dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)

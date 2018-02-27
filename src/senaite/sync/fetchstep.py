@@ -6,14 +6,13 @@ import transaction
 
 from BTrees.OOBTree import OOBTree
 
-from senaite.sync.syncstep import SyncStep
+from senaite import api
 
+from senaite.sync.syncstep import SyncStep
 from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
 from senaite.sync import utils
-
-SKIP_PORTAL_TYPES = ["SKIP"]
 
 
 class FetchStep(SyncStep):
@@ -119,8 +118,8 @@ class FetchStep(SyncStep):
                     start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
-                if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
-                    logger.debug("Skipping unnecessary portal type: {}"
+                if not utils.is_item_allowed(item):
+                    logger.debug("Skipping unnecessary/unknown portal type: {}"
                                  .format(item))
                     continue
                 data_dict = utils.get_soup_format(item)

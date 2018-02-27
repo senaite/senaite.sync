@@ -194,6 +194,9 @@ class SyncStep(object):
         to fill the missing parents for fetched objects.
         :return:
         """
+        # Never fetch parents of an unnecessary objects
+        if not utils.is_item_allowed(item):
+            return
         parent_path = item.get("parent_path")
         # Skip if the parent is portal object
         if self.is_portal_path(parent_path):
