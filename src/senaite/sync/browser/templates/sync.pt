@@ -146,7 +146,7 @@
                       <input type="checkbox"
                              name="import_registry"
                              id="import_registry"/>
-	     	          <label for="import_settings">Import Registry</label>
+	     	          <label for="import_registry">Import Registry</label>
 	                </div>
                   </li>
                   <li class="list-group-item">
@@ -154,7 +154,7 @@
                       <input type="checkbox"
                              name="import_users"
                              id="import_users"/>
-	     	          <label for="import_settings">Import Users</label>
+	     	          <label for="import_users">Import Users</label>
 	                </div>
                   </li>
                   <li class="list-group-item">
