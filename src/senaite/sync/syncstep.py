@@ -196,17 +196,17 @@ class SyncStep(object):
         """
         # Never fetch parents of an unnecessary objects
         if not utils.is_item_allowed(item):
-            return
+            return False
         parent_path = item.get("parent_path")
         # Skip if the parent is portal object
         if self.is_portal_path(parent_path):
-            return
+            return True
         # Skip if already exists
         if self.sh.find_unique("path", parent_path):
-            return
+            return True
         logger.debug("Inserting missing parent: {}".format(parent_path))
         parent = self.get_first_item(item.get("parent_url"))
         par_dict = utils.get_soup_format(parent)
         self.sh.insert(par_dict)
         # Recursively import grand parents too
-        self._fetch_missing_parents(parent)
+        return self._fetch_missing_parents(parent)
