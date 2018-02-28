@@ -321,6 +321,10 @@ class ImportStep(SyncStep):
         if p_path == "/":
             return True
 
+        # Skip if its the portal object.
+        if self.is_portal_path(p_path):
+            return True
+
         # Incoming path was remote path, translate it into local one
         local_path = self.translate_path(p_path)
 
@@ -329,9 +333,6 @@ class ImportStep(SyncStep):
 
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
-            # Skip if its the portal object.
-            if self.is_portal_path(p_path):
-                return False
             p_row = self.sh.find_unique("path", p_path)
             if p_row is None:
                 return False
