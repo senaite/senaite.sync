@@ -277,6 +277,14 @@ class ImportStep(SyncStep):
         :type row: dict
         """
         path = row.get("path")
+
+        remote_parent_path = utils.get_parent_path(path)
+        # If parent creation failed previously, do not try to create the object
+        if remote_parent_path in self.skipped:
+            logger.warning("Parent creation failed previously, skipping: {}"
+                           .format(path))
+            return None
+
         existing = self.portal.unrestrictedTraverse(self.translate_path(path),
                                                     None)
         if existing:
@@ -287,7 +295,10 @@ class ImportStep(SyncStep):
                 self.sh.update_by_path(path, local_uid=local_uid)
             return existing
 
-        self._create_parents(path)
+        if not self._create_parents(path):
+            logger.warning("Parent creation failed, skipping: {}".format(path))
+            return None
+
         parent = self.translate_path(utils.get_parent_path(path))
         container = self.portal.unrestrictedTraverse(str(parent), None)
         obj_data = {
@@ -505,10 +516,12 @@ class ImportStep(SyncStep):
         """Create an content object slug for the given data
         """
         id = data.get("id")
+        path = data.get("path")
         portal_type = data.get("portal_type")
         types_tool = api.get_tool("portal_types")
         fti = types_tool.getTypeInfo(portal_type)
         if not fti:
+            self.skipped.append(path)
             logger.error("Type Info not found for {}".format(portal_type))
             return None
         logger.debug("Creating {} with ID {} in parent path {}".format(
