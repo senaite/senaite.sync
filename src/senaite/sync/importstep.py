@@ -330,7 +330,6 @@ class ImportStep(SyncStep):
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
-
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
             p_row = self.sh.find_unique("path", p_path)
@@ -353,6 +352,7 @@ class ImportStep(SyncStep):
         container = self.portal.unrestrictedTraverse(str(grand_parent), None)
         parent_data = {
             "id": utils.get_id_from_path(p_path),
+            "path": p_path,
             "portal_type": parent.get("portal_type")}
         parent_obj = self._create_object_slug(container, parent_data)
         if parent_obj is None:
@@ -517,12 +517,12 @@ class ImportStep(SyncStep):
         """Create an content object slug for the given data
         """
         id = data.get("id")
-        path = data.get("path")
+        remote_path = data.get("path")
         portal_type = data.get("portal_type")
         types_tool = api.get_tool("portal_types")
         fti = types_tool.getTypeInfo(portal_type)
         if not fti:
-            self.skipped.append(path)
+            self.skipped.append(remote_path)
             logger.error("Type Info not found for {}".format(portal_type))
             return None
         logger.debug("Creating {} with ID {} in parent path {}".format(
