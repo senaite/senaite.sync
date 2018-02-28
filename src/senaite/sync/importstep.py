@@ -67,6 +67,7 @@ class ImportStep(SyncStep):
         self._queue = []
         # An Integer to count the number of non-committed objects.
         self._non_commited_objects = 0
+        self.skipped = []
 
     def run(self):
         """
@@ -261,7 +262,6 @@ class ImportStep(SyncStep):
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
-            import pdb; pdb.set_trace()
             self._queue.remove(r_uid)
             logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
@@ -304,7 +304,7 @@ class ImportStep(SyncStep):
         Creates all non-existing parents and updates local UIDs for the existing
         ones.
         :param path: object path in the remote
-        :return:
+        :return: True if ALL the parents were created successfully
         """
         p_path = utils.get_parent_path(path)
         if p_path == "/":
@@ -320,21 +320,22 @@ class ImportStep(SyncStep):
         if existing:
             # Skip if its the portal object.
             if self.is_portal_path(p_path):
-                return
+                return False
             p_row = self.sh.find_unique("path", p_path)
             if p_row is None:
-                return
+                return False
             p_local_uid = self.sh.find_unique("path", p_path).get(
                                                     "local_uid", None)
             if not p_local_uid:
                 if hasattr(existing, "UID") and existing.UID():
                     p_local_uid = existing.UID()
                     self.sh.update_by_path(p_path, local_uid=p_local_uid)
-            return
+            return True
 
         # Before creating an object's parent, make sure grand parents are
         # already ready.
-        self._create_parents(p_path)
+        if not self._create_parents(p_path):
+            return False
         parent = self.sh.find_unique("path", p_path)
         grand_parent = self.translate_path(utils.get_parent_path(p_path))
         container = self.portal.unrestrictedTraverse(str(grand_parent), None)
