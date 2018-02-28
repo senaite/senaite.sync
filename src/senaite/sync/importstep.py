@@ -169,6 +169,7 @@ class ImportStep(SyncStep):
                 continue
             email = user.get("email", "")
             roles = user.get("roles", ())
+            groups = user.get("groups", ())
             logger.debug("Creating user {}".format(username))
             message = _("Created new user {} with password {}".format(
                         username, username))
@@ -177,6 +178,13 @@ class ImportStep(SyncStep):
                                  username=username,
                                  password=username,
                                  roles=roles,)
+            for group in groups:
+                # Try to add the user to the group if group exists.
+                try:
+                    ploneapi.group.add_user(groupname=group, username=username)
+                except KeyError:
+                    continue
+
             logger.debug(message)
 
         logger.info("*** Users Were Imported: {} ***".format(self.domain_name))
