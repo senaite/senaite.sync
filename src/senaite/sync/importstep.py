@@ -547,7 +547,7 @@ class ImportStep(SyncStep):
             logger.warn("%s: Cannot find workflow id %s" % (content, wf_id))
 
         for rh in sorted(review_history, key=lambda k: k['time']):
-            if not utils.review_history_imported(content, rh, wf_def):
+            if not utils.is_review_history_imported(content, rh, wf_def):
                 portal_workflow.setStatusOf(wf_id, content,
                                             utils.to_review_history_format(rh))
 
