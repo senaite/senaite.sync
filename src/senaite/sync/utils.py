@@ -13,7 +13,6 @@ SOUPER_REQUIRED_FIELDS = {"uid": "remote_uid",
                           "portal_type": "portal_type"}
 
 SYNC_CREDENTIALS = "senaite.sync.credentials"
-SKIP_PORTAL_TYPES = ["SKIP"]
 
 
 def to_review_history_format(review_history):
@@ -31,16 +30,15 @@ def to_review_history_format(review_history):
 
 
 def is_item_allowed(item):
-    """
-    Check if an item can be handled based in its portal type.
-    :return:
+    """ Check if an item can be handled based on its portal type.
+    :return: True if the item can be handled
     """
     if not isinstance(item, dict):
         return False
 
     portal_types = api.get_tool("portal_types")
-    pt = item.get("portal_type", "SKIP")
-    if pt in SKIP_PORTAL_TYPES or pt not in portal_types:
+    pt = item.get("portal_type", None)
+    if pt not in portal_types:
         return False
 
     return True

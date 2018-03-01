@@ -295,7 +295,7 @@ class ImportStep(SyncStep):
                 self.sh.update_by_path(path, local_uid=local_uid)
             return existing
 
-        if not self._create_parents(path):
+        if not self._parents_created(path):
             logger.warning("Parent creation failed, skipping: {}".format(path))
             return None
 
@@ -310,10 +310,9 @@ class ImportStep(SyncStep):
             self.sh.update_by_path(path, local_uid=local_uid)
         return obj
 
-    def _create_parents(self, path):
-        """
-        Creates all non-existing parents and updates local UIDs for the existing
-        ones.
+    def _parents_created(self, path):
+        """ Check if parents have been already created and create all non-existing
+        parents and updates local UIDs for the existing ones.
         :param path: object path in the remote
         :return: True if ALL the parents were created successfully
         """
@@ -345,7 +344,7 @@ class ImportStep(SyncStep):
 
         # Before creating an object's parent, make sure grand parents are
         # already ready.
-        if not self._create_parents(p_path):
+        if not self._parents_created(p_path):
             return False
         parent = self.sh.find_unique("path", p_path)
         grand_parent = self.translate_path(utils.get_parent_path(p_path))
