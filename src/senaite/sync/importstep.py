@@ -168,6 +168,8 @@ class ImportStep(SyncStep):
                 logger.debug("Skipping existing user {}".format(username))
                 continue
             email = user.get("email", "")
+            if not email:
+                email = "example@example.com"
             roles = user.get("roles", ())
             groups = user.get("groups", ())
             logger.debug("Creating user {}".format(username))
