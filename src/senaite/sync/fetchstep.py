@@ -11,6 +11,7 @@ from senaite.sync.syncstep import SyncStep
 from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
+from senaite.sync.souphandler import REMOTE_UID
 from senaite.sync import utils
 
 SKIP_PORTAL_TYPES = ["SKIP"]
@@ -125,7 +126,7 @@ class FetchStep(SyncStep):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
-                ordered_uids.insert(0, data_dict['remote_uid'])
+                ordered_uids.insert(0, data_dict[REMOTE_UID])
                 self._fetch_missing_parents(item)
 
             logger.info("{} of {} pages fetched...".format(current_page+1,
