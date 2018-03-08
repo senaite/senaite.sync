@@ -409,7 +409,7 @@ class ImportStep(SyncStep):
                 data_dict = utils.get_soup_format(dep_item)
                 rec_id = self.sh.insert(data_dict)
                 dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
-                if self._fetch_missing_parents(dep_item):
+                if self._parents_fetched(dep_item):
                     self._handle_obj(dep_row, handle_dependencies=False)
                 continue
 

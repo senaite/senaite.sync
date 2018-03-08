@@ -188,11 +188,11 @@ class SyncStep(object):
         if annotation.get(SYNC_STORAGE) is not None:
             del annotation[SYNC_STORAGE]
 
-    def _fetch_missing_parents(self, item):
+    def _parents_fetched(self, item):
         """
         If data was fetched with portal type filter, this method will be used
         to fill the missing parents for fetched objects.
-        :return:
+        :return: True if ALL parents are fetched
         """
         # Never fetch parents of an unnecessary objects
         if not utils.is_item_allowed(item):
@@ -209,4 +209,4 @@ class SyncStep(object):
         par_dict = utils.get_soup_format(parent)
         self.sh.insert(par_dict)
         # Recursively import grand parents too
-        return self._fetch_missing_parents(parent)
+        return self._parents_fetched(parent)

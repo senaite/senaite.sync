@@ -123,7 +123,8 @@ class FetchStep(SyncStep):
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
                 ordered_uids.insert(0, data_dict['remote_uid'])
-                self._fetch_missing_parents(item)
+                if not self._parents_fetched(item):
+                    logger.warning("Some parents are missing: {} ".format(item))
 
             logger.info("{} of {} pages fetched...".format(current_page+1,
                                                            number_of_pages))
