@@ -10,27 +10,27 @@
 </div>
 
 
-Introduction
-============
+## Introduction
+===============
 
 
-Installation
-============
+## Installation
+===============
 
 
-Contribute
-==========
+## Contribute
+=============
 
 
-Feedback and support
-====================
+## Feedback and support
+=======================
 
 * [Gitter channel](https://gitter.im/senaite/Lobby)
 * [Users list](https://sourceforge.net/projects/senaite/lists/senaite-users)
 
 
-License
-=======
+## License
+==========
 
 
 
