@@ -21,6 +21,15 @@ from repoze.catalog.query import Eq
 from repoze.catalog.query import Or
 
 
+# SOUPER TABLE COLUMNS
+REMOTE_UID = 'remote_uid'
+REMOTE_PATH = 'remote_path'
+LOCAL_UID = 'local_uid'
+LOCAL_PATH = 'local_path'
+PORTAL_TYPE = 'portal_type'
+UPDATED = 'updated'
+
+
 class SoupHandler:
     """
     A basic class to interact with soup tables.
@@ -56,11 +65,11 @@ class SoupHandler:
             logger.debug("Trying to insert existing record... {}".format(data))
             return False
         record = Record()
-        record.attrs['remote_uid'] = data['remote_uid']
+        record.attrs[REMOTE_UID] = data[REMOTE_UID]
         record.attrs['path'] = data['path']
-        record.attrs['portal_type'] = data['portal_type']
-        record.attrs['local_uid'] = data.get('local_uid', "")
-        record.attrs['updated'] = data.get('updated', "0")
+        record.attrs[PORTAL_TYPE] = data[PORTAL_TYPE]
+        record.attrs[LOCAL_UID] = data.get(LOCAL_UID, "")
+        record.attrs[UPDATED] = data.get(UPDATED, "0")
         r_id = self.soup.add(record)
         logger.info("Record {} inserted: {}".format(r_id, data))
         return r_id
@@ -71,11 +80,11 @@ class SoupHandler:
         :param data: row dictionary
         :return: True or False
         """
-        r_uid = data.get("remote_uid", False) or '-1'
-        l_uid = data.get("local_uid", False) or '-1'
+        r_uid = data.get(REMOTE_UID, False) or '-1'
+        l_uid = data.get(LOCAL_UID, False) or '-1'
         path = data.get("path", False) or '-1'
-        r_uid_q = Eq('remote_uid', r_uid)
-        l_uid_q = Eq('local_uid', l_uid)
+        r_uid_q = Eq(REMOTE_UID, r_uid)
+        l_uid_q = Eq(LOCAL_UID, l_uid)
         p_q = Eq('path', path)
         ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, p_q))]
         return ret != []
@@ -107,9 +116,9 @@ class SoupHandler:
         :param r_uid: remote uid of the row
         :return: local uid from the row
         """
-        recs = [r for r in self.soup.query(Eq("remote_uid", r_uid))]
+        recs = [r for r in self.soup.query(Eq(REMOTE_UID, r_uid))]
         if recs and len(recs) == 1:
-            return record_to_dict(recs[0])["local_uid"]
+            return record_to_dict(recs[0])[LOCAL_UID]
         return None
 
     def update_by_remote_uid(self, remote_uid, **kwargs):
@@ -118,7 +127,7 @@ class SoupHandler:
         :param remote_uid: UID of the object in the source
         :param kwargs: columns and their values to be updated.
         """
-        recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
+        recs = [r for r in self.soup.query(Eq(REMOTE_UID, remote_uid))]
         if not recs:
             logger.error("Could not find any record with remote_uid: '{}'"
                          .format(remote_uid))
@@ -148,12 +157,12 @@ class SoupHandler:
         """
         Marks that record's object has been updated.
         """
-        recs = [r for r in self.soup.query(Eq('remote_uid', remote_uid))]
+        recs = [r for r in self.soup.query(Eq(REMOTE_UID, remote_uid))]
         if not recs:
             logger.error("Could not find any record with remote_uid: '{}'"
                          .format(remote_uid))
             return False
-        recs[0].attrs["updated"] = "1"
+        recs[0].attrs[UPDATED] = "1"
         self.soup.reindex([recs[0]])
         return True
 
@@ -164,7 +173,7 @@ class SoupHandler:
         """
         for intid in self.soup.data:
             rec = self.soup.get(intid)
-            rec.attrs["updated"] = "0"
+            rec.attrs[UPDATED] = "0"
             self.soup.reindex(rec)
         return True
 
@@ -177,11 +186,11 @@ class SoupHandler:
         class DomainSoupCatalogFactory(object):
             def __call__(self, context=None):
                 catalog = Catalog()
-                r_uid_indexer = NodeAttributeIndexer('remote_uid')
+                r_uid_indexer = NodeAttributeIndexer(REMOTE_UID)
                 catalog[u'remote_uid'] = CatalogFieldIndex(r_uid_indexer)
                 path_indexer = NodeAttributeIndexer('path')
                 catalog[u'path'] = CatalogFieldIndex(path_indexer)
-                l_uid_indexer = NodeAttributeIndexer('local_uid')
+                l_uid_indexer = NodeAttributeIndexer(LOCAL_UID)
                 catalog[u'local_uid'] = CatalogFieldIndex(l_uid_indexer)
                 return catalog
 
@@ -215,11 +224,11 @@ def record_to_dict(record):
     """
     ret = {
         'rec_int_id': record.intid,
-        'remote_uid': record.attrs.get('remote_uid', ""),
-        'local_uid': record.attrs.get('local_uid', ""),
+        REMOTE_UID: record.attrs.get(REMOTE_UID, ""),
+        LOCAL_UID: record.attrs.get(LOCAL_UID, ""),
         'path': record.attrs.get('path', ""),
-        'updated': record.attrs.get('updated', "0"),
-        'portal_type': record.attrs.get('portal_type', "")
+        UPDATED: record.attrs.get(UPDATED, "0"),
+        PORTAL_TYPE: record.attrs.get(PORTAL_TYPE, "")
     }
     return ret
 
