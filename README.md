@@ -8,3 +8,29 @@
   <p>Synchronization Solution to migrate data between two SENAITE instances</p>
 
 </div>
+
+
+Introduction
+============
+
+
+Installation
+============
+
+
+Contribute
+==========
+
+
+Feedback and support
+====================
+
+* `Gitter channel <https://gitter.im/senaite/Lobby>`_
+* `Users list <https://sourceforge.net/projects/senaite/lists/senaite-users>`_
+
+
+License
+=======
+
+
+
