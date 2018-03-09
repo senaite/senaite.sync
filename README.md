@@ -25,8 +25,8 @@ Contribute
 Feedback and support
 ====================
 
-* `Gitter channel <https://gitter.im/senaite/Lobby>`_
-* `Users list <https://sourceforge.net/projects/senaite/lists/senaite-users>`_
+* [Gitter channel](https://gitter.im/senaite/Lobby)
+* [Users list](https://sourceforge.net/projects/senaite/lists/senaite-users)
 
 
 License
