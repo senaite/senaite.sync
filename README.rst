@@ -1,17 +1,14 @@
-<div align="center">
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/logo.png
+   :height: 64x
+   :alt: senaite.core
+   :align: center
 
-  <a href="https://github.com/senaite/senaite.ci">
-    <img src="static/logo.png" alt="SENAITE" height="64" />
-  </a>
-  <h1>SENAITE SYNC</h1>
-
-  <p>Synchronization Solution to migrate data between two SENAITE instances</p>
-
-</div>
-
+— **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
 
 Introduction
 ============
+
+SENAITE.SYNC is a Synchronization Solution to migrate data between two SENAITE instances.
 
 
 Installation
