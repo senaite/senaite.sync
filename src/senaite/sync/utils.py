@@ -133,3 +133,21 @@ def get_credentials_storage(portal):
     if not annotation.get(SYNC_CREDENTIALS):
         annotation[SYNC_CREDENTIALS] = OOBTree()
     return annotation[SYNC_CREDENTIALS]
+
+
+def get_estimated_end_date(self, started, processed, total):
+    """Returns the estimated date when the process will finish
+    :param started: time when the process started
+    :param processed: number of current
+    :param total: total number of items to process
+    :return: datetime object or None
+    """
+    remaining_items = total-processed
+    if remaining_items <= 0:
+        return None
+    current_time = datetime.now()
+    elapsed_time = current_time - started
+    if elapsed_time.total_seconds() <= 0:
+        return None
+    remaining_time = remaining_items * elapsed_time / processed
+    return current_time + remaining_time
