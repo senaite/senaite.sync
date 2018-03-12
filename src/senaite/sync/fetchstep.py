@@ -6,8 +6,9 @@ import transaction
 
 from BTrees.OOBTree import OOBTree
 
-from senaite import api
+from datetime import datetime
 
+from senaite import api
 from senaite.sync.syncstep import SyncStep
 from senaite.sync import logger
 from senaite.sync import _
@@ -90,6 +91,7 @@ class FetchStep(SyncStep):
         """
         logger.info("*** FETCHING DATA: {} ***".format(
             self.domain_name))
+        start_time = datetime.now()
         storage = self.get_storage()
         storage["ordered_uids"] = []
         ordered_uids = storage["ordered_uids"]
@@ -127,8 +129,9 @@ class FetchStep(SyncStep):
                 if not self._parents_fetched(item):
                     logger.warning("Some parents are missing: {} ".format(item))
 
-            logger.info("{} of {} pages fetched...".format(current_page+1,
-                                                           number_of_pages))
+            utils.log_process(task_name="Pages fetched", started=start_time,
+                              processed=current_page+1, total=number_of_pages)
+
         logger.info("*** FETCHING DATA FINISHED: {} ***".format(
             self.domain_name))
 
