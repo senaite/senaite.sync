@@ -136,7 +136,7 @@ def get_credentials_storage(portal):
     return annotation[SYNC_CREDENTIALS]
 
 
-def log_process(self, task_name, started, processed, total, frequency=1):
+def log_process(task_name, started, processed, total, frequency=1):
     """Logs the current status of the process
     :param task_name: name of the task
     :param started: datetime when the process started
