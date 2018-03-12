@@ -4,6 +4,7 @@ from BTrees.OOBTree import OOBTree
 from zope.annotation.interfaces import IAnnotations
 
 from senaite import api
+from senaite.sync import logger
 from DateTime import DateTime
 from datetime import datetime
 
@@ -135,11 +136,34 @@ def get_credentials_storage(portal):
     return annotation[SYNC_CREDENTIALS]
 
 
-def get_estimated_end_date(self, started, processed, total):
+def log_process(self, task_name, started, processed, total, frequency=1):
+    """Logs the current status of the process
+    :param task_name: name of the task
+    :param started: datetime when the process started
+    :param processed: number of processed items
+    :param total: total number of items to be processed
+    :param frequency: number of items to be processed before logging more
+    :return:
+    """
+    if frequency <= 0 or processed % frequency > 0 or total <= 0:
+        return
+
+    percentage = "0.0"
+    if processed > 0:
+        percentage = "{0:.1f}".format(processed * 100.0 / total)
+
+    estimated = get_estimated_end_date(started, processed, total)
+    estimated = estimated and estimated.strftime("%Y-%m-%d %H:%M:%S") or "-"
+    msg = "{}: {} / {} ({}%) - ETD: {}".format(task_name, processed, total,
+                                               percentage, estimated)
+    logger.info(msg)
+
+
+def get_estimated_end_date(started, processed, total):
     """Returns the estimated date when the process will finish
-    :param started: time when the process started
-    :param processed: number of current
-    :param total: total number of items to process
+    :param started: datetime when the process started
+    :param processed: number of processed items
+    :param total: total number of items to be processed
     :return: datetime object or None
     """
     remaining_items = total-processed

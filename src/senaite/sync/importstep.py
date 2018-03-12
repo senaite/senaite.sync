@@ -235,13 +235,10 @@ class ImportStep(SyncStep):
                             self._non_commited_objects, total_object_count))
                 self._non_commited_objects = 0
 
-            item_count = item_index+1
-            perc = "{0:.1f}".format(item_count*100.0/total_object_count)
-            estim = utils.get_estimated_end_date(start_time, item_count,
-                                                     total_object_count)
-            estim = estim and estim.strftime("%Y-%m-%d %H:%M:%S") or "-"
-            msg = "Imported: {} / {} ({}%) - ETD: {}"
-            logger.info(msg.format(item_count, total_object_count, perc, estim))
+            # Log.info every 50 objects imported
+            utils.log_process(task_name="Data Import", started=start_time,
+                              processed=item_index+1, total=total_object_count,
+                              frequency=50)
 
         # Delete the UID list from the storage.
         storage["ordered_uids"] = []
