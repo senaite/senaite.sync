@@ -86,22 +86,23 @@ def get_soup_format(item):
     return data_dict
 
 
-def review_history_imported(obj, review_history, wf_tool=None):
+def is_review_history_imported(obj, review_history, wf_tool=None):
     """
     Check if review History info is already imported for given workflow.
     :param obj: the object to be checked
     :param review_history: Review State Dictionary
     :param wf_tool: Objects Workflow tool. Will be set to 'portal_worklow'
             if is None.
-    :return: formatted dictionary
+    :return: True if the state was found in the current review history
     """
     if wf_tool is None:
         wf_tool = api.get_tool('portal_workflow')
 
-    state = review_history.get('review_state')
+    state_variable = wf_tool.variables.getStateVar()
+    state = review_history.get(state_variable)
     current_rh = wf_tool.getInfoFor(obj, 'review_history', '')
     for rh in current_rh:
-        if rh.get('review_state') == state:
+        if rh.get(state_variable) == state:
             return True
 
     return False

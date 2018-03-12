@@ -12,6 +12,7 @@ from senaite.sync.syncstep import SyncStep
 from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
+from senaite.sync.souphandler import REMOTE_UID
 from senaite.sync import utils
 
 
@@ -122,7 +123,7 @@ class FetchStep(SyncStep):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
-                ordered_uids.insert(0, data_dict['remote_uid'])
+                ordered_uids.insert(0, data_dict[REMOTE_UID])
                 if not self._parents_fetched(item):
                     logger.warning("Some parents are missing: {} ".format(item))
 

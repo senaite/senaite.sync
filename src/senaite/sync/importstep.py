@@ -23,6 +23,7 @@ from senaite.jsonapi.interfaces import IFieldManager
 from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
+from senaite.sync.souphandler import REMOTE_UID, LOCAL_UID, PORTAL_TYPE
 from senaite.sync import utils
 
 COMMIT_INTERVAL = 1000
@@ -170,6 +171,7 @@ class ImportStep(SyncStep):
                 continue
             email = user.get("email", "")
             roles = user.get("roles", ())
+            groups = user.get("groups", ())
             logger.debug("Creating user {}".format(username))
             message = _("Created new user {} with password {}".format(
                         username, username))
@@ -178,6 +180,13 @@ class ImportStep(SyncStep):
                                  username=username,
                                  password=username,
                                  roles=roles,)
+            for group in groups:
+                # Try to add the user to the group if group exists.
+                try:
+                    ploneapi.group.add_user(groupname=group, username=username)
+                except KeyError:
+                    continue
+
             logger.debug(message)
 
         logger.info("*** Users Were Imported: {} ***".format(self.domain_name))
@@ -197,7 +206,7 @@ class ImportStep(SyncStep):
         total_object_count = len(ordered_uids)
 
         for item_count, r_uid in enumerate(ordered_uids):
-            row = self.sh.find_unique("remote_uid", r_uid)
+            row = self.sh.find_unique(REMOTE_UID, r_uid)
             logger.debug("Handling: {} ".format(row["path"]))
             self._handle_obj(row)
 
@@ -212,7 +221,7 @@ class ImportStep(SyncStep):
                     obj = api.get_object_by_uid(uid)
                     obj.reindexObject()
                 except Exception, e:
-                    rec = self.sh.find_unique("local_uid", uid)
+                    rec = self.sh.find_unique(LOCAL_UID, uid)
                     logger.error("Error while reindexing {} - {}"
                                  .format(rec, e))
             self._non_commited_objects += len(self.uids_to_reindex)
@@ -245,7 +254,7 @@ class ImportStep(SyncStep):
         :param row: A row dictionary from the souper
         :type row: dict
         """
-        r_uid = row.get("remote_uid")
+        r_uid = row.get(REMOTE_UID)
         try:
             if row.get("updated", "0") == "1":
                 return True
@@ -288,7 +297,7 @@ class ImportStep(SyncStep):
         existing = self.portal.unrestrictedTraverse(self.translate_path(path),
                                                     None)
         if existing:
-            local_uid = self.sh.find_unique("path", path).get("local_uid",
+            local_uid = self.sh.find_unique("path", path).get(LOCAL_UID,
                                                               None)
             if not local_uid:
                 local_uid = api.get_uid(existing)
@@ -303,7 +312,7 @@ class ImportStep(SyncStep):
         container = self.portal.unrestrictedTraverse(str(parent), None)
         obj_data = {
             "id": utils.get_id_from_path(path),
-            "portal_type": row.get("portal_type")}
+            "portal_type": row.get(PORTAL_TYPE)}
         obj = self._create_object_slug(container, obj_data)
         if obj is not None:
             local_uid = api.get_uid(obj)
@@ -335,7 +344,7 @@ class ImportStep(SyncStep):
             if p_row is None:
                 return False
             p_local_uid = self.sh.find_unique("path", p_path).get(
-                                                    "local_uid", None)
+                                                    LOCAL_UID, None)
             if not p_local_uid:
                 if hasattr(existing, "UID") and existing.UID():
                     p_local_uid = existing.UID()
@@ -352,7 +361,7 @@ class ImportStep(SyncStep):
         parent_data = {
             "id": utils.get_id_from_path(p_path),
             "path": p_path,
-            "portal_type": parent.get("portal_type")}
+            "portal_type": parent.get(PORTAL_TYPE)}
         parent_obj = self._create_object_slug(container, parent_data)
         if parent_obj is None:
             logger.warning("Couldn't create parent of {}".format(path))
@@ -393,7 +402,7 @@ class ImportStep(SyncStep):
                                                           dependencies))
         dependencies = list(set(dependencies))
         for r_uid in dependencies:
-            dep_row = self.sh.find_unique("remote_uid", r_uid)
+            dep_row = self.sh.find_unique(REMOTE_UID, r_uid)
             if dep_row is None:
                 # If dependency doesn't exist in fetched data table,
                 # just try to create its object for the first time
@@ -423,7 +432,7 @@ class ImportStep(SyncStep):
             # Reindex dependency just in case it has a field that uses
             # BackReference of this object.
             else:
-                self.uids_to_reindex.append(dep_row.get("local_uid"))
+                self.uids_to_reindex.append(dep_row.get(LOCAL_UID))
 
         return True
 
@@ -568,7 +577,7 @@ class ImportStep(SyncStep):
             logger.warn("%s: Cannot find workflow id %s" % (content, wf_id))
 
         for rh in sorted(review_history, key=lambda k: k['time']):
-            if not utils.review_history_imported(content, rh, wf_def):
+            if not utils.is_review_history_imported(content, rh, wf_def):
                 portal_workflow.setStatusOf(wf_id, content,
                                             utils.to_review_history_format(rh))
 
