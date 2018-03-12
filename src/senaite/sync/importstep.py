@@ -6,6 +6,7 @@ import requests
 import transaction
 
 from Products.CMFPlone.utils import _createObjectByType
+from datetime import datetime
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 from senaite.jsonapi.fieldmanagers import ComputedFieldManager
 from senaite.sync.syncstep import SyncStep
@@ -203,8 +204,9 @@ class ImportStep(SyncStep):
         storage = self.get_storage()
         ordered_uids = storage["ordered_uids"]
         total_object_count = len(ordered_uids)
+        start_time = datetime.now()
 
-        for item_count, r_uid in enumerate(ordered_uids):
+        for item_index, r_uid in enumerate(ordered_uids):
             row = self.sh.find_unique(REMOTE_UID, r_uid)
             logger.debug("Handling: {} ".format(row["path"]))
             self._handle_obj(row)
@@ -232,8 +234,12 @@ class ImportStep(SyncStep):
                 logger.info("Committed: {} / {} ".format(
                             self._non_commited_objects, total_object_count))
                 self._non_commited_objects = 0
-            logger.info("Imported: {} / {}".format(item_count+1,
-                                                   total_object_count))
+
+            # Log.info every 50 objects imported
+            utils.log_process(task_name="Data Import", started=start_time,
+                              processed=item_index+1, total=total_object_count,
+                              frequency=50)
+
         # Delete the UID list from the storage.
         storage["ordered_uids"] = []
         # Mark all objects as non-updated for the next import.
