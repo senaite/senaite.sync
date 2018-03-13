@@ -606,15 +606,16 @@ class ImportStep(SyncStep):
         query = AdvancedQuery.Eq('Title', '') & ~ AdvancedQuery.Eq(
                                                     'portal_type', 'Reference')
         brains = uc.evalAdvancedQuery(query)
-
-        for brain in brains:
+        total = len(brains)
+        logger.info('*** Recovering {} objects ***'.format(total))
+        for idx, brain in enumerate(brains):
             # Check if object has been created during migration
             uid = brain.UID
             existing = self.sh.find_unique(LOCAL_UID, uid)
             if existing is None:
                 continue
-            logger.info("Handling non-updated object: {} ".format(
-                            existing["path"]))
+            logger.info('Recovering {0}/{1} : {2} '.format(
+                                                idx+1, total, existing["path"]))
             # Mark that update failed previously
             existing['updated'] = '0'
             self._handle_obj(existing, handle_dependencies=False)
