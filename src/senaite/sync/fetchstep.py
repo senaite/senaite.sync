@@ -5,16 +5,16 @@
 import transaction
 
 from BTrees.OOBTree import OOBTree
-from datetime import datetime
-from senaite.sync.syncstep import SyncStep
 
+from datetime import datetime
+
+from senaite import api
+from senaite.sync.syncstep import SyncStep
 from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
 from senaite.sync.souphandler import REMOTE_UID
 from senaite.sync import utils
-
-SKIP_PORTAL_TYPES = ["SKIP"]
 
 
 class FetchStep(SyncStep):
@@ -121,14 +121,13 @@ class FetchStep(SyncStep):
                     start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
-                if item.get("portal_type", "SKIP") in SKIP_PORTAL_TYPES:
-                    logger.debug("Skipping unnecessary portal type: {}"
-                                 .format(item))
+                if not item or not item.get("portal_type", True):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
                 ordered_uids.insert(0, data_dict[REMOTE_UID])
-                self._fetch_missing_parents(item)
+                if not self._parents_fetched(item):
+                    logger.warning("Some parents are missing: {} ".format(item))
 
             utils.log_process(task_name="Pages fetched", started=start_time,
                               processed=current_page+1, total=number_of_pages)

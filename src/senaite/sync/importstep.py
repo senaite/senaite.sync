@@ -69,6 +69,7 @@ class ImportStep(SyncStep):
         self._queue = []
         # An Integer to count the number of non-committed objects.
         self._non_commited_objects = 0
+        self.skipped = []
 
     def run(self):
         """
@@ -278,7 +279,6 @@ class ImportStep(SyncStep):
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
-            import pdb; pdb.set_trace()
             self._queue.remove(r_uid)
             logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
@@ -294,6 +294,14 @@ class ImportStep(SyncStep):
         :type row: dict
         """
         path = row.get("path")
+
+        remote_parent_path = utils.get_parent_path(path)
+        # If parent creation failed previously, do not try to create the object
+        if remote_parent_path in self.skipped:
+            logger.warning("Parent creation failed previously, skipping: {}"
+                           .format(path))
+            return None
+
         existing = self.portal.unrestrictedTraverse(self.translate_path(path),
                                                     None)
         if existing:
@@ -304,7 +312,10 @@ class ImportStep(SyncStep):
                 self.sh.update_by_path(path, local_uid=local_uid)
             return existing
 
-        self._create_parents(path)
+        if not self._parents_created(path):
+            logger.warning("Parent creation failed, skipping: {}".format(path))
+            return None
+
         parent = self.translate_path(utils.get_parent_path(path))
         container = self.portal.unrestrictedTraverse(str(parent), None)
         obj_data = {
@@ -316,15 +327,18 @@ class ImportStep(SyncStep):
             self.sh.update_by_path(path, local_uid=local_uid)
         return obj
 
-    def _create_parents(self, path):
-        """
-        Creates all non-existing parents and updates local UIDs for the existing
-        ones.
+    def _parents_created(self, path):
+        """ Check if parents have been already created and create all non-existing
+        parents and updates local UIDs for the existing ones.
         :param path: object path in the remote
-        :return:
+        :return: True if ALL the parents were created successfully
         """
         p_path = utils.get_parent_path(path)
         if p_path == "/":
+            return True
+
+        # Skip if its the portal object.
+        if self.is_portal_path(p_path):
             return True
 
         # Incoming path was remote path, translate it into local one
@@ -332,33 +346,34 @@ class ImportStep(SyncStep):
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
-
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
-            # Skip if its the portal object.
-            if self.is_portal_path(p_path):
-                return
             p_row = self.sh.find_unique("path", p_path)
             if p_row is None:
-                return
+                return False
             p_local_uid = self.sh.find_unique("path", p_path).get(
                                                     LOCAL_UID, None)
             if not p_local_uid:
                 if hasattr(existing, "UID") and existing.UID():
                     p_local_uid = existing.UID()
                     self.sh.update_by_path(p_path, local_uid=p_local_uid)
-            return
+            return True
 
         # Before creating an object's parent, make sure grand parents are
         # already ready.
-        self._create_parents(p_path)
+        if not self._parents_created(p_path):
+            return False
         parent = self.sh.find_unique("path", p_path)
         grand_parent = self.translate_path(utils.get_parent_path(p_path))
         container = self.portal.unrestrictedTraverse(str(grand_parent), None)
         parent_data = {
             "id": utils.get_id_from_path(p_path),
+            "path": p_path,
             "portal_type": parent.get(PORTAL_TYPE)}
         parent_obj = self._create_object_slug(container, parent_data)
+        if parent_obj is None:
+            logger.warning("Couldn't create parent of {}".format(path))
+            return False
 
         # Parent is created, update it in the soup table.
         p_local_uid = api.get_uid(parent_obj)
@@ -404,11 +419,15 @@ class ImportStep(SyncStep):
                     logger.error("Remote UID not found in fetched data: {}".
                                  format(r_uid))
                     continue
+                if not utils.is_item_allowed(dep_item):
+                    logger.error("Skipping dependency with unknown portal type:"
+                                 " {}".format(dep_item))
+                    continue
                 data_dict = utils.get_soup_format(dep_item)
                 rec_id = self.sh.insert(data_dict)
                 dep_row = self.sh.get_record_by_id(rec_id, as_dict=True)
-                self._fetch_missing_parents(dep_item)
-                self._handle_obj(dep_row, handle_dependencies=False)
+                if self._parents_fetched(dep_item):
+                    self._handle_obj(dep_row, handle_dependencies=False)
                 continue
 
             # If Dependency is being processed, skip it.
@@ -514,10 +533,12 @@ class ImportStep(SyncStep):
         """Create an content object slug for the given data
         """
         id = data.get("id")
+        remote_path = data.get("path")
         portal_type = data.get("portal_type")
         types_tool = api.get_tool("portal_types")
         fti = types_tool.getTypeInfo(portal_type)
         if not fti:
+            self.skipped.append(remote_path)
             logger.error("Type Info not found for {}".format(portal_type))
             return None
         logger.debug("Creating {} with ID {} in parent path {}".format(
