@@ -6,7 +6,7 @@ import requests
 import transaction
 
 from Products.CMFPlone.utils import _createObjectByType
-from Products import AdvancedQuery
+from Products.AdvancedQuery import Eq
 from datetime import datetime
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 from senaite.jsonapi.fieldmanagers import ComputedFieldManager
@@ -603,8 +603,8 @@ class ImportStep(SyncStep):
         """
         uc = api.get_tool('uid_catalog', self.portal)
         # Reference objects must be skipped
-        query = AdvancedQuery.Eq('Title', '') & ~ AdvancedQuery.Eq(
-                                                    'portal_type', 'Reference')
+        query = Eq('Title', '') & ~ Eq('portal_type', 'Reference') & ~ \
+            Eq('portal_type', 'ARReport')
         brains = uc.evalAdvancedQuery(query)
         total = len(brains)
         logger.info('*** Recovering {} objects ***'.format(total))
