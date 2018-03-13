@@ -619,4 +619,6 @@ class ImportStep(SyncStep):
             # Mark that update failed previously
             existing['updated'] = '0'
             self._handle_obj(existing, handle_dependencies=False)
+            obj = brain.getObject()
+            obj.reindexObject()
         return
