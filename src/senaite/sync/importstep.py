@@ -6,6 +6,7 @@ import requests
 import transaction
 
 from Products.CMFPlone.utils import _createObjectByType
+from Products import AdvancedQuery
 from datetime import datetime
 from senaite.jsonapi.fieldmanagers import ProxyFieldManager
 from senaite.jsonapi.fieldmanagers import ComputedFieldManager
@@ -245,6 +246,9 @@ class ImportStep(SyncStep):
 
         # Delete the UID list from the storage.
         storage["ordered_uids"] = []
+
+        self._recover_failed_objects()
+
         # Mark all objects as non-updated for the next import.
         self.sh.reset_updated_flags()
 
@@ -590,4 +594,28 @@ class ImportStep(SyncStep):
                                             utils.to_review_history_format(rh))
 
         wf_def.updateRoleMappingsFor(content)
+        return
+
+    def _recover_failed_objects(self):
+        """ Checks for non-updated objects (by filtering null Title) and
+        re-updates them.
+        :return:
+        """
+        uc = api.get_tool('uid_catalog', self.portal)
+        # Reference objects must be skipped
+        query = AdvancedQuery.Eq('Title', '') & ~ AdvancedQuery.Eq(
+                                                    'portal_type', 'Reference')
+        brains = uc.evalAdvancedQuery(query)
+
+        for brain in brains:
+            # Check if object has been created during migration
+            uid = brain.UID
+            existing = self.sh.find_unique(LOCAL_UID, uid)
+            if existing is None:
+                continue
+            logger.info("Handling non-updated object: {} ".format(
+                            existing["path"]))
+            # Mark that update failed previously
+            existing['updated'] = '0'
+            self._handle_obj(existing, handle_dependencies=False)
         return
