@@ -66,6 +66,7 @@ class FetchStep(SyncStep):
         storage["configuration"]["import_settings"] = self.import_settings
         storage["configuration"]["import_registry"] = self.import_registry
         storage["configuration"]["import_users"] = self.import_users
+        storage["last_fetch_time"] = datetime.now()
 
         message = "Fetching Data started for {}".format(self.domain_name)
         return True, message

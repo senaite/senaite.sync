@@ -2,11 +2,12 @@
 #
 # Copyright 2017-2017 SENAITE LIMS.
 
-
+from datetime import datetime
 from BTrees.OOBTree import OOBTree
 
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from senaite.sync.complementstep import ComplementStep
 from senaite.sync.importstep import ImportStep
 
 from zope.interface import implements
@@ -73,6 +74,33 @@ class Sync(BrowserView):
                 "content_types": content_types,
             }
             step = ImportStep(data)
+            step.run()
+            return self.template()
+
+        # Handle "Complement" action
+        if form.get("complement", False):
+            domain_name = form.get("domain_name", None)
+            storage = self.get_storage(domain_name)
+            fetch_time = storage.get("last_fetch_time", None)
+            if not isinstance(fetch_time, datetime):
+                message = 'Cannot get last fetched time, please re-run the ' \
+                          'Fetch step.'
+                self.add_status_message(message, "error")
+                return self.template()
+
+            url = storage["credentials"]["url"]
+            username = storage["credentials"]["username"]
+            password = storage["credentials"]["password"]
+            content_types = storage["configuration"].get("content_types", None)
+            data = {
+                "url": url,
+                "domain_name": domain_name,
+                "ac_name": username,
+                "ac_password": password,
+                "fetch_time": fetch_time,
+                "content_types": content_types,
+            }
+            step = ComplementStep(data)
             step.run()
             return self.template()
 
