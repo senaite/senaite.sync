@@ -2,7 +2,7 @@
 #
 # Copyright 2017-2017 SENAITE LIMS.
 
-from datetime import datetime
+from DateTime import DateTime
 from BTrees.OOBTree import OOBTree
 
 from Products.Five import BrowserView
@@ -82,7 +82,7 @@ class Sync(BrowserView):
             domain_name = form.get("domain_name", None)
             storage = self.get_storage(domain_name)
             fetch_time = storage.get("last_fetch_time", None)
-            if not isinstance(fetch_time, datetime):
+            if not isinstance(fetch_time, DateTime):
                 message = 'Cannot get last fetched time, please re-run the ' \
                           'Fetch step.'
                 self.add_status_message(message, "error")
