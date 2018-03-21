@@ -6,6 +6,8 @@ import urllib
 import urlparse
 import requests
 
+from DateTime import DateTime
+
 from BTrees.OOBTree import OOBTree
 from zope.annotation.interfaces import IAnnotations
 from senaite import api
@@ -168,6 +170,7 @@ class SyncStep(object):
             self.storage[domain]["settings"] = OOBTree()
             self.storage[domain]["ordered_uids"] = []
             self.storage[domain]["configuration"] = OOBTree()
+            self.storage[domain]["last_fetch_time"] = DateTime()
         return self.storage[domain]
 
     @property
