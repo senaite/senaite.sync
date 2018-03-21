@@ -205,18 +205,15 @@
               Data for <span tal:replace="storage"/>
               (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
-
-            <dl class="collapsible">
-              Import settings: <span tal:replace="python:view.storage[storage]['configuration'].get('import_settings')"/>,
-              Import registry: <span tal:replace="python:view.storage[storage]['configuration'].get('import_registry')"/>,
-              Import users: <span tal:replace="python:view.storage[storage]['configuration'].get('import_users')"/>
-            </dl>
-
             <input type="hidden" name="dataform" value="1"/>
             <input type="hidden" name="domain_name" value="" tal:attributes="value storage" />
 
             <dd class="collapsibleContent">
-
+              <div>
+                  Import settings: <span tal:replace="python:view.storage[storage]['configuration'].get('import_settings')"/>
+                  Import registry: <span tal:replace="python:view.storage[storage]['configuration'].get('import_registry')"/>
+                  Import users: <span tal:replace="python:view.storage[storage]['configuration'].get('import_users')"/>
+              </div><br>
               <input class="btn btn-default btn-sm"
                      type="submit"
                      name="import"
@@ -225,16 +222,42 @@
 
               <input class="btn btn-default btn-sm"
                      type="submit"
-                     name="complement"
-                     i18n:attributes="value"
-                     value="Complement"/>
-
-              <input class="btn btn-default btn-sm"
-                     type="submit"
                      onclick="return confirm('Are you sure you want to delete all the fetched data?');"
                      name="clear_storage"
                      i18n:attributes="value"
                      value="Clear this Storage"/>
+              <div>
+                  <dl class="collapsible">
+                      <dt class="collapsibleHeader">
+                          Complement Step
+                      </dt>
+                      <dd class="collapsibleContent">
+                          <div class="field form-group field">
+                              <label i18n:translate=""
+                                     class="form-control-label"
+                                     for="mod_date_limit">
+                                Modification Date Limit
+                                <span i18n:translate=""
+                                      class="help formHelp">
+                                  If filled, complement step will run for the objects created/modified after this time.
+                                </span>
+                              </label>
+                              <div class="form-group input-group">
+                                <input type="text"
+                                       size="25"
+                                       class="form-control"
+                                       id="mod_date_limit"
+                                       name="mod_date_limit"/>
+                                </div>
+                          </div>
+                          <input class="btn btn-default btn-sm"
+                                 type="submit"
+                                 name="complement"
+                                 i18n:attributes="value"
+                                 value="Complement"/>
+                      </dd>
+                  </dl>
+              </div>
             </dd>
           </dl>
         </form>

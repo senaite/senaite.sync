@@ -81,12 +81,23 @@ class Sync(BrowserView):
         if form.get("complement", False):
             domain_name = form.get("domain_name", None)
             storage = self.get_storage(domain_name)
-            fetch_time = storage.get("last_fetch_time", None)
-            if not isinstance(fetch_time, DateTime):
-                message = 'Cannot get last fetched time, please re-run the ' \
-                          'Fetch step.'
+
+            fetch_time = form.get("mod_date_limit", None) or \
+                storage.get("last_fetch_time", None)
+
+            if not fetch_time:
+                message = 'Cannot get last fetched time, please re-run ' \
+                          'the Fetch step.'
                 self.add_status_message(message, "error")
                 return self.template()
+
+            if isinstance(fetch_time, str):
+                try:
+                    fetch_time = DateTime(fetch_time)
+                except:
+                    message = 'Please enter a valid Date & Time'
+                    self.add_status_message(message, "error")
+                    return self.template()
 
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
