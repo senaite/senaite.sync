@@ -84,13 +84,11 @@ class Sync(BrowserView):
 
             fetch_time = form.get("mod_date_limit", None) or \
                 storage.get("last_fetch_time", None)
-
             if not fetch_time:
                 message = 'Cannot get last fetched time, please re-run ' \
                           'the Fetch step.'
                 self.add_status_message(message, "error")
                 return self.template()
-
             if isinstance(fetch_time, str):
                 try:
                     fetch_time = DateTime(fetch_time)
