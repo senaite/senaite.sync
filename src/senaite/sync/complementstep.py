@@ -77,32 +77,29 @@ class ComplementStep(ImportStep):
         for item_index, r_uid in enumerate(self.uids):
             row = self.sh.find_unique(REMOTE_UID, r_uid)
             logger.debug("Handling: {} ".format(row["path"]))
-            self._handle_obj(row, handle_dependencies=False)
-
-            # Handling object means there is a chunk containing several objects
-            # which have been created and updated. Reindex them now.
-            self.uids_to_reindex = list(set(self.uids_to_reindex))
-            for uid in self.uids_to_reindex:
-                try:
-                    obj = api.get_object_by_uid(uid)
-                    obj.reindexObject()
-                except Exception, e:
-                    rec = self.sh.find_unique(LOCAL_UID, uid)
-                    logger.error("Error while reindexing {} - {}"
-                                 .format(rec, e))
-            self.uids_to_reindex = []
+            self._handle_obj(row)
 
             # Log.info every 50 objects imported
             utils.log_process(task_name="Complement Step", started=start_time,
                               processed=item_index+1, total=total_object_count,
                               frequency=50)
 
-        # Delete the UID list from the storage.
-        storage["ordered_uids"] = []
+        self.uids_to_reindex = list(set(self.uids_to_reindex))
+        logger.info("Reindexing {} objects...".format(
+                    len(self.uids_to_reindex)))
+        for uid in self.uids_to_reindex:
+            try:
+                obj = api.get_object_by_uid(uid)
+                obj.reindexObject()
+            except Exception, e:
+                rec = self.sh.find_unique(LOCAL_UID, uid)
+                logger.error("Error while reindexing {} - {}"
+                             .format(rec, e))
+        self.uids_to_reindex = []
 
         # Mark all objects as non-updated for the next import.
         self.sh.reset_updated_flags()
-
+        logger.info("*** IMPORT DATA FINISHED: {} ***".format(self.domain_name))
         return
 
     def _yield_items(self, url_or_endpoint, **kw):
