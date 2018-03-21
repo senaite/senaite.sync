@@ -35,33 +35,25 @@ class ComplementStep(ImportStep):
         logger.info("*** FETCHING DATA: {} ***".format(
             self.domain_name))
 
-        self.ordered_uids = []
+        self.uids = []
         self.sh = SoupHandler(self.domain_name)
-        # Dummy query to get overall number of items in the specified catalog
         query = {
             "url_or_endpoint": "search",
             "catalog": 'uid_catalog',
             "b_start": 0,
             "complete": "yes",
-            "limit": 10
+            "limit": 500
         }
         if self.content_types:
             query["portal_type"] = self.content_types
-        # cd = self.get_json(**query)
-        # total = cd['count']
-        # b_start = total - 10
-        # query["b_start"] = b_start
-        # query["complete"] = 'yes'
-        # query["limit"] = 10
-        items = self._yield_items(self.fetch_time, **query)
-
+        items = self._yield_items(**query)
         for item in items:
             # skip object or extract the required data for the import
             if not item or not item.get("portal_type", True):
                 continue
             data_dict = utils.get_soup_format(item)
             rec_id = self.sh.insert(data_dict)
-            self.ordered_uids.insert(0, data_dict[REMOTE_UID])
+            self.uids.insert(0, data_dict[REMOTE_UID])
 
         return
 
@@ -76,10 +68,10 @@ class ComplementStep(ImportStep):
         self.sh = SoupHandler(self.domain_name)
         self.uids_to_reindex = []
         storage = self.get_storage()
-        total_object_count = len(self.ordered_uids)
+        total_object_count = len(self.uids)
         start_time = datetime.now()
 
-        for item_index, r_uid in enumerate(self.ordered_uids):
+        for item_index, r_uid in enumerate(self.uids):
             row = self.sh.find_unique(REMOTE_UID, r_uid)
             logger.debug("Handling: {} ".format(row["path"]))
             self._handle_obj(row, handle_dependencies=False)
@@ -98,7 +90,7 @@ class ComplementStep(ImportStep):
             self.uids_to_reindex = []
 
             # Log.info every 50 objects imported
-            utils.log_process(task_name="Data Import", started=start_time,
+            utils.log_process(task_name="Data Complement", started=start_time,
                               processed=item_index+1, total=total_object_count,
                               frequency=50)
 
@@ -110,23 +102,22 @@ class ComplementStep(ImportStep):
 
         return
 
-    def _yield_items(self, modified_date_limit, url_or_endpoint, **kw):
+    def _yield_items(self, url_or_endpoint, **kw):
         """Yield items of all pages
         """
         data = self.get_json(url_or_endpoint, **kw)
-        enough = False
         for item in data.get("items", []):
             if not item:
                 continue
-            modified = DateTime(item.get('modified'))
-            if modified > modified_date_limit:
-                enough = True
-                continue
-            else:
+            modified = DateTime(item.get('modification_date'))
+            if modified > self.fetch_time:
                 yield item
 
-        if not enough:
-            next_url = data.get("next")
-            if next_url:
-                for item in self.yield_items(next_url, **kw):
+        next_url = data.get("next")
+        if next_url:
+            for item in self.yield_items(next_url, **kw):
+                if not item:
+                    continue
+                modified = DateTime(item.get('modification_date'))
+                if modified > self.fetch_time:
                     yield item
