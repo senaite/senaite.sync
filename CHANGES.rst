@@ -26,6 +26,7 @@ Changelog
 
 **Fixed**
 
+- #35 Bug- Complement Step yields all the items
 - #29 User creation when user email is empty
 - #28 Created users not being added to user groups
 - #27 Worksheet's analysis workflow state not being updated properly
