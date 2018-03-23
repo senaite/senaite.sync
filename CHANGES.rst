@@ -15,6 +15,7 @@ Changelog
 
 **Fixed**
 
+- #35 Bug- Complement Step yields all the items
 
 **Security**
 
