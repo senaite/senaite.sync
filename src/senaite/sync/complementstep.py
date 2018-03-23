@@ -116,7 +116,7 @@ class ComplementStep(ImportStep):
 
         next_url = data.get("next")
         if next_url:
-            for item in self.yield_items(next_url, **kw):
+            for item in self._yield_items(next_url):
                 if not item:
                     continue
                 modified = DateTime(item.get('modification_date'))
