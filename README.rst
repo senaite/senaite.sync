@@ -14,10 +14,10 @@ SENAITE.SYNC is a Synchronization Solution to migrate data between two SENAITE i
 Installation
 ============
 
-In order to get SENAITE.SYNC running properly both `senaite.api` and `senaite.jsonapi` are required in the source and destination instances. However, `senaite.sync` is only required in the destination instance (where the data is to be imported).
+In order to get SENAITE.SYNC running properly both :code:`senaite.api` and :code:`senaite.jsonapi` are required in the source and destination instances. However, :code:`senaite.sync` is only required in the destination instance (where the data is to be imported).
 
-To install SENAITE SYNC, you simply have to add `senaite.sync` into the `eggs` section
-of your `buildout.cfg`:
+To install SENAITE SYNC, you simply have to add :code:`senaite.sync` into the :code:`eggs` section
+of your :code:`buildout.cfg`::
 
     eggs =
       ...
@@ -27,7 +27,7 @@ of your `buildout.cfg`:
 Importing data
 ==============
 
-Once SEANITE SYNC has been installed and the instance is up and running navigate to SENAITE SYNC's view by adding `/sync` after the base url of the instance.
+Once SEANITE SYNC has been installed and the instance is up and running navigate to SENAITE SYNC's view by adding :code:`/sync` after the base url of the instance.
 
 The migration process mainly consists of three steps. 
 
