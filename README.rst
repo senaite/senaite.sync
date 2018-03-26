@@ -33,7 +33,9 @@ The migration process mainly consists of three steps.
 
 1. Prepare the two instances involved in the synchronization process
 2. Connect to the source instance and fetch its data into the destination instance. By the end of this step the destination instance will know which are the objects from the source instance that have to be created and its relations.
-3. Import the data. This is the step that creates, in the destination instance, the objects from the source instance and its relationships in the destination instance. 
+3. Import the data. This is the step that creates, in the destination instance, the objects from the source instance and its relationships.
+
+**Note**: The source instance can still be used while the migration is being done. However, if objects are created or modified while running steps 2 or 3 then a complementary step should be run. This extra step will only import the objects that were created or update the ones that were modified. During this complementary step it is really **important** that **no objects are created or modified in the source instance**.  
 
 
 Contribute
