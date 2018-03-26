@@ -28,6 +28,7 @@ class ComplementStep(ImportStep):
         """
         self.session = self.get_session()
         self._fetch_data()
+        self._create_new_objects()
         self._import_missing_objects()
         return
 
@@ -77,7 +78,7 @@ class ComplementStep(ImportStep):
         for item_index, r_uid in enumerate(self.uids):
             row = self.sh.find_unique(REMOTE_UID, r_uid)
             logger.debug("Handling: {} ".format(row["path"]))
-            self._handle_obj(row)
+            self._handle_obj(row, handle_dependencies=False)
 
             # Log.info every 50 objects imported
             utils.log_process(task_name="Complement Step", started=start_time,
@@ -100,6 +101,19 @@ class ComplementStep(ImportStep):
         # Mark all objects as non-updated for the next import.
         self.sh.reset_updated_flags()
         logger.info("*** IMPORT DATA FINISHED: {} ***".format(self.domain_name))
+        return
+
+    def _create_new_objects(self):
+        """         """
+        logger.info("*** CREATING NEW OBJECTS: {} ***".format(self.domain_name))
+
+        self.sh = SoupHandler(self.domain_name)
+
+        for item_index, r_uid in enumerate(self.uids):
+            row = self.sh.find_unique(REMOTE_UID, r_uid)
+            self._do_obj_creation(row)
+
+        logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
         return
 
     def _yield_items(self, url_or_endpoint, **kw):
