@@ -77,6 +77,8 @@ class ComplementStep(ImportStep):
                 rec_id = self.sh.insert(data_dict)
                 self.uids.insert(0, data_dict[REMOTE_UID])
 
+        logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
+                                                        len(self.uids)))
         return
 
     def _import_missing_objects(self):
