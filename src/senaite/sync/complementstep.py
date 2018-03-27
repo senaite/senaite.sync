@@ -40,25 +40,42 @@ class ComplementStep(ImportStep):
 
         self.uids = []
         self.sh = SoupHandler(self.domain_name)
-
-        # TODO: Find another way to do it without waking up objects.
+        # Dummy query to get overall number of items in the specified catalog
         query = {
             "url_or_endpoint": "search",
             "catalog": 'uid_catalog',
-            "b_start": 0,
-            "complete": "yes",
-            "limit": 500
+            "limit": 1
         }
         if self.content_types:
             query["portal_type"] = self.content_types
-        items = self._yield_items(**query)
-        for item in items:
-            # skip object or extract the required data for the import
-            if not item or not item.get("portal_type", True):
-                continue
-            data_dict = utils.get_soup_format(item)
-            rec_id = self.sh.insert(data_dict)
-            self.uids.insert(0, data_dict[REMOTE_UID])
+        cd = self.get_json(**query)
+        # Knowing the catalog length compute the number of pages we will need
+        # with the desired window size and overlap
+        window = 500
+        overlap = 5
+        effective_window = window-overlap
+        number_of_pages = (cd["count"]/effective_window) + 1
+        # Retrieve data from catalog in batches with size equal to window,
+        # format it and insert it into the import soup
+        for current_page in xrange(number_of_pages):
+            start_from = (current_page * window) - overlap
+            query["complete"] = True
+            query["limit"] = window
+            query["b_start"] = start_from
+            items = self.get_items(**query)
+            if not items:
+                logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
+                    start_from, start_from+window))
+            for item in items:
+                # skip object or extract the required data for the import
+                if not item or not item.get("portal_type", True):
+                    continue
+                modified = DateTime(item.get('modification_date'))
+                if modified < self.fetch_time:
+                    continue
+                data_dict = utils.get_soup_format(item)
+                rec_id = self.sh.insert(data_dict)
+                self.uids.insert(0, data_dict[REMOTE_UID])
 
         return
 
@@ -115,24 +132,3 @@ class ComplementStep(ImportStep):
 
         logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
         return
-
-    def _yield_items(self, url_or_endpoint, **kw):
-        """ Walk through all objects and yield items filtering by their
-        modification date.
-        """
-        data = self.get_json(url_or_endpoint, **kw)
-        for item in data.get("items", []):
-            if not item:
-                continue
-            modified = DateTime(item.get('modification_date'))
-            if modified > self.fetch_time:
-                yield item
-
-        next_url = data.get("next")
-        if next_url:
-            for item in self._yield_items(next_url):
-                if not item:
-                    continue
-                modified = DateTime(item.get('modification_date'))
-                if modified > self.fetch_time:
-                    yield item
