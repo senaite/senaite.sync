@@ -38,7 +38,7 @@ class ComplementStep(ImportStep):
         logger.info("*** COMPLEMENT STEP - FETCHING DATA: {} ***".format(
             self.domain_name))
 
-        self.uids = []
+        self.records = []
         self.sh = SoupHandler(self.domain_name)
         # Dummy query to get overall number of items in the specified catalog
         query = {
@@ -64,8 +64,10 @@ class ComplementStep(ImportStep):
             query["b_start"] = start_from
             items = self.get_items(**query)
             if not items:
-                logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
-                    start_from, start_from+window))
+                items = self.get_items(**query)
+                if not items:
+                    logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
+                                  start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
                 if not item or not item.get("portal_type", True):
@@ -75,10 +77,13 @@ class ComplementStep(ImportStep):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
-                self.uids.insert(0, data_dict[REMOTE_UID])
+                if rec_id is False:
+                    rec_id = self.sh.find_unique(
+                                REMOTE_UID, data_dict[REMOTE_UID])['rec_int_id']
+                self.records.append(rec_id)
 
         logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
-                                                        len(self.uids)))
+                                                        len(self.records)))
         return
 
     def _import_missing_objects(self):
@@ -90,12 +95,13 @@ class ComplementStep(ImportStep):
 
         self.sh = SoupHandler(self.domain_name)
         self.uids_to_reindex = []
-        storage = self.get_storage()
-        total_object_count = len(self.uids)
+        total_object_count = len(self.records)
         start_time = datetime.now()
 
-        for item_index, r_uid in enumerate(self.uids):
-            row = self.sh.find_unique(REMOTE_UID, r_uid)
+        for item_index, rec_id in enumerate(self.records):
+            row = self.sh.get_record_by_id(rec_id, as_dict=True)
+            if not row:
+                continue
             logger.debug("Handling: {} ".format(row["path"]))
             self._handle_obj(row, handle_dependencies=False)
 
@@ -123,14 +129,16 @@ class ComplementStep(ImportStep):
         return
 
     def _create_new_objects(self):
-        """         """
+        """
+        """
         logger.info("*** CREATING NEW OBJECTS: {} ***".format(self.domain_name))
 
         self.sh = SoupHandler(self.domain_name)
 
-        for item_index, r_uid in enumerate(self.uids):
-            row = self.sh.find_unique(REMOTE_UID, r_uid)
-            self._do_obj_creation(row)
+        for rec_id in self.records:
+            row = self.sh.get_record_by_id(rec_id, as_dict=True)
+            if row:
+                self._do_obj_creation(row)
 
         logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
         return
