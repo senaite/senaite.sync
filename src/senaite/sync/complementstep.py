@@ -78,8 +78,13 @@ class ComplementStep(ImportStep):
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
                 if rec_id is False:
-                    rec_id = self.sh.find_unique(
-                                REMOTE_UID, data_dict[REMOTE_UID])['rec_int_id']
+                    rec = self.sh.find_unique(
+                                REMOTE_UID, data_dict[REMOTE_UID])
+                    if not rec:
+                        logger.error("Error while getting soup record of "
+                                     "{}".format(data_dict))
+                        continue
+                    rec_id = rec.get("rec_int_id")
                 self.records.append(rec_id)
 
         logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
