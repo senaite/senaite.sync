@@ -39,6 +39,7 @@ class ComplementStep(ImportStep):
             self.domain_name))
 
         self.records = []
+        self.waiting_records = []
         self.sh = SoupHandler(self.domain_name)
         # Dummy query to get overall number of items in the specified catalog
         query = {
@@ -76,17 +77,32 @@ class ComplementStep(ImportStep):
                 modified = DateTime(item.get('modification_date'))
                 if modified < self.fetch_time:
                     continue
+
                 data_dict = utils.get_soup_format(item)
-                rec_id = self.sh.insert(data_dict)
-                if rec_id is False:
-                    rec = self.sh.find_unique(
-                                REMOTE_UID, data_dict[REMOTE_UID])
-                    if not rec:
-                        logger.error("Error while getting soup record of "
-                                     "{}".format(data_dict))
+                existing_rec = self.sh.find_unique(
+                    REMOTE_UID, data_dict[REMOTE_UID])
+                # If remote UID is in the souper table already, just check if
+                # remote path of the object has been updated
+                if existing_rec:
+                    rem_path = data_dict.get('path')
+                    if rem_path != existing_rec.get('path'):
+                        self.sh.update_by_remote_uid(**data_dict)
+                    rec_id = existing_rec.get("rec_int_id")
+                else:
+                    rec_id = self.sh.insert(data_dict)
+                    # It is possible that insert failed because of non-unique
+                    # path value. We add this object to list and will insert
+                    # after updating path of 'duplicate' object
+                    if rec_id is False:
+                        self.waiting_records.append(data_dict)
                         continue
-                    rec_id = rec.get("rec_int_id")
                 self.records.append(rec_id)
+
+        # All path values were updated, there cannot be any repeating paths.
+        # Time to insert waiting objects
+        for record in self.waiting_records:
+            rec_id = self.sh.insert(record)
+            self.records.append(rec_id)
 
         logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
                                                         len(self.records)))
