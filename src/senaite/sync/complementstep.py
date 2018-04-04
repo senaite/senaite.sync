@@ -135,7 +135,7 @@ class ComplementStep(ImportStep):
         return
 
     def _create_new_objects(self):
-        """ Creates all the new objects from destination without setting any
+        """ Creates all the new objects from source without setting any
         field data. We use this to skip handling dependencies process. If any
         dependency of the object is new (or recently modified), it must be
         handled during Complement Step. So before updating objects with data,
