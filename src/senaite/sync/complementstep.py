@@ -63,6 +63,7 @@ class ComplementStep(ImportStep):
             query["limit"] = window
             query["b_start"] = start_from
             items = self.get_items(**query)
+            # Try one more time if items are not retrieved
             if not items:
                 items = self.get_items(**query)
                 if not items:
@@ -134,7 +135,11 @@ class ComplementStep(ImportStep):
         return
 
     def _create_new_objects(self):
-        """
+        """ Creates all the new objects from destination without setting any
+        field data. We use this to skip handling dependencies process. If any
+        dependency of the object is new (or recently modified), it must be
+        handled during Complement Step. So before updating objects with data,
+        we must be sure that all its dependencies are created.
         """
         logger.info("*** CREATING NEW OBJECTS: {} ***".format(self.domain_name))
 
