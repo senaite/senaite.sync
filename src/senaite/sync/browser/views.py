@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2017 SENAITE LIMS.
+# This file is part of SENAITE.SYNC
+#
+# Copyright 2018 by it's authors.
+# Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
 
 from DateTime import DateTime
 from BTrees.OOBTree import OOBTree
