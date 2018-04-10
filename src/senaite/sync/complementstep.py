@@ -63,13 +63,11 @@ class ComplementStep(ImportStep):
             query["complete"] = True
             query["limit"] = window
             query["b_start"] = start_from
-            items = self.get_items(**query)
-            # Try one more time if items are not retrieved
+            items = self.get_items_with_retry(**query)
             if not items:
-                items = self.get_items(**query)
-                if not items:
-                    logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
-                                  start_from, start_from+window))
+                logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
+                    start_from, start_from + window))
+
             for item in items:
                 # skip object or extract the required data for the import
                 if not item or not item.get("portal_type", True):

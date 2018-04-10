@@ -6,6 +6,7 @@ import urllib
 import urlparse
 import requests
 
+from time import sleep
 from DateTime import DateTime
 
 from BTrees.OOBTree import OOBTree
@@ -77,6 +78,22 @@ class SyncStep(object):
         if not isinstance(data, dict):
             return []
         return data.get("items", [])
+
+    def get_items_with_retry(self, max_attempts=5, interval=1, **kwargs):
+        """
+        Retries to retrieve items if HTTP response fails.
+        :param max_attempts: maximum number of attempts to try
+        :param interval: time delay between attempts in seconds
+        :param kwargs: query and parameters pass to get_items
+        :return:
+        """
+        items = None
+        for i in range(max_attempts):
+            items = self.get_items(**kwargs)
+            if items:
+                break
+            sleep(interval)
+        return items
 
     def yield_items(self, url_or_endpoint, **kw):
         """Yield items of all pages
