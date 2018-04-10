@@ -27,7 +27,7 @@ of your :code:`buildout.cfg`::
 Importing data
 ==============
 
-Once SEANITE SYNC has been installed and the instance is up and running navigate to SENAITE SYNC's view by adding :code:`/sync` after the base url of the instance.
+Once SEANITE.SYNC has been installed and the instance is up and running navigate to SENAITE SYNC's view by adding :code:`/sync` after the base url of the instance.
 
 The migration process mainly consists of three steps. 
 
