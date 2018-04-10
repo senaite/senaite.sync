@@ -1,6 +1,6 @@
 ## Description of the issue/feature this PR addresses
 
-Linked issue: https://github.com/senaite/senaite.api/issues/
+Linked issue: https://github.com/senaite/senaite.sync/issues/
 
 ## Current behavior before PR
 
