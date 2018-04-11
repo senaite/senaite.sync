@@ -18,6 +18,8 @@ from senaite.sync.syncerror import SyncError
 
 SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
+API_MAX_ATTEMPTS = 5
+API_ATTEMPT_INTERVAL = 5
 
 
 class SyncStep(object):
@@ -79,7 +81,8 @@ class SyncStep(object):
             return []
         return data.get("items", [])
 
-    def get_items_with_retry(self, max_attempts=5, interval=1, **kwargs):
+    def get_items_with_retry(self, max_attempts=API_MAX_ATTEMPTS,
+                             interval=API_ATTEMPT_INTERVAL, **kwargs):
         """
         Retries to retrieve items if HTTP response fails.
         :param max_attempts: maximum number of attempts to try
