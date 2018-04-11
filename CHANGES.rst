@@ -26,6 +26,8 @@ Changelog
 
 **Fixed**
 
+- #39 Complement Step does not update all objects
+- #35 Bug- Complement Step yields all the items
 - #35 Complement Step yields all the items
 - #29 User creation when user email is empty
 - #28 Created users not being added to user groups

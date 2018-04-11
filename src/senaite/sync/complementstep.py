@@ -28,7 +28,8 @@ class ComplementStep(ImportStep):
         """
         self.session = self.get_session()
         self._fetch_data()
-        self._import_missing_objects()
+        self._create_new_objects()
+        self._update_objects()
         return
 
     def _fetch_data(self):
@@ -37,47 +38,92 @@ class ComplementStep(ImportStep):
         logger.info("*** COMPLEMENT STEP - FETCHING DATA: {} ***".format(
             self.domain_name))
 
-        self.uids = []
+        self.records = []
+        self.waiting_records = []
         self.sh = SoupHandler(self.domain_name)
-
-        # TODO: Find another way to do it without waking up objects.
+        # Dummy query to get overall number of items in the specified catalog
         query = {
             "url_or_endpoint": "search",
             "catalog": 'uid_catalog',
-            "b_start": 0,
-            "complete": "yes",
-            "limit": 500
+            "limit": 1
         }
         if self.content_types:
             query["portal_type"] = self.content_types
-        items = self._yield_items(**query)
-        for item in items:
-            # skip object or extract the required data for the import
-            if not item or not item.get("portal_type", True):
-                continue
-            data_dict = utils.get_soup_format(item)
-            rec_id = self.sh.insert(data_dict)
-            self.uids.insert(0, data_dict[REMOTE_UID])
+        cd = self.get_json(**query)
+        # Knowing the catalog length compute the number of pages we will need
+        # with the desired window size and overlap
+        window = 500
+        overlap = 5
+        effective_window = window-overlap
+        number_of_pages = (cd["count"]/effective_window) + 1
+        # Retrieve data from catalog in batches with size equal to window,
+        # format it and insert it into the import soup
+        for current_page in xrange(number_of_pages):
+            start_from = (current_page * window) - overlap
+            query["complete"] = True
+            query["limit"] = window
+            query["b_start"] = start_from
+            items = self.get_items_with_retry(**query)
+            if not items:
+                logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
+                    start_from, start_from + window))
 
+            for item in items:
+                # skip object or extract the required data for the import
+                if not item or not item.get("portal_type", True):
+                    continue
+                modified = DateTime(item.get('modification_date'))
+                if modified < self.fetch_time:
+                    continue
+
+                data_dict = utils.get_soup_format(item)
+                existing_rec = self.sh.find_unique(
+                    REMOTE_UID, data_dict[REMOTE_UID])
+                # If remote UID is in the souper table already, just check if
+                # remote path of the object has been updated
+                if existing_rec:
+                    rem_path = data_dict.get('path')
+                    if rem_path != existing_rec.get('path'):
+                        self.sh.update_by_remote_uid(**data_dict)
+                    rec_id = existing_rec.get("rec_int_id")
+                else:
+                    rec_id = self.sh.insert(data_dict)
+                    # It is possible that insert failed because of non-unique
+                    # path value. We add this object to list and will insert
+                    # after updating path of 'duplicate' object
+                    if rec_id is False:
+                        self.waiting_records.append(data_dict)
+                        continue
+                self.records.append(rec_id)
+
+        # All path values were updated, there cannot be any repeating paths.
+        # Time to insert waiting objects
+        for record in self.waiting_records:
+            rec_id = self.sh.insert(record)
+            self.records.append(rec_id)
+
+        logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
+                                                        len(self.records)))
         return
 
-    def _import_missing_objects(self):
-        """ For each UID from the fetched data, creates and updates objects
-        step by step.
+    def _update_objects(self):
+        """ For each UID from the fetched data, updates objects step by step.
+        Does NOT do anything with dependencies!
         :return:
         """
         logger.info("*** IMPORT DATA STARTED: {} ***".format(self.domain_name))
 
         self.sh = SoupHandler(self.domain_name)
         self.uids_to_reindex = []
-        storage = self.get_storage()
-        total_object_count = len(self.uids)
+        total_object_count = len(self.records)
         start_time = datetime.now()
 
-        for item_index, r_uid in enumerate(self.uids):
-            row = self.sh.find_unique(REMOTE_UID, r_uid)
+        for item_index, rec_id in enumerate(self.records):
+            row = self.sh.get_record_by_id(rec_id, as_dict=True)
+            if not row:
+                continue
             logger.debug("Handling: {} ".format(row["path"]))
-            self._handle_obj(row)
+            self._handle_obj(row, handle_dependencies=False)
 
             # Log.info every 50 objects imported
             utils.log_process(task_name="Complement Step", started=start_time,
@@ -102,23 +148,24 @@ class ComplementStep(ImportStep):
         logger.info("*** IMPORT DATA FINISHED: {} ***".format(self.domain_name))
         return
 
-    def _yield_items(self, url_or_endpoint, **kw):
-        """ Walk through all objects and yield items filtering by their
-        modification date.
+    def _create_new_objects(self):
+        """ Creates all the new objects from source without setting any
+        field data. We use this to skip handling dependencies process. If any
+        dependency of the object is new (or recently modified), it must be
+        handled during Complement Step. So before updating objects with data,
+        we must be sure that all its dependencies are created.
         """
-        data = self.get_json(url_or_endpoint, **kw)
-        for item in data.get("items", []):
-            if not item:
-                continue
-            modified = DateTime(item.get('modification_date'))
-            if modified > self.fetch_time:
-                yield item
+        logger.info("*** CREATING NEW OBJECTS: {} ***".format(self.domain_name))
 
-        next_url = data.get("next")
-        if next_url:
-            for item in self._yield_items(next_url):
-                if not item:
-                    continue
-                modified = DateTime(item.get('modification_date'))
-                if modified > self.fetch_time:
-                    yield item
+        self.sh = SoupHandler(self.domain_name)
+
+        for rec_id in self.records:
+            row = self.sh.get_record_by_id(rec_id, as_dict=True)
+            try:
+                if row:
+                    self._do_obj_creation(row)
+            except Exception, e:
+                logger.error("Object creation failed for: {} ... {}".
+                             format(row, str(e)))
+        logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
+        return

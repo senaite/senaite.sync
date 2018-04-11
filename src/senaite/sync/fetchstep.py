@@ -117,7 +117,7 @@ class FetchStep(SyncStep):
             start_from = (current_page * window) - overlap
             query["limit"] = window
             query["b_start"] = start_from
-            items = self.get_items(**query)
+            items = self.get_items_with_retry(**query)
             if not items:
                 logger.error("CAN NOT GET ITEMS FROM {} TO {}".format(
                     start_from, start_from+window))
