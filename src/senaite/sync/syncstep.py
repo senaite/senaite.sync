@@ -18,6 +18,8 @@ from senaite.sync.syncerror import SyncError
 
 SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
+# Sometimes we might want to send the request to the source until we get the
+# response
 API_MAX_ATTEMPTS = 5
 API_ATTEMPT_INTERVAL = 5
 

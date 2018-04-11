@@ -29,7 +29,7 @@ class ComplementStep(ImportStep):
         self.session = self.get_session()
         self._fetch_data()
         self._create_new_objects()
-        self._import_missing_objects()
+        self._update_objects()
         return
 
     def _fetch_data(self):
@@ -106,9 +106,9 @@ class ComplementStep(ImportStep):
                                                         len(self.records)))
         return
 
-    def _import_missing_objects(self):
-        """ For each UID from the fetched data, creates and updates objects
-        step by step.
+    def _update_objects(self):
+        """ For each UID from the fetched data, updates objects step by step.
+        Does NOT do anything with dependencies!
         :return:
         """
         logger.info("*** IMPORT DATA STARTED: {} ***".format(self.domain_name))
