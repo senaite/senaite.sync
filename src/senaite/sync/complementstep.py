@@ -161,8 +161,11 @@ class ComplementStep(ImportStep):
 
         for rec_id in self.records:
             row = self.sh.get_record_by_id(rec_id, as_dict=True)
-            if row:
-                self._do_obj_creation(row)
-
+            try:
+                if row:
+                    self._do_obj_creation(row)
+            except Exception, e:
+                logger.error("Object creation failed for: {} ... {}".
+                             format(row, str(e)))
         logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
         return
