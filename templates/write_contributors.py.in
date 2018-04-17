@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 
-SRC = os.getcwd()
+SRC = '${buildout:directory}'
 OUTFILE = SRC + '/CONTRIBUTORS.rst'
 
 # User names or emails to be replaced. If the value is None, the committer will
