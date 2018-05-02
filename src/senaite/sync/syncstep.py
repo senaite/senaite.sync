@@ -15,6 +15,7 @@ from senaite import api
 from senaite.sync import logger
 from senaite.sync import utils
 from senaite.sync.syncerror import SyncError
+from senaite.sync.souphandler import REMOTE_PATH
 
 SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
@@ -227,7 +228,7 @@ class SyncStep(object):
         if self.is_portal_path(parent_path):
             return True
         # Skip if already exists
-        if self.sh.find_unique("path", parent_path):
+        if self.sh.find_unique(REMOTE_PATH, parent_path):
             return True
         logger.debug("Inserting missing parent: {}".format(parent_path))
         parent = self.get_first_item(item.get("parent_url"))

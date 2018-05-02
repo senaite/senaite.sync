@@ -7,11 +7,12 @@ from senaite import api
 from senaite.sync import logger
 from DateTime import DateTime
 from datetime import datetime
+from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
 
 
-SOUPER_REQUIRED_FIELDS = {"uid": "remote_uid",
-                          "path": "path",
-                          "portal_type": "portal_type"}
+SOUPER_REQUIRED_FIELDS = {"uid": REMOTE_UID,
+                          "path": REMOTE_PATH,
+                          "portal_type": PORTAL_TYPE}
 
 SYNC_CREDENTIALS = "senaite.sync.credentials"
 
