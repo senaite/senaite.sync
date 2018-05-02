@@ -15,7 +15,7 @@ from senaite import api
 from senaite.sync import logger
 from senaite.sync import utils
 from senaite.sync.syncerror import SyncError
-from senaite.sync.souphandler import REMOTE_PATH
+from senaite.sync.souphandler import REMOTE_PATH, LOCAL_PATH, PORTAL_TYPE
 
 SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
@@ -44,6 +44,7 @@ class SyncStep(object):
         self.password = data.get("ac_password", None)
         # Import configuration
         self.content_types = data.get("content_types", None)
+        self.prefix = ""
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
         self.import_registry = data.get("import_registry", False)
@@ -52,11 +53,48 @@ class SyncStep(object):
             self.fail("Missing parameter in Sync Step: {}".format(data))
 
     def translate_path(self, path):
-        """Translate the physical path to a local path
+        """ Translate the physical path to a local path
         """
         portal_id = self.portal.getId()
         remote_portal_id = path.split("/")[1]
         return str(path.replace(remote_portal_id, portal_id))
+
+    def translate_path_with_prefix(self, remote_path):
+        """
+        """
+        portal_id = self.portal.getId()
+        remote_portal_id = remote_path.split("/")[1]
+        if not self.prefix:
+            return str(remote_path.replace(remote_portal_id, portal_id))
+
+        rem_id = utils.get_id_from_path(remote_path)
+        rec = self.sh.find_unique(REMOTE_PATH, remote_path)
+        if rec[LOCAL_PATH]:
+            return rec[LOCAL_PATH]
+
+        # Get parent's local path
+        remote_parent_path = utils.get_parent_path(remote_path)
+        parent_path = self.translate_path_with_prefix(remote_parent_path)
+
+        # Will check whether prefix needed by portal type
+        portal_type = rec[PORTAL_TYPE]
+        prefix = self.get_prefix(portal_type)
+
+        res = "{0}/{1}{2}".format(parent_path, prefix, rem_id)
+        res = res.replace(remote_portal_id, portal_id)
+        self.sh.update_by_remote_path(remote_path, LOCAL_PATH = res)
+        return res
+
+    def get_prefix(self, portal_type):
+        """
+
+        :param portal_type:
+        :return:
+        """
+        if self.prefix and portal_type == 'Analysis':
+            return "PR_"
+
+        return ""
 
     def is_portal_path(self, path):
         """ Check if the given path is the path of any portal object.
