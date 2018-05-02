@@ -307,8 +307,8 @@ class ImportStep(SyncStep):
                            .format(remote_path))
             return None
 
-        existing = self.portal.unrestrictedTraverse(self.translate_path(remote_path),
-                                                    None)
+        local_path = self.translate_path_with_prefix(remote_path)
+        existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
             local_uid = self.sh.find_unique(REMOTE_PATH, remote_path).get(LOCAL_UID,
                                                               None)
@@ -322,10 +322,10 @@ class ImportStep(SyncStep):
                 remote_path))
             return None
 
-        parent = self.translate_path(utils.get_parent_path(remote_path))
-        container = self.portal.unrestrictedTraverse(str(parent), None)
+        parent_path = utils.get_parent_path(local_path)
+        container = self.portal.unrestrictedTraverse(str(parent_path), None)
         obj_data = {
-            "id": utils.get_id_from_path(remote_path),
+            "id": utils.get_id_from_path(local_path),
             "portal_type": row.get(PORTAL_TYPE)}
         obj = self._create_object_slug(container, obj_data)
         if obj is not None:
@@ -348,7 +348,7 @@ class ImportStep(SyncStep):
             return True
 
         # Incoming path was remote path, translate it into local one
-        local_p_path = self.translate_path(p_path)
+        local_p_path = self.translate_path_with_prefix(p_path)
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
@@ -369,13 +369,15 @@ class ImportStep(SyncStep):
         # already ready.
         if not self._parents_created(p_path):
             return False
+
         parent = self.sh.find_unique(REMOTE_PATH, p_path)
-        grand_parent = self.translate_path(utils.get_parent_path(p_path))
-        container = self.portal.unrestrictedTraverse(str(grand_parent), None)
+        grand_parent = utils.get_parent_path(local_p_path)
+        container = self.portal.unrestrictedTraverse(grand_parent, None)
         parent_data = {
             "id": utils.get_id_from_path(p_path),
             "remote_path": p_path,
             "portal_type": parent.get(PORTAL_TYPE)}
+
         parent_obj = self._create_object_slug(container, parent_data)
         if parent_obj is None:
             logger.warning("Couldn't create parent of {}".format(remote_path))
