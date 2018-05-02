@@ -67,7 +67,7 @@ class SoupHandler:
         record.attrs[REMOTE_UID] = data[REMOTE_UID]
         record.attrs[LOCAL_UID] = data.get(LOCAL_UID, "")
         record.attrs[REMOTE_PATH] = data[REMOTE_PATH]
-        record.attrs[LOCAL_PATH] = data[LOCAL_PATH]
+        record.attrs[LOCAL_PATH] = data.get(LOCAL_PATH, "")
         record.attrs[PORTAL_TYPE] = data[PORTAL_TYPE]
         record.attrs[UPDATED] = data.get(UPDATED, "0")
         r_id = self.soup.add(record)
