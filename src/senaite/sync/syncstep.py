@@ -73,7 +73,7 @@ class SyncStep(object):
         rem_id = utils.get_id_from_path(remote_path)
         rec = self.sh.find_unique(REMOTE_PATH, remote_path)
         if rec[LOCAL_PATH]:
-            return rec[LOCAL_PATH]
+            return str(rec[LOCAL_PATH])
 
         # Get parent's local path
         remote_parent_path = utils.get_parent_path(remote_path)
@@ -86,7 +86,7 @@ class SyncStep(object):
         res = "{0}/{1}{2}".format(parent_path, prefix, rem_id)
         res = res.replace(remote_portal_id, portal_id)
         self.sh.update_by_remote_path(remote_path, LOCAL_PATH = res)
-        return res
+        return str(res)
 
     def get_prefix(self, portal_type):
         """
