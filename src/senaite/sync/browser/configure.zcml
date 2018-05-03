@@ -9,6 +9,13 @@
       permission="cmf.ManagePortal"
       />
 
+    <browser:page
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="sync_add"
+      class=".add.Add"
+      permission="cmf.ManagePortal"
+      />
+
   <browser:page
       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
       name="do_auto_sync"

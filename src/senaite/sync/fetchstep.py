@@ -69,7 +69,7 @@ class FetchStep(SyncStep):
         storage["configuration"]["import_users"] = self.import_users
         storage["last_fetch_time"] = DateTime()
 
-        message = "Fetching Data started for {}".format(self.domain_name)
+        message = "Data fetched and saved: {}".format(self.domain_name)
         return True, message
 
     def get_version(self):
