@@ -44,7 +44,7 @@ class SyncStep(object):
         self.password = data.get("ac_password", None)
         # Import configuration
         self.content_types = data.get("content_types", None)
-        self.prefix = ""
+        self.prefix = data.get("prefix", None)
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
         self.import_registry = data.get("import_registry", False)
@@ -62,6 +62,9 @@ class SyncStep(object):
     def translate_path_with_prefix(self, remote_path):
         """
         """
+        if self.is_portal_path(remote_path):
+            return api.get_path(self.portal)
+
         portal_id = self.portal.getId()
         remote_portal_id = remote_path.split("/")[1]
         if not self.prefix:
@@ -91,8 +94,8 @@ class SyncStep(object):
         :param portal_type:
         :return:
         """
-        if self.prefix and portal_type == 'Analysis':
-            return "PR_"
+        if self.prefix and portal_type == 'Client':
+            return self.prefix
 
         return ""
 

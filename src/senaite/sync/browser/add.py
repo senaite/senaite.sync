@@ -57,11 +57,23 @@ class Add(Sync):
             import_users = True if form.get("import_users") == 'on' else False
             import_registry = True if form.get("import_registry") == 'on' else False
             content_types = form.get("content_types", None)
+            prefix = form.get("prefix", None)
+
+            # Content Type Validation
             if content_types is not None:
                 content_types = [t.strip() for t in content_types.split(",")]
                 portal_types = api.get_tool("portal_types")
                 content_types = filter(lambda ct: ct in portal_types,
                                        content_types)
+
+            # Prefix Validation
+            if prefix:
+                prefix = prefix.strip(u"*.!$%&/()=-+:'`´^")
+                if not prefix:
+                    self.add_status_message("Invalid Prefix!", "error")
+                    return self.template()
+                if len(prefix) > 3:
+                    self.add_status_message("Long Prefix!", "warning")
 
             data = {
                 "url": url,
@@ -72,6 +84,7 @@ class Add(Sync):
                 "import_settings": import_settings,
                 "import_users": import_users,
                 "import_registry": import_registry,
+                "prefix": prefix,
             }
 
             fs = FetchStep(data)

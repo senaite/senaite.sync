@@ -47,7 +47,6 @@
             <input type="text" size="30"
                    class="form-control"
                    id="domain_name"
-                   tal:attributes="value view/domain_name|nothing"
                    name="domain_name"/>
           </div>
         </div>
@@ -69,7 +68,6 @@
             <input type="text" size="30"
                    class="form-control"
                    id="url"
-                   tal:attributes="value view/url|nothing"
                    name="url"/>
           </div>
         </div>
@@ -93,7 +91,6 @@
                    autocomplete="new-username"
                    class="form-control"
                    id="ac_name"
-                   tal:attributes="value view/username|nothing"
                    name="ac_name"/>
           </div>
         </div>
@@ -117,7 +114,6 @@
                    size="30"
                    class="form-control"
                    id="ac_password"
-                   tal:attributes="value view/password|nothing"
                    name="ac_password"/>
           </div>
         </div>
@@ -128,7 +124,7 @@
             <div class="panel panel-default">
               <div class="panel-heading">
                 <h4 class="panel-title">
-                 <a data-toggle="collapse" href="#collapse1">Show import configuration</a>
+                 <a data-toggle="collapse" href="#collapse1">Advanced Configuration</a>
                </h4>
               </div>
               <div id="collapse1" class="panel-collapse collapse">
@@ -174,11 +170,33 @@
                                size="45"
                                class="form-control"
                                id="content_types"
-                               tal:attributes="value view/content_types|nothing"
                                name="content_types"/>
                       </div>
                     </div>
                   </li>
+
+                  <li class="list-group-item">
+                    <!-- Prefix -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="prefix">
+                        Prefix
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          A short prefix to appear in the Object ID's imported from this Remote.
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="10"
+                               class="form-control"
+                               id="prefix"
+                               name="prefix"/>
+                      </div>
+                    </div>
+                  </li>
+
                 </ul>
               </div>
             </div>

@@ -57,7 +57,9 @@ def get_parent_path(path):
     if path.endswith("/"):
         path = path[:-1]
     parts = path.split("/")
-    return "/".join(parts[:-1])
+    if len(parts) < 3:
+        return "/"
+    return str("/".join(parts[:-1]))
 
 
 def get_id_from_path(path):
