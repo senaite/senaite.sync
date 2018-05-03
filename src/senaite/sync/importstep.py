@@ -60,7 +60,8 @@ class ImportStep(SyncStep):
     update objects based on previously fetched data.
 
     """
-    fields_to_skip = ['excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
+    fields_to_skip = ['id',  # Overriding ID's can remove prefixes
+                      'excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
     def __init__(self, data):
         SyncStep.__init__(self, data)
