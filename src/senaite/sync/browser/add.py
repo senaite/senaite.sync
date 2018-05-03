@@ -58,6 +58,7 @@ class Add(Sync):
             import_registry = True if form.get("import_registry") == 'on' else False
             content_types = form.get("content_types", None)
             prefix = form.get("prefix", None)
+            prefixable_types = form.get("prefixable_types", None)
 
             # Content Type Validation
             if content_types is not None:
@@ -75,6 +76,17 @@ class Add(Sync):
                 if len(prefix) > 3:
                     self.add_status_message("Long Prefix!", "warning")
 
+            # Content Type Validation
+            if prefixable_types is not None:
+                prefixable_types = [t.strip() for t in prefixable_types.split(",")]
+                portal_types = api.get_tool("portal_types")
+                prefixable_types = filter(lambda ct: ct in portal_types,
+                                          prefixable_types)
+                if not prefixable_types:
+                    self.add_status_message("Invalid Content Types to be"
+                                            "Prefixified!", "error")
+                    return self.template()
+
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -85,6 +97,7 @@ class Add(Sync):
                 "import_users": import_users,
                 "import_registry": import_registry,
                 "prefix": prefix,
+                "prefixable_types": prefixable_types,
             }
 
             fs = FetchStep(data)

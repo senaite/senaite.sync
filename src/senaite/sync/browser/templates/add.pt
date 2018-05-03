@@ -197,6 +197,28 @@
                     </div>
                   </li>
 
+                  <li class="list-group-item">
+                    <!-- Content Types to be prefixified -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="prefixable_types">
+                        Prefixable Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          Please specify exactly which content types must contain Remote's Prefix in their ID's. E.g: 'Sample, Client, Worksheet'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="prefixable_types"
+                               name="prefixable_types"/>
+                      </div>
+                    </div>
+                  </li>
+
                 </ul>
               </div>
             </div>

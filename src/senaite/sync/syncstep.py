@@ -45,6 +45,7 @@ class SyncStep(object):
         # Import configuration
         self.content_types = data.get("content_types", None)
         self.prefix = data.get("prefix", None)
+        self.prefixable_types = data.get("prefixable_types", None)
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
         self.import_registry = data.get("import_registry", False)
@@ -94,9 +95,8 @@ class SyncStep(object):
         :param portal_type:
         :return:
         """
-        if self.prefix and portal_type == 'Client':
+        if self.prefix and portal_type in self.prefixable_types:
             return self.prefix
-
         return ""
 
     def is_portal_path(self, path):

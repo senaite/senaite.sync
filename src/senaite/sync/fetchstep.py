@@ -65,6 +65,7 @@ class FetchStep(SyncStep):
         # remember import configuration in the storage
         storage["configuration"]["content_types"] = self.content_types
         storage["configuration"]["prefix"] = self.prefix
+        storage["configuration"]["prefixable_types"] = self.prefixable_types
         storage["configuration"]["import_settings"] = self.import_settings
         storage["configuration"]["import_registry"] = self.import_registry
         storage["configuration"]["import_users"] = self.import_users

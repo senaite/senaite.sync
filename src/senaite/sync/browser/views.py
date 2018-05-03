@@ -67,6 +67,7 @@ class Sync(BrowserView):
             password = storage["credentials"]["password"]
             content_types = storage["configuration"].get("content_types", None)
             prefix = storage["configuration"].get("prefix", None)
+            prefixable_types = storage["configuration"].get("prefixable_types", None)
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -74,6 +75,7 @@ class Sync(BrowserView):
                 "ac_password": password,
                 "content_types": content_types,
                 "prefix": prefix,
+                "prefixable_types": prefixable_types,
             }
             step = ImportStep(data)
             step.run()
@@ -104,6 +106,7 @@ class Sync(BrowserView):
             password = storage["credentials"]["password"]
             content_types = storage["configuration"].get("content_types", None)
             prefix = storage["configuration"].get("prefix", None)
+            prefixable_types = storage["configuration"].get("prefixable_types", None)
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -112,6 +115,7 @@ class Sync(BrowserView):
                 "fetch_time": fetch_time,
                 "content_types": content_types,
                 "prefix": prefix,
+                "prefixable_types": prefixable_types,
             }
             step = ComplementStep(data)
             step.run()
