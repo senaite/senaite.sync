@@ -374,7 +374,7 @@ class ImportStep(SyncStep):
         grand_parent = utils.get_parent_path(local_p_path)
         container = self.portal.unrestrictedTraverse(grand_parent, None)
         parent_data = {
-            "id": utils.get_id_from_path(p_path),
+            "id": utils.get_id_from_path(local_p_path),
             "remote_path": p_path,
             "portal_type": parent.get(PORTAL_TYPE)}
 
