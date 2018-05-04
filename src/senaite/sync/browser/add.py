@@ -61,14 +61,13 @@ class Add(Sync):
             prefix = form.get("prefix", None)
             prefixable_types = form.get("prefixable_types", None)
 
-            portal_types = api.get_tool("portal_types")
-
             # Content Type Validation
+            portal_types = api.get_tool("portal_types")
             if content_types is not None:
                 content_types = [t.strip() for t in content_types.split(",")]
                 content_types = filter(lambda ct: ct in portal_types,
                                        content_types)
-            # Content Type Validation
+
             if unwanted_content_types is not None:
                 unwanted_content_types = [t.strip() for t
                                           in unwanted_content_types.split(",")]
@@ -90,14 +89,14 @@ class Add(Sync):
                     self.add_status_message("Please enter a valid Prefix.",
                                             "error")
                     return self.template()
-
-                prefixable_types = [t.strip() for t in prefixable_types.split(",")]
+                prefixable_types = [t.strip() for t
+                                    in prefixable_types.split(",")]
                 prefixable_types = filter(lambda ct: ct in portal_types,
                                           prefixable_types)
 
             if prefix and not prefixable_types:
                 self.add_status_message("Please enter valid Content Types to be"
-                                        " prefixified.", "error")
+                                        " created with the Prefix.", "error")
                 return self.template()
 
             data = {

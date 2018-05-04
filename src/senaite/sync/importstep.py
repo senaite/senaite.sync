@@ -308,7 +308,7 @@ class ImportStep(SyncStep):
                            .format(remote_path))
             return None
 
-        local_path = self.translate_path_with_prefix(remote_path)
+        local_path = self.translate_path(remote_path)
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
             local_uid = self.sh.find_unique(REMOTE_PATH, remote_path).get(LOCAL_UID,
@@ -349,7 +349,7 @@ class ImportStep(SyncStep):
             return True
 
         # Incoming path was remote path, translate it into local one
-        local_p_path = self.translate_path_with_prefix(p_path)
+        local_p_path = self.translate_path(p_path)
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.

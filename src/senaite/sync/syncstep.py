@@ -54,15 +54,13 @@ class SyncStep(object):
         if not any([self.domain_name, self.url, self.username, self.password]):
             self.fail("Missing parameter in Sync Step: {}".format(data))
 
-    def translate_path(self, path):
-        """ Translate the physical path to a local path
-        """
-        portal_id = self.portal.getId()
-        remote_portal_id = path.split("/")[1]
-        return str(path.replace(remote_portal_id, portal_id))
-
-    def translate_path_with_prefix(self, remote_path):
-        """
+    def translate_path(self, remote_path):
+        """ Translates a remote physical path into local path taking into account
+        the prefix. If prefix is not enabled, then just the Remote Site ID will
+        be replaced by the Local one. In case prefixes are enabled, then walk
+        through all parents and add prefixes if necessary.
+        :param remote_path: a path in a remote instance
+        :return string: the translated path
         """
         if self.is_portal_path(remote_path):
             return api.get_path(self.portal)
@@ -77,12 +75,14 @@ class SyncStep(object):
         if rec is None:
             raise SyncError("Missing Remote path in Soup table: {}".format(
                                                     remote_path))
+
+        # Check if previously translated and saved
         if rec[LOCAL_PATH]:
             return str(rec[LOCAL_PATH])
 
         # Get parent's local path
         remote_parent_path = utils.get_parent_path(remote_path)
-        parent_path = self.translate_path_with_prefix(remote_parent_path)
+        parent_path = self.translate_path(remote_parent_path)
 
         # Will check whether prefix needed by portal type
         portal_type = rec[PORTAL_TYPE]
@@ -90,13 +90,13 @@ class SyncStep(object):
 
         res = "{0}/{1}{2}".format(parent_path, prefix, rem_id)
         res = res.replace(remote_portal_id, portal_id)
+        # Save the local path in the Souper to use in the future
         self.sh.update_by_remote_path(remote_path, LOCAL_PATH = res)
         return str(res)
 
     def get_prefix(self, portal_type):
         """
-
-        :param portal_type:
+        :param portal_type: content type to get the prefix for
         :return:
         """
         if self.prefix and portal_type in self.prefixable_types:
