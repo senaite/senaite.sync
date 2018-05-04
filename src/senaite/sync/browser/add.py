@@ -78,6 +78,11 @@ class Add(Sync):
 
             # Content Type Validation
             if prefixable_types is not None:
+                if not prefix:
+                    self.add_status_message("Please enter a valid Prefix.",
+                                            "error")
+                    return self.template()
+
                 prefixable_types = [t.strip() for t in prefixable_types.split(",")]
                 portal_types = api.get_tool("portal_types")
                 prefixable_types = filter(lambda ct: ct in portal_types,
