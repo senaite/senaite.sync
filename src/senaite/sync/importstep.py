@@ -269,24 +269,24 @@ class ImportStep(SyncStep):
         :type row: dict
         """
         r_uid = row.get(REMOTE_UID)
-        try:
-            if row.get("updated", "0") == "1":
-                return True
-            self._queue.append(r_uid)
-            obj = self._do_obj_creation(row)
-            if obj is None:
-                logger.error('Object creation failed: {}'.format(row))
-                return
-            obj_data = self.get_json(r_uid, complete=True,
-                                     workflow=True)
-            if handle_dependencies:
-                self._create_dependencies(obj, obj_data)
-            self._update_object_with_data(obj, obj_data)
-            self.sh.mark_update(r_uid)
-            self._queue.remove(r_uid)
-        except Exception, e:
-            self._queue.remove(r_uid)
-            logger.error('Failed to handle {} : {} '.format(row, str(e)))
+        # try:
+        if row.get("updated", "0") == "1":
+            return True
+        self._queue.append(r_uid)
+        obj = self._do_obj_creation(row)
+        if obj is None:
+            logger.error('Object creation failed: {}'.format(row))
+            return
+        obj_data = self.get_json(r_uid, complete=True,
+                                 workflow=True)
+        if handle_dependencies:
+            self._create_dependencies(obj, obj_data)
+        self._update_object_with_data(obj, obj_data)
+        self.sh.mark_update(r_uid)
+        self._queue.remove(r_uid)
+        # except Exception, e:
+        #     self._queue.remove(r_uid)
+        #     logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
         return True
 
@@ -307,7 +307,7 @@ class ImportStep(SyncStep):
             logger.warning("Parent creation failed previously, skipping: {}"
                            .format(remote_path))
             return None
-
+        import pdb; pdb.set_trace()
         local_path = self.translate_path(remote_path)
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:

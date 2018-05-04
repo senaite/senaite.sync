@@ -62,6 +62,10 @@ class SyncStep(object):
         :param remote_path: a path in a remote instance
         :return string: the translated path
         """
+        if not remote_path or "/" not in remote_path:
+            raise SyncError("error", "Invalid remote path: '{}'"
+                            .format(remote_path))
+
         if self.is_portal_path(remote_path):
             return api.get_path(self.portal)
 
@@ -73,8 +77,8 @@ class SyncStep(object):
         rem_id = utils.get_id_from_path(remote_path)
         rec = self.sh.find_unique(REMOTE_PATH, remote_path)
         if rec is None:
-            raise SyncError("Missing Remote path in Soup table: {}".format(
-                                                    remote_path))
+            raise SyncError("error", "Missing Remote path in Soup table: {}"
+                            .format(remote_path))
 
         # Check if previously translated and saved
         if rec[LOCAL_PATH]:
