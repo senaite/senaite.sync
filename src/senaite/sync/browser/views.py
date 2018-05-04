@@ -65,10 +65,10 @@ class Sync(BrowserView):
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
-            content_types = storage["configuration"].get("content_types", None)
-            unwanted_content_types = storage["configuration"].get("unwanted_content_types", None)
+            content_types = storage["configuration"].get("content_types", [])
+            unwanted_content_types = storage["configuration"].get("unwanted_content_types", [])
             prefix = storage["configuration"].get("prefix", None)
-            prefixable_types = storage["configuration"].get("prefixable_types", None)
+            prefixable_types = storage["configuration"].get("prefixable_types", [])
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -106,10 +106,10 @@ class Sync(BrowserView):
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
-            content_types = storage["configuration"].get("content_types", None)
-            unwanted_content_types = storage["configuration"].get("unwanted_content_types", None)
+            content_types = storage["configuration"].get("content_types", [])
+            unwanted_content_types = storage["configuration"].get("unwanted_content_types", [])
             prefix = storage["configuration"].get("prefix", None)
-            prefixable_types = storage["configuration"].get("prefixable_types", None)
+            prefixable_types = storage["configuration"].get("prefixable_types", [])
             data = {
                 "url": url,
                 "domain_name": domain_name,
