@@ -71,7 +71,7 @@ class ComplementStep(ImportStep):
 
             for item in items:
                 # skip object or extract the required data for the import
-                if not item or not item.get("portal_type", True):
+                if not self.is_item_allowed(item):
                     continue
                 modified = DateTime(item.get('modification_date'))
                 if modified < self.fetch_time:

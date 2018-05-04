@@ -126,10 +126,7 @@ class FetchStep(SyncStep):
                     start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
-                if not item:
-                    continue
-                portal_type = item.get("portal_type", None)
-                if not portal_type or portal_type in self.unwanted_content_types:
+                if not self.is_item_allowed(item):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)

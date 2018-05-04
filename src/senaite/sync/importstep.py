@@ -428,7 +428,7 @@ class ImportStep(SyncStep):
                     logger.error("Remote UID not found in fetched data: {}".
                                  format(r_uid))
                     continue
-                if not utils.is_item_allowed(dep_item):
+                if not utils.has_valid_portal_type(dep_item):
                     logger.error("Skipping dependency with unknown portal type:"
                                  " {}".format(dep_item))
                     continue

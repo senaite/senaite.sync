@@ -43,10 +43,10 @@ class SyncStep(object):
         self.username = data.get("ac_name", None)
         self.password = data.get("ac_password", None)
         # Import configuration
-        self.content_types = data.get("content_types", None)
-        self.unwanted_content_types = data.get("unwanted_content_types", None)
+        self.content_types = data.get("content_types", [])
+        self.unwanted_content_types = data.get("unwanted_content_types", [])
         self.prefix = data.get("prefix", None)
-        self.prefixable_types = data.get("prefixable_types", None)
+        self.prefixable_types = data.get("prefixable_types", [])
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
         self.import_registry = data.get("import_registry", False)
@@ -266,7 +266,7 @@ class SyncStep(object):
         :return: True if ALL parents are fetched
         """
         # Never fetch parents of an unnecessary objects
-        if not utils.is_item_allowed(item):
+        if not utils.has_valid_portal_type(item):
             return False
         parent_path = item.get("parent_path")
         # Skip if the parent is portal object
@@ -281,3 +281,14 @@ class SyncStep(object):
         self.sh.insert(par_dict)
         # Recursively import grand parents too
         return self._parents_fetched(parent)
+
+    def is_item_allowed(self, item):
+        """ Checks if item is allowed based on its portal_type
+        :param item: object data dict
+        """
+        if not utils.has_valid_portal_type(item):
+            return False
+        if item.get("portal_type") in self.unwanted_content_types:
+            return False
+
+        return True

@@ -31,7 +31,7 @@ def to_review_history_format(review_history):
     return review_history
 
 
-def is_item_allowed(item):
+def has_valid_portal_type(item):
     """ Check if an item can be handled based on its portal type.
     :return: True if the item can be handled
     """
