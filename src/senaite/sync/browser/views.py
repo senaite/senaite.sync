@@ -66,6 +66,7 @@ class Sync(BrowserView):
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
             content_types = storage["configuration"].get("content_types", None)
+            unwanted_content_types = storage["configuration"].get("unwanted_content_types", None)
             prefix = storage["configuration"].get("prefix", None)
             prefixable_types = storage["configuration"].get("prefixable_types", None)
             data = {
@@ -74,6 +75,7 @@ class Sync(BrowserView):
                 "ac_name": username,
                 "ac_password": password,
                 "content_types": content_types,
+                "unwanted_content_types": unwanted_content_types,
                 "prefix": prefix,
                 "prefixable_types": prefixable_types,
             }
@@ -105,6 +107,7 @@ class Sync(BrowserView):
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
             content_types = storage["configuration"].get("content_types", None)
+            unwanted_content_types = storage["configuration"].get("unwanted_content_types", None)
             prefix = storage["configuration"].get("prefix", None)
             prefixable_types = storage["configuration"].get("prefixable_types", None)
             data = {
@@ -114,6 +117,7 @@ class Sync(BrowserView):
                 "ac_password": password,
                 "fetch_time": fetch_time,
                 "content_types": content_types,
+                "unwanted_content_types": unwanted_content_types,
                 "prefix": prefix,
                 "prefixable_types": prefixable_types,
             }

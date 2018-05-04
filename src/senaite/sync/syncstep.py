@@ -44,6 +44,7 @@ class SyncStep(object):
         self.password = data.get("ac_password", None)
         # Import configuration
         self.content_types = data.get("content_types", None)
+        self.unwanted_content_types = data.get("unwanted_content_types", None)
         self.prefix = data.get("prefix", None)
         self.prefixable_types = data.get("prefixable_types", None)
         self.import_settings = data.get("import_settings", False)

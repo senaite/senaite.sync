@@ -162,7 +162,7 @@
                         Content Types
                         <span i18n:translate=""
                               class="help formHelp">
-                          If filled, only indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
+                          If filled, ONLY indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
                         </span>
                       </label>
                       <div class="form-group input-group">
@@ -171,6 +171,28 @@
                                class="form-control"
                                id="content_types"
                                name="content_types"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Unwanted Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="unwanted_content_types">
+                        Content Types to be Skipped
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          If filled, introduced content types will be SKIPPED and only regular objects that are dependencies of the Allowed Types will be imported.. E.g: 'Supplier, Instrument'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="unwanted_content_types"
+                               name="unwanted_content_types"/>
                       </div>
                     </div>
                   </li>
@@ -206,7 +228,7 @@
                         Prefixable Content Types
                         <span i18n:translate=""
                               class="help formHelp">
-                          Please specify exactly which content types must contain Remote's Prefix in their ID's. E.g: 'Sample, Client, Worksheet'
+                          Please specify exactly which content types must contain Remote's Prefix in their ID's. Must be filled if prefix is enabled. E.g: 'Sample, Client, Worksheet'
                         </span>
                       </label>
                       <div class="form-group input-group">

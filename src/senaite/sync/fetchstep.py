@@ -64,6 +64,7 @@ class FetchStep(SyncStep):
         storage["credentials"]["password"] = self.password
         # remember import configuration in the storage
         storage["configuration"]["content_types"] = self.content_types
+        storage["configuration"]["unwanted_content_types"] = self.unwanted_content_types
         storage["configuration"]["prefix"] = self.prefix
         storage["configuration"]["prefixable_types"] = self.prefixable_types
         storage["configuration"]["import_settings"] = self.import_settings
@@ -125,7 +126,10 @@ class FetchStep(SyncStep):
                     start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
-                if not item or not item.get("portal_type", True):
+                if not item:
+                    continue
+                portal_type = item.get("portal_type", None)
+                if not portal_type or portal_type in self.unwanted_content_types:
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)

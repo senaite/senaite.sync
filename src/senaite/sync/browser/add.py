@@ -57,15 +57,23 @@ class Add(Sync):
             import_users = True if form.get("import_users") == 'on' else False
             import_registry = True if form.get("import_registry") == 'on' else False
             content_types = form.get("content_types", None)
+            unwanted_content_types = form.get("unwanted_content_types", None)
             prefix = form.get("prefix", None)
             prefixable_types = form.get("prefixable_types", None)
+
+            portal_types = api.get_tool("portal_types")
 
             # Content Type Validation
             if content_types is not None:
                 content_types = [t.strip() for t in content_types.split(",")]
-                portal_types = api.get_tool("portal_types")
                 content_types = filter(lambda ct: ct in portal_types,
                                        content_types)
+            # Content Type Validation
+            if unwanted_content_types is not None:
+                unwanted_content_types = [t.strip() for t
+                                          in unwanted_content_types.split(",")]
+                unwanted_content_types = filter(lambda ct: ct in portal_types,
+                                                unwanted_content_types)
 
             # Prefix Validation
             if prefix:
@@ -84,7 +92,6 @@ class Add(Sync):
                     return self.template()
 
                 prefixable_types = [t.strip() for t in prefixable_types.split(",")]
-                portal_types = api.get_tool("portal_types")
                 prefixable_types = filter(lambda ct: ct in portal_types,
                                           prefixable_types)
 
@@ -99,6 +106,7 @@ class Add(Sync):
                 "ac_name": username,
                 "ac_password": password,
                 "content_types": content_types,
+                "unwanted_content_types": unwanted_content_types,
                 "import_settings": import_settings,
                 "import_users": import_users,
                 "import_registry": import_registry,
