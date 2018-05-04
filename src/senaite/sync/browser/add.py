@@ -12,7 +12,7 @@ from senaite.sync.fetchstep import FetchStep
 from zope.interface import implements
 
 SYNC_STORAGE = "senaite.sync"
-
+PREFIX_SPECIAL_CHARACTERS = u"*.!$%&/()=-+:'`´^"
 
 class Add(Sync):
     """ Add new sync instance view
@@ -69,7 +69,7 @@ class Add(Sync):
 
             # Prefix Validation
             if prefix:
-                prefix = prefix.strip(u"*.!$%&/()=-+:'`´^")
+                prefix = prefix.strip(PREFIX_SPECIAL_CHARACTERS)
                 if not prefix:
                     self.add_status_message("Invalid Prefix!", "error")
                     return self.template()
@@ -87,10 +87,11 @@ class Add(Sync):
                 portal_types = api.get_tool("portal_types")
                 prefixable_types = filter(lambda ct: ct in portal_types,
                                           prefixable_types)
-                if not prefixable_types:
-                    self.add_status_message("Invalid Content Types to be"
-                                            "Prefixified!", "error")
-                    return self.template()
+
+            if prefix and not prefixable_types:
+                self.add_status_message("Please enter valid Content Types to be"
+                                        " prefixified.", "error")
+                return self.template()
 
             data = {
                 "url": url,
