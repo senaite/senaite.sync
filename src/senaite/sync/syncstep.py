@@ -73,6 +73,9 @@ class SyncStep(object):
 
         rem_id = utils.get_id_from_path(remote_path)
         rec = self.sh.find_unique(REMOTE_PATH, remote_path)
+        if rec is None:
+            raise SyncError("Missing Remote path in Soup table: {}".format(
+                                                    remote_path))
         if rec[LOCAL_PATH]:
             return str(rec[LOCAL_PATH])
 
