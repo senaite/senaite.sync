@@ -87,7 +87,7 @@ class SoupHandler:
         r_uid_q = Eq(REMOTE_UID, r_uid)
         l_uid_q = Eq(LOCAL_UID, l_uid)
         r_p_q = Eq(REMOTE_PATH, r_path)
-        l_p_q = Eq(REMOTE_PATH, l_path)
+        l_p_q = Eq(LOCAL_PATH, l_path)
         ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, r_p_q, l_p_q))]
         return ret != []
 
