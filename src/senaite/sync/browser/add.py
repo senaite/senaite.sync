@@ -63,12 +63,12 @@ class Add(Sync):
 
             # Content Type Validation
             portal_types = api.get_tool("portal_types")
-            if content_types is not None:
+            if content_types:
                 content_types = [t.strip() for t in content_types.split(",")]
                 content_types = filter(lambda ct: ct in portal_types,
                                        content_types)
 
-            if unwanted_content_types is not None:
+            if unwanted_content_types:
                 unwanted_content_types = [t.strip() for t
                                           in unwanted_content_types.split(",")]
                 unwanted_content_types = filter(lambda ct: ct in portal_types,
@@ -84,7 +84,7 @@ class Add(Sync):
                     self.add_status_message("Long Prefix!", "warning")
 
             # Content Type Validation
-            if prefixable_types is not None:
+            if prefixable_types:
                 if not prefix:
                     self.add_status_message("Please enter a valid Prefix.",
                                             "error")
