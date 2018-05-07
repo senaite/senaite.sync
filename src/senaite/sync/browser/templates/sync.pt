@@ -29,6 +29,7 @@
 
       <!-- Storage View -->
       <tal:storage repeat="storage view/storage">
+        <div style="border:double; padding:10px">
         <form
           name="data_form"
           method="POST">
@@ -36,7 +37,7 @@
           <dl class="collapsible">
 
             <dt class="collapsibleHeader">
-              <span tal:replace="storage"/>
+              <span tal:replace="python: storage.upper()"/>
               (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
             <input type="hidden" name="dataform" value="1"/>
@@ -69,10 +70,10 @@
                      name="clear_storage"
                      i18n:attributes="value"
                      value="Clear this Storage"/>
-              <div>
+              <div style="margin-top: 15px">
                   <dl class="collapsible">
                       <dt class="collapsibleHeader">
-                          Run Complement Step
+                          RUN COMPLEMENT STEP
                       </dt>
                       <dd class="collapsibleContent">
                           <div class="field form-group field">
@@ -104,6 +105,7 @@
             </dd>
           </dl>
         </form>
+      </div>
       </tal:storage>
 
     </div>
