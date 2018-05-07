@@ -307,7 +307,7 @@ class ImportStep(SyncStep):
             logger.warning("Parent creation failed previously, skipping: {}"
                            .format(remote_path))
             return None
-        import pdb; pdb.set_trace()
+
         local_path = self.translate_path(remote_path)
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
