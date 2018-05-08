@@ -199,11 +199,10 @@ def get_estimated_end_date(started, processed, total):
 
 
 def date_to_query_literal(date, date_format=_default_date_format):
-    """
-
-    :param date:
-    :param date_format:
-    :return:
+    """ Convert a date to URL query string.
+    :param date: date to be converted in datetime, DateTime or string format
+    :param date_format: in case the date is string, format to parse it
+    :return string: literal date
     """
     if not date:
         return None
