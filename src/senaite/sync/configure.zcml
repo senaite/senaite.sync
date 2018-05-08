@@ -18,6 +18,13 @@
       description="SENAITE SYNC Extension Profile"
       provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
+    <!-- Run Setup Script -->
+  <genericsetup:importStep
+      name="senaite.sync.setupHandler"
+      title="SENAITE SYNC: Run Setup Handler"
+      description="Run various configuration actions"
+      handler="senaite.sync.setuphandlers.setupHandler"/>
+
   <!-- AT FIELD MANAGERS
        Field level interface to get and set values and get a JSON compatible
        structure of the value.
