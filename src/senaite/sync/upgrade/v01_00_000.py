@@ -35,9 +35,10 @@ def modify_uid_catalog(portal):
     :param portal: portal object
     :return:
     """
-    logger.info("Adding a new index to 'uid_catalog'... ")
     uc = api.get_tool('uid_catalog', portal)
-    uc.addIndex('modified', 'DateIndex')
-    uc.reindexIndex('modified', None)
-    logger.info("New 'modified' index added to 'uid_catalog'. ")
+    if 'modified' not in uc.indexes():
+        logger.info("Adding a new index to 'uid_catalog'... ")
+        uc.addIndex('modified', 'DateIndex')
+        uc.reindexIndex('modified', None)
+        logger.info("New 'modified' index added to 'uid_catalog'. ")
     return
