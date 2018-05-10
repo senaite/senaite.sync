@@ -361,6 +361,7 @@ class ImportStep(SyncStep):
                 return False
             p_local_uid = p_row.get(LOCAL_UID, None)
             if not p_local_uid:
+                # Update parent's local path if it is not set already
                 if hasattr(existing, "UID") and existing.UID():
                     p_local_uid = existing.UID()
                     self.sh.update_by_remote_path(p_path, local_uid=p_local_uid)

@@ -8,6 +8,7 @@ from senaite import api
 from senaite.sync import logger
 from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
 from zope.annotation.interfaces import IAnnotations
+from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
 
 SOUPER_REQUIRED_FIELDS = {"uid": REMOTE_UID,
                           "path": REMOTE_PATH,
@@ -39,12 +40,32 @@ def has_valid_portal_type(item):
     if not isinstance(item, dict):
         return False
 
-    portal_types = api.get_tool("portal_types")
+    portal_types = api.get_tool("portal_types").listContentTypes()
     pt = item.get("portal_type", None)
     if pt not in portal_types:
         return False
 
     return True
+
+
+def filter_content_types(content_types):
+    """
+
+    :param content_types:
+    :return:
+    """
+    ret = list()
+    if not content_types:
+        return ret
+
+    # Get available portal types and make it all lowercase
+    portal_types = api.get_tool("portal_types").listContentTypes()
+    portal_types = [t.lower for t in portal_types]
+
+    ret = [t.strip() for t in content_types.split(",") if t]
+    ret = filter(lambda ct, types=portal_types: ct.lower() in types, ret)
+    ret = list(set(ret))
+    return ret
 
 
 def get_parent_path(path):

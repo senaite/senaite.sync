@@ -9,6 +9,7 @@ from senaite.sync import _
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync.browser.views import Sync
 from senaite.sync.fetchstep import FetchStep
+from senaite.sync import utils
 from zope.interface import implements
 
 SYNC_STORAGE = "senaite.sync"
@@ -43,7 +44,7 @@ class Add(Sync):
 
             url = form.get("url", "")
             if not url.startswith("http"):
-                url = "http://{}".format(url)
+                url = "https://{}".format(url)
             domain_name = form.get("domain_name", None)
             username = form.get("ac_name", None)
             password = form.get("ac_password", None)
@@ -53,26 +54,17 @@ class Add(Sync):
                 self.add_status_message(message, "error")
                 return self.template()
 
-            import_settings = True if form.get("import_settings") == 'on' else False
-            import_users = True if form.get("import_users") == 'on' else False
-            import_registry = True if form.get("import_registry") == 'on' else False
-            content_types = form.get("content_types", None)
-            unwanted_content_types = form.get("unwanted_content_types", None)
+            import_settings = (form.get("import_settings") == 'on')
+            import_users = (form.get("import_users") == 'on')
+            import_registry = (form.get("import_registry") == 'on')
+            content_types = utils.filter_content_types(
+                                        form.get("content_types"))
+            unwanted_content_types = utils.filter_content_types(
+                                        form.get("unwanted_content_types"))
+
             prefix = form.get("prefix", None)
-            prefixable_types = form.get("prefixable_types", None)
-
-            # Content Type Validation
-            portal_types = api.get_tool("portal_types")
-            if content_types:
-                content_types = [t.strip() for t in content_types.split(",")]
-                content_types = filter(lambda ct: ct in portal_types,
-                                       content_types)
-
-            if unwanted_content_types:
-                unwanted_content_types = [t.strip() for t
-                                          in unwanted_content_types.split(",")]
-                unwanted_content_types = filter(lambda ct: ct in portal_types,
-                                                unwanted_content_types)
+            prefixable_types = utils.filter_content_types(
+                                        form.get("prefixable_types"))
 
             # Prefix Validation
             if prefix:
@@ -80,24 +72,19 @@ class Add(Sync):
                 if not prefix:
                     self.add_status_message("Invalid Prefix!", "error")
                     return self.template()
+
                 if len(prefix) > 3:
                     self.add_status_message("Long Prefix!", "warning")
 
-            # Content Type Validation
-            if prefixable_types:
-                if not prefix:
+                if not prefixable_types:
+                    self.add_status_message("Please enter valid Content Types "
+                                    "to be created with the Prefix.", "error")
+                    return self.template()
+            else:
+                if prefixable_types:
                     self.add_status_message("Please enter a valid Prefix.",
                                             "error")
                     return self.template()
-                prefixable_types = [t.strip() for t
-                                    in prefixable_types.split(",")]
-                prefixable_types = filter(lambda ct: ct in portal_types,
-                                          prefixable_types)
-
-            if prefix and not prefixable_types:
-                self.add_status_message("Please enter valid Content Types to be"
-                                        " created with the Prefix.", "error")
-                return self.template()
 
             data = {
                 "url": url,
@@ -123,3 +110,4 @@ class Add(Sync):
 
         # render the template
         return self.template()
+

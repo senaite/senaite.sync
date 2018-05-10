@@ -65,10 +65,14 @@ class Sync(BrowserView):
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
-            content_types = storage["configuration"].get("content_types", [])
-            unwanted_content_types = storage["configuration"].get("unwanted_content_types", [])
-            prefix = storage["configuration"].get("prefix", None)
-            prefixable_types = storage["configuration"].get("prefixable_types", [])
+            prefix = self.get_storage_config(domain_name, "prefix", None)
+            content_types = self.get_storage_config(
+                                    domain_name, "content_types", [])
+            unwanted_content_types = self.get_storage_config(
+                                    domain_name, "unwanted_content_types", [])
+            prefixable_types = self.get_storage_config(
+                                    domain_name, "prefixable_types", [])
+
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -106,10 +110,14 @@ class Sync(BrowserView):
             url = storage["credentials"]["url"]
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
-            content_types = storage["configuration"].get("content_types", [])
-            unwanted_content_types = storage["configuration"].get("unwanted_content_types", [])
-            prefix = storage["configuration"].get("prefix", None)
-            prefixable_types = storage["configuration"].get("prefixable_types", [])
+            prefix = self.get_storage_config(domain_name, "prefix", None)
+            content_types = self.get_storage_config(
+                                    domain_name, "content_types", [])
+            unwanted_content_types = self.get_storage_config(
+                                    domain_name, "unwanted_content_types", [])
+            prefixable_types = self.get_storage_config(
+                                    domain_name, "prefixable_types", [])
+
             data = {
                 "url": url,
                 "domain_name": domain_name,
@@ -136,6 +144,15 @@ class Sync(BrowserView):
 
         # always render the template
         return self.template()
+
+    def get_storage_config(self, domain_name, config_name, default = None):
+        """ Get the advanced configuration setting for a given domain
+        :param config_name: advanced configuration section name
+        :param default: default value if configuration value is not set
+        :return:
+        """
+        storage = self.get_storage(domain_name)
+        return storage["configuration"].get(config_name, default)
 
     def add_status_message(self, message, level="info"):
         """Set a portal status message
