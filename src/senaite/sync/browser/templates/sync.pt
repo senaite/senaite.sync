@@ -45,14 +45,14 @@
 
             <dd class="collapsibleContent">
               <div
-                      tal:define="content_types python:view.storage[storage]['configuration'].get('content_types');
-                                  unwanted_content_types python:view.storage[storage]['configuration'].get('unwanted_content_types');
-                                  prefixable_types python:view.storage[storage]['configuration'].get('prefixable_types');"
+                      tal:define="content_types python: view.get_storage_config(domain_name, 'content_types');
+                                  unwanted_content_types python: view.get_storage_config(domain_name, 'unwanted_content_types');
+                                  prefixable_types python: view.get_storage_config(domain_name, 'prefixable_types');"
               >
-                  <b>Prefix: <span style="font-size: medium" tal:replace="python: view.storage[storage]['configuration'].get('prefix', 'Not defined')"/></b><br><br>
-                  Settings will <span tal:condition="python: not view.storage[storage]['configuration'].get('import_settings')">NOT</span>,
-                  Registry will <span tal:condition="python: not view.storage[storage]['configuration'].get('import_registry')">NOT</span>,
-                  Users will <span tal:condition="python: not view.storage[storage]['configuration'].get('import_users')">NOT</span> be imported.<br><br>
+                  <b>Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(domain_name, 'prefix', 'Not Defined')"/></b><br><br>
+                  Settings will <span tal:condition="python: not view.get_storage_config(domain_name, 'import_settings')">NOT</span>,
+                  Registry will <span tal:condition="python: not view.get_storage_config(domain_name, 'import_registry')">NOT</span>,
+                  Users will <span tal:condition="python: not view.get_storage_config(domain_name, 'import_users')">NOT</span> be imported.<br><br>
 
                   Content types to be imported: <b><span tal:replace="python: ', '.join(content_types) if content_types else 'All the content types'"/> </b><br><br>
                   Content types to be skipped: <b><span tal:replace="python: ', '.join(unwanted_content_types) if unwanted_content_types else 'Not specified'"/> </b><br><br>

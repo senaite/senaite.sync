@@ -46,6 +46,24 @@ def has_valid_portal_type(item):
     return True
 
 
+def filter_content_types(content_types):
+    """
+
+    :param content_types:
+    :return:
+    """
+    ret = list()
+    if not content_types:
+        return ret
+
+    # Get available portal types and make it all lowercase
+    portal_types = api.get_tool("portal_types")
+
+    ret = [t.strip() for t in content_types.split(",") if t]
+    ret = filter(lambda ct: ct.lower() in portal_types, ret)
+    return ret
+
+
 def get_parent_path(path):
     """
     Gets the parent path for a given object path.

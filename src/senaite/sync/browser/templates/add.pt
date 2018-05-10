@@ -251,7 +251,7 @@
                type="submit"
                name="fetch"
                i18n:attributes="value"
-               value="Save & Fetch"/>
+               value="Save and Fetch"/>
 
       </form><br><br>
       <form action="sync">
