@@ -38,7 +38,7 @@ def has_valid_portal_type(item):
     if not isinstance(item, dict):
         return False
 
-    portal_types = api.get_tool("portal_types")
+    portal_types = api.get_tool("portal_types").listContentTypes()
     pt = item.get("portal_type", None)
     if pt not in portal_types:
         return False
@@ -57,10 +57,9 @@ def filter_content_types(content_types):
         return ret
 
     # Get available portal types and make it all lowercase
-    portal_types = api.get_tool("portal_types")
-
+    portal_types = api.get_tool("portal_types").listContentTypes()
     ret = [t.strip() for t in content_types.split(",") if t]
-    ret = filter(lambda ct: ct.lower() in portal_types, ret)
+    ret = filter(lambda ct, types=portal_types: ct in types, ret)
     return ret
 
 
