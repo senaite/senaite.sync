@@ -15,6 +15,7 @@ from senaite import api
 from senaite.sync import logger
 from senaite.sync import utils
 from senaite.sync.syncerror import SyncError
+from senaite.sync.souphandler import REMOTE_PATH, LOCAL_PATH, PORTAL_TYPE
 
 SYNC_STORAGE = "senaite.sync"
 API_BASE_URL = "API/senaite/v1"
@@ -42,7 +43,10 @@ class SyncStep(object):
         self.username = data.get("ac_name", None)
         self.password = data.get("ac_password", None)
         # Import configuration
-        self.content_types = data.get("content_types", None)
+        self.content_types = data.get("content_types", [])
+        self.unwanted_content_types = data.get("unwanted_content_types", [])
+        self.prefix = data.get("prefix", None)
+        self.prefixable_types = data.get("prefixable_types", [])
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
         self.import_registry = data.get("import_registry", False)
@@ -50,12 +54,58 @@ class SyncStep(object):
         if not any([self.domain_name, self.url, self.username, self.password]):
             self.fail("Missing parameter in Sync Step: {}".format(data))
 
-    def translate_path(self, path):
-        """Translate the physical path to a local path
+    def translate_path(self, remote_path):
+        """ Translates a remote physical path into local path taking into account
+        the prefix. If prefix is not enabled, then just the Remote Site ID will
+        be replaced by the Local one. In case prefixes are enabled, then walk
+        through all parents and add prefixes if necessary.
+        :param remote_path: a path in a remote instance
+        :return string: the translated path
         """
+        if not remote_path or "/" not in remote_path:
+            raise SyncError("error", "Invalid remote path: '{}'"
+                            .format(remote_path))
+
+        if self.is_portal_path(remote_path):
+            return api.get_path(self.portal)
+
         portal_id = self.portal.getId()
-        remote_portal_id = path.split("/")[1]
-        return str(path.replace(remote_portal_id, portal_id))
+        remote_portal_id = remote_path.split("/")[1]
+        if not self.prefix:
+            return str(remote_path.replace(remote_portal_id, portal_id))
+
+        rem_id = utils.get_id_from_path(remote_path)
+        rec = self.sh.find_unique(REMOTE_PATH, remote_path)
+        if rec is None:
+            raise SyncError("error", "Missing Remote path in Soup table: {}"
+                            .format(remote_path))
+
+        # Check if previously translated and saved
+        if rec[LOCAL_PATH]:
+            return str(rec[LOCAL_PATH])
+
+        # Get parent's local path
+        remote_parent_path = utils.get_parent_path(remote_path)
+        parent_path = self.translate_path(remote_parent_path)
+
+        # Will check whether prefix needed by portal type
+        portal_type = rec[PORTAL_TYPE]
+        prefix = self.get_prefix(portal_type)
+
+        res = "{0}/{1}{2}".format(parent_path, prefix, rem_id)
+        res = res.replace(remote_portal_id, portal_id)
+        # Save the local path in the Souper to use in the future
+        self.sh.update_by_remote_path(remote_path, LOCAL_PATH = res)
+        return str(res)
+
+    def get_prefix(self, portal_type):
+        """
+        :param portal_type: content type to get the prefix for
+        :return:
+        """
+        if self.prefix and portal_type in self.prefixable_types:
+            return self.prefix
+        return ""
 
     def is_portal_path(self, path):
         """ Check if the given path is the path of any portal object.
@@ -220,14 +270,14 @@ class SyncStep(object):
         :return: True if ALL parents are fetched
         """
         # Never fetch parents of an unnecessary objects
-        if not utils.is_item_allowed(item):
+        if not utils.has_valid_portal_type(item):
             return False
         parent_path = item.get("parent_path")
         # Skip if the parent is portal object
         if self.is_portal_path(parent_path):
             return True
         # Skip if already exists
-        if self.sh.find_unique("path", parent_path):
+        if self.sh.find_unique(REMOTE_PATH, parent_path):
             return True
         logger.debug("Inserting missing parent: {}".format(parent_path))
         parent = self.get_first_item(item.get("parent_url"))
@@ -235,3 +285,14 @@ class SyncStep(object):
         self.sh.insert(par_dict)
         # Recursively import grand parents too
         return self._parents_fetched(parent)
+
+    def is_item_allowed(self, item):
+        """ Checks if item is allowed based on its portal_type
+        :param item: object data dict
+        """
+        if not utils.has_valid_portal_type(item):
+            return False
+        if item.get("portal_type") in self.unwanted_content_types:
+            return False
+
+        return True

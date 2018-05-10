@@ -1,0 +1,263 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="senaite">
+  <head>
+    <metal:block fill-slot="javascript_head_slot"
+                 tal:define="portal context/@@plone_portal_state/portal;">
+    </metal:block>
+  </head>
+  <body>
+
+    <metal:title fill-slot="content-title">
+      <h1 i18n:translate="">
+        Add new Remote
+      </h1>
+    </metal:title>
+    <metal:description fill-slot="content-description">
+      <p i18n:translate="">
+      </p>
+    </metal:description>
+
+    <div metal:fill-slot="content-core"
+         tal:define="portal context/@@plone_portal_state/portal;">
+
+      <form id="fetch_form"
+            name="fetch_form"
+            method="POST">
+
+        <input type="hidden" name="fetchform" value="1"/>
+        <span tal:replace="structure context/@@authenticator/authenticator"/>
+
+        <!-- Domain Name -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="domain_name">
+            Domain Name
+            <span class="required"></span>
+            <span i18n:translate=""
+                  class="help formHelp">
+              Representative unique name for the source system.
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
+            <input type="text" size="30"
+                   class="form-control"
+                   id="domain_name"
+                   name="domain_name"/>
+          </div>
+        </div>
+
+        <!-- Base URL -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="url">
+            Source URL
+            <span class="required"></span>
+            <span i18n:translate=""
+                  class="help formHelp">
+              The base URL of the source system, e.g. http://localhost:1337/senaitelims
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
+            <input type="text" size="30"
+                   class="form-control"
+                   id="url"
+                   name="url"/>
+          </div>
+        </div>
+
+        <!-- Username -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="ac_name">
+            Username
+            <span class="required"></span>
+            <span i18n:translate=""
+                  class="help formHelp">
+              The username to login into the source system
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+            <input type="text"
+                   size="30"
+                   autocomplete="new-username"
+                   class="form-control"
+                   id="ac_name"
+                   name="ac_name"/>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="ac_password">
+            Password
+            <span class="required"></span>
+            <span i18n:translate=""
+                  class="help formHelp">
+              The password to login into the source system
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+            <input type="password"
+                   autocomplete="new-password"
+                   size="30"
+                   class="form-control"
+                   id="ac_password"
+                   name="ac_password"/>
+          </div>
+        </div>
+
+        <!-- Import configuration -->
+        <div class="field form-group field">
+          <div class="panel-group">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h4 class="panel-title">
+                 <a data-toggle="collapse" href="#collapse1">Advanced Configuration</a>
+               </h4>
+              </div>
+              <div id="collapse1" class="panel-collapse collapse">
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <div>
+                      <input type="checkbox"
+                             name="import_settings"
+                             id="import_settings"/>
+	     	          <label for="import_settings">Import Settings</label>
+	                </div>
+                  </li>
+                  <li class="list-group-item">
+                    <div>
+                      <input type="checkbox"
+                             name="import_registry"
+                             id="import_registry"/>
+	     	          <label for="import_registry">Import Registry</label>
+	                </div>
+                  </li>
+                  <li class="list-group-item">
+                    <div>
+                      <input type="checkbox"
+                             name="import_users"
+                             id="import_users"/>
+	     	          <label for="import_users">Import Users</label>
+	                </div>
+                  </li>
+                  <li class="list-group-item">
+                    <!-- Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="content_types">
+                        Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          If filled, ONLY indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="content_types"
+                               name="content_types"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Unwanted Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="unwanted_content_types">
+                        Content Types to be Skipped
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          If filled, introduced content types will be SKIPPED and only regular objects that are dependencies of the Allowed Types will be imported.. E.g: 'Supplier, Instrument'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="unwanted_content_types"
+                               name="unwanted_content_types"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Prefix -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="prefix">
+                        Prefix
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          A short prefix to appear in the Object ID's imported from this Remote.
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="10"
+                               class="form-control"
+                               id="prefix"
+                               name="prefix"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Content Types to be prefixified -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="prefixable_types">
+                        Prefixable Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          Please specify exactly which content types must contain Remote's Prefix in their ID's. Must be filled if prefix is enabled. E.g: 'Sample, Client, Worksheet'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="prefixable_types"
+                               name="prefixable_types"/>
+                      </div>
+                    </div>
+                  </li>
+
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <input class="btn btn-success btn-sm allowMultiSubmit"
+               type="submit"
+               name="fetch"
+               i18n:attributes="value"
+               value="Save and Fetch"/>
+
+      </form><br><br>
+      <form action="sync">
+          <input type="submit" value="Show Remotes" />
+      </form>
+    </div>
+
+  </body>
+</html>

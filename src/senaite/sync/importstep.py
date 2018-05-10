@@ -25,7 +25,8 @@ from senaite.jsonapi.interfaces import IFieldManager
 from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
-from senaite.sync.souphandler import REMOTE_UID, LOCAL_UID, PORTAL_TYPE
+from senaite.sync.souphandler import REMOTE_UID, LOCAL_UID, REMOTE_PATH,\
+                                     PORTAL_TYPE
 from senaite.sync import utils
 
 COMMIT_INTERVAL = 1000
@@ -59,7 +60,8 @@ class ImportStep(SyncStep):
     update objects based on previously fetched data.
 
     """
-    fields_to_skip = ['excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
+    fields_to_skip = ['id',  # Overriding ID's can remove prefixes
+                      'excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
     def __init__(self, data):
         SyncStep.__init__(self, data)
@@ -212,7 +214,7 @@ class ImportStep(SyncStep):
 
         for item_index, r_uid in enumerate(ordered_uids):
             row = self.sh.find_unique(REMOTE_UID, r_uid)
-            logger.debug("Handling: {} ".format(row["path"]))
+            logger.debug("Handling: {} ".format(row[REMOTE_PATH]))
             self._handle_obj(row)
 
             # Handling object means there is a chunk containing several objects
@@ -297,47 +299,48 @@ class ImportStep(SyncStep):
         :param row: A row dictionary from the souper
         :type row: dict
         """
-        path = row.get("path")
+        remote_path = row.get(REMOTE_PATH)
 
-        remote_parent_path = utils.get_parent_path(path)
+        remote_parent_path = utils.get_parent_path(remote_path)
         # If parent creation failed previously, do not try to create the object
         if remote_parent_path in self.skipped:
             logger.warning("Parent creation failed previously, skipping: {}"
-                           .format(path))
+                           .format(remote_path))
             return None
 
-        existing = self.portal.unrestrictedTraverse(self.translate_path(path),
-                                                    None)
+        local_path = self.translate_path(remote_path)
+        existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
-            local_uid = self.sh.find_unique("path", path).get(LOCAL_UID,
+            local_uid = self.sh.find_unique(REMOTE_PATH, remote_path).get(LOCAL_UID,
                                                               None)
             if not local_uid:
                 local_uid = api.get_uid(existing)
-                self.sh.update_by_path(path, local_uid=local_uid)
+                self.sh.update_by_remote_path(remote_path, local_uid=local_uid)
             return existing
 
-        if not self._parents_created(path):
-            logger.warning("Parent creation failed, skipping: {}".format(path))
+        if not self._parents_created(remote_path):
+            logger.warning("Parent creation failed, skipping: {}".format(
+                remote_path))
             return None
 
-        parent = self.translate_path(utils.get_parent_path(path))
-        container = self.portal.unrestrictedTraverse(str(parent), None)
+        parent_path = utils.get_parent_path(local_path)
+        container = self.portal.unrestrictedTraverse(str(parent_path), None)
         obj_data = {
-            "id": utils.get_id_from_path(path),
+            "id": utils.get_id_from_path(local_path),
             "portal_type": row.get(PORTAL_TYPE)}
         obj = self._create_object_slug(container, obj_data)
         if obj is not None:
             local_uid = api.get_uid(obj)
-            self.sh.update_by_path(path, local_uid=local_uid)
+            self.sh.update_by_remote_path(remote_path, local_uid=local_uid)
         return obj
 
-    def _parents_created(self, path):
+    def _parents_created(self, remote_path):
         """ Check if parents have been already created and create all non-existing
         parents and updates local UIDs for the existing ones.
         :param path: object path in the remote
         :return: True if ALL the parents were created successfully
         """
-        p_path = utils.get_parent_path(path)
+        p_path = utils.get_parent_path(remote_path)
         if p_path == "/":
             return True
 
@@ -346,42 +349,45 @@ class ImportStep(SyncStep):
             return True
 
         # Incoming path was remote path, translate it into local one
-        local_path = self.translate_path(p_path)
+        local_p_path = self.translate_path(p_path)
 
         # Check if the parent already exists. If yes, make sure it has
         # 'local_uid' value set in the soup table.
-        existing = self.portal.unrestrictedTraverse(local_path, None)
+        existing = self.portal.unrestrictedTraverse(local_p_path, None)
         if existing:
-            p_row = self.sh.find_unique("path", p_path)
+            p_row = self.sh.find_unique(REMOTE_PATH, p_path)
             if p_row is None:
+                # This should never happen
                 return False
-            p_local_uid = self.sh.find_unique("path", p_path).get(
-                                                    LOCAL_UID, None)
+            p_local_uid = p_row.get(LOCAL_UID, None)
             if not p_local_uid:
+                # Update parent's local path if it is not set already
                 if hasattr(existing, "UID") and existing.UID():
                     p_local_uid = existing.UID()
-                    self.sh.update_by_path(p_path, local_uid=p_local_uid)
+                    self.sh.update_by_remote_path(p_path, local_uid=p_local_uid)
             return True
 
         # Before creating an object's parent, make sure grand parents are
         # already ready.
         if not self._parents_created(p_path):
             return False
-        parent = self.sh.find_unique("path", p_path)
-        grand_parent = self.translate_path(utils.get_parent_path(p_path))
-        container = self.portal.unrestrictedTraverse(str(grand_parent), None)
+
+        parent = self.sh.find_unique(REMOTE_PATH, p_path)
+        grand_parent = utils.get_parent_path(local_p_path)
+        container = self.portal.unrestrictedTraverse(grand_parent, None)
         parent_data = {
-            "id": utils.get_id_from_path(p_path),
-            "path": p_path,
+            "id": utils.get_id_from_path(local_p_path),
+            "remote_path": p_path,
             "portal_type": parent.get(PORTAL_TYPE)}
+
         parent_obj = self._create_object_slug(container, parent_data)
         if parent_obj is None:
-            logger.warning("Couldn't create parent of {}".format(path))
+            logger.warning("Couldn't create parent of {}".format(remote_path))
             return False
 
         # Parent is created, update it in the soup table.
         p_local_uid = api.get_uid(parent_obj)
-        self.sh.update_by_path(p_path, local_uid=p_local_uid)
+        self.sh.update_by_remote_path(p_path, local_uid=p_local_uid)
         return True
 
     def _create_dependencies(self, obj, data):
@@ -423,7 +429,7 @@ class ImportStep(SyncStep):
                     logger.error("Remote UID not found in fetched data: {}".
                                  format(r_uid))
                     continue
-                if not utils.is_item_allowed(dep_item):
+                if not utils.has_valid_portal_type(dep_item):
                     logger.error("Skipping dependency with unknown portal type:"
                                  " {}".format(dep_item))
                     continue
@@ -537,7 +543,7 @@ class ImportStep(SyncStep):
         """Create an content object slug for the given data
         """
         id = data.get("id")
-        remote_path = data.get("path")
+        remote_path = data.get("remote_path")
         portal_type = data.get("portal_type")
         types_tool = api.get_tool("portal_types")
         fti = types_tool.getTypeInfo(portal_type)
@@ -615,7 +621,7 @@ class ImportStep(SyncStep):
             if existing is None:
                 continue
             logger.info('Recovering {0}/{1} : {2} '.format(
-                                                idx+1, total, existing["path"]))
+                                        idx+1, total, existing[REMOTE_PATH]))
             # Mark that update failed previously
             existing['updated'] = '0'
             self._handle_obj(existing, handle_dependencies=False)

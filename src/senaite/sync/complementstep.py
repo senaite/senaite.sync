@@ -9,7 +9,8 @@ from senaite import api
 from senaite.sync.importstep import ImportStep
 
 from senaite.sync import logger, utils
-from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID
+from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID, \
+                                     REMOTE_PATH
 
 
 class ComplementStep(ImportStep):
@@ -70,7 +71,7 @@ class ComplementStep(ImportStep):
 
             for item in items:
                 # skip object or extract the required data for the import
-                if not item or not item.get("portal_type", True):
+                if not self.is_item_allowed(item):
                     continue
                 modified = DateTime(item.get('modification_date'))
                 if modified < self.fetch_time:
@@ -82,8 +83,8 @@ class ComplementStep(ImportStep):
                 # If remote UID is in the souper table already, just check if
                 # remote path of the object has been updated
                 if existing_rec:
-                    rem_path = data_dict.get('path')
-                    if rem_path != existing_rec.get('path'):
+                    rem_path = data_dict.get(REMOTE_PATH)
+                    if rem_path != existing_rec.get(REMOTE_PATH):
                         self.sh.update_by_remote_uid(**data_dict)
                     rec_id = existing_rec.get("rec_int_id")
                 else:
@@ -122,7 +123,7 @@ class ComplementStep(ImportStep):
             row = self.sh.get_record_by_id(rec_id, as_dict=True)
             if not row:
                 continue
-            logger.debug("Handling: {} ".format(row["path"]))
+            logger.debug("Handling: {} ".format(row[REMOTE_PATH]))
             self._handle_obj(row, handle_dependencies=False)
 
             # Log.info every 50 objects imported

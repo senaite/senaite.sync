@@ -6,6 +6,7 @@ Changelog
 
 **Added**
 
+- #42 New Advanced Configuration Options
 - #34 Complement step for migration
 - #33 Recover step for failed objects in data import
 - #32 Log the estimated date of end
