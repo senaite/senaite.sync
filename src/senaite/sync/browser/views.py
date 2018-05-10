@@ -72,6 +72,8 @@ class Sync(BrowserView):
                                     domain_name, "unwanted_content_types", [])
             prefixable_types = self.get_storage_config(
                                     domain_name, "prefixable_types", [])
+            read_only_types = self.get_storage_config(
+                                    domain_name, "read_only_types", [])
 
             data = {
                 "url": url,
@@ -80,6 +82,7 @@ class Sync(BrowserView):
                 "ac_password": password,
                 "content_types": content_types,
                 "unwanted_content_types": unwanted_content_types,
+                "read_only_types": read_only_types,
                 "prefix": prefix,
                 "prefixable_types": prefixable_types,
             }
@@ -117,6 +120,8 @@ class Sync(BrowserView):
                                     domain_name, "unwanted_content_types", [])
             prefixable_types = self.get_storage_config(
                                     domain_name, "prefixable_types", [])
+            read_only_types = self.get_storage_config(
+                                    domain_name, "read_only_types", [])
 
             data = {
                 "url": url,
@@ -126,6 +131,7 @@ class Sync(BrowserView):
                 "fetch_time": fetch_time,
                 "content_types": content_types,
                 "unwanted_content_types": unwanted_content_types,
+                "read_only_types": read_only_types,
                 "prefix": prefix,
                 "prefixable_types": prefixable_types,
             }

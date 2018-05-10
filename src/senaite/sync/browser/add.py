@@ -61,6 +61,8 @@ class Add(Sync):
                                         form.get("content_types"))
             unwanted_content_types = utils.filter_content_types(
                                         form.get("unwanted_content_types"))
+            read_only_types = utils.filter_content_types(
+                                        form.get("read_only_types"))
 
             prefix = form.get("prefix", None)
             prefixable_types = utils.filter_content_types(
@@ -93,6 +95,7 @@ class Add(Sync):
                 "ac_password": password,
                 "content_types": content_types,
                 "unwanted_content_types": unwanted_content_types,
+                "read_only_types": read_only_types,
                 "import_settings": import_settings,
                 "import_users": import_users,
                 "import_registry": import_registry,
