@@ -165,7 +165,7 @@ class SyncStep(object):
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
         """
-        items = self.get_items(url_or_endpoint, **kw)
+        items = self.get_items_with_retry(url_or_endpoint, **kw)
         if not items:
             return None
         return items[0]
@@ -281,6 +281,9 @@ class SyncStep(object):
             return True
         logger.debug("Inserting missing parent: {}".format(parent_path))
         parent = self.get_first_item(item.get("parent_url"))
+        if not parent:
+            logger.error("Cannot fetch parent info: {} ".format(parent_path))
+            return False
         par_dict = utils.get_soup_format(parent)
         self.sh.insert(par_dict)
         # Recursively import grand parents too
