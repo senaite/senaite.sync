@@ -165,7 +165,7 @@ class SyncStep(object):
     def get_first_item(self, url_or_endpoint, **kw):
         """Fetch the first item of the 'items' list from a std. JSON API reponse
         """
-        items = self.get_items_with_retry(url_or_endpoint, **kw)
+        items = self.get_items_with_retry(url_or_endpoint=url_or_endpoint, **kw)
         if not items:
             return None
         return items[0]
