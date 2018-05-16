@@ -282,6 +282,7 @@ class ImportStep(SyncStep):
             if handle_dependencies:
                 self._create_dependencies(obj, obj_data)
             self._update_object_with_data(obj, obj_data)
+            self._set_object_permission(obj)
             self.sh.mark_update(r_uid)
             self._queue.remove(r_uid)
         except Exception, e:
@@ -628,3 +629,17 @@ class ImportStep(SyncStep):
             obj = brain.getObject()
             obj.reindexObject()
         return
+
+    def _set_object_permission(self, obj):
+        """
+        :param obj:
+        :return:
+        """
+        portal_type = api.get_portal_type(obj)
+
+        # Don't do anything, if it is just a dependency
+        if portal_type in self.unwanted_content_types:
+            return
+
+        if portal_type in self.read_only_types:
+            obj.manage_permission('Modify portal content', roles=[])

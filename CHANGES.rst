@@ -6,6 +6,7 @@ Changelog
 
 **Added**
 
+- #44 Advanced Configuration: 'Read-Only' Portal Types
 - #42 New Advanced Configuration Options
 - #34 Complement step for migration
 - #33 Recover step for failed objects in data import

@@ -241,6 +241,28 @@
                     </div>
                   </li>
 
+                  <li class="list-group-item">
+                    <!-- Content Types to be created in Read-Only mode -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="read_only_types">
+                        Read-Only Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          Introduce Content Types to be Imported and Created in Read-Only Mode. E.g: 'Method, Department'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="read_only_types"
+                               name="read_only_types"/>
+                      </div>
+                    </div>
+                  </li>
+
                 </ul>
               </div>
             </div>

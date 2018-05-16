@@ -45,6 +45,7 @@ class SyncStep(object):
         # Import configuration
         self.content_types = data.get("content_types", [])
         self.unwanted_content_types = data.get("unwanted_content_types", [])
+        self.read_only_types = data.get("read_only_types", [])
         self.prefix = data.get("prefix", None)
         self.prefixable_types = data.get("prefixable_types", [])
         self.import_settings = data.get("import_settings", False)
