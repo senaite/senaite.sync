@@ -64,23 +64,25 @@ class Add(Sync):
             read_only_types = utils.filter_content_types(
                                         form.get("read_only_types"))
 
-            prefix = form.get("prefix", None)
+            remote_prefix = form.get("remote_prefix", None)
             prefixable_types = utils.filter_content_types(
                                         form.get("prefixable_types"))
 
             # Prefix Validation
-            if prefix:
-                prefix = prefix.strip(PREFIX_SPECIAL_CHARACTERS)
-                if not prefix:
-                    self.add_status_message("Invalid Prefix!", "error")
+            if remote_prefix:
+                remote_prefix = remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
+                if not remote_prefix:
+                    self.add_status_message("Invalid Remote Prefix!", "error")
                     return self.template()
 
-                if len(prefix) > 3:
-                    self.add_status_message("Long Prefix!", "warning")
+                if len(remote_prefix) > 3:
+                    self.add_status_message("Remote's Prefix is too long!!",
+                                            "warning")
 
                 if not prefixable_types:
                     self.add_status_message("Please enter valid Content Types "
-                                    "to be created with the Prefix.", "error")
+                                            "to be created with the Prefix.",
+                                            "error")
                     return self.template()
             else:
                 if prefixable_types:
@@ -99,7 +101,7 @@ class Add(Sync):
                 "import_settings": import_settings,
                 "import_users": import_users,
                 "import_registry": import_registry,
-                "prefix": prefix,
+                "remote_prefix": remote_prefix,
                 "prefixable_types": prefixable_types,
             }
 

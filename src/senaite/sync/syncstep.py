@@ -46,7 +46,7 @@ class SyncStep(object):
         self.content_types = data.get("content_types", [])
         self.unwanted_content_types = data.get("unwanted_content_types", [])
         self.read_only_types = data.get("read_only_types", [])
-        self.prefix = data.get("prefix", None)
+        self.remote_prefix = data.get("remote_prefix", None)
         self.prefixable_types = data.get("prefixable_types", [])
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
@@ -72,7 +72,7 @@ class SyncStep(object):
 
         portal_id = self.portal.getId()
         remote_portal_id = remote_path.split("/")[1]
-        if not self.prefix:
+        if not self.remote_prefix:
             return str(remote_path.replace(remote_portal_id, portal_id))
 
         rem_id = utils.get_id_from_path(remote_path)
@@ -104,8 +104,8 @@ class SyncStep(object):
         :param portal_type: content type to get the prefix for
         :return:
         """
-        if self.prefix and portal_type in self.prefixable_types:
-            return self.prefix
+        if self.remote_prefix and portal_type in self.prefixable_types:
+            return self.remote_prefix
         return ""
 
     def is_portal_path(self, path):

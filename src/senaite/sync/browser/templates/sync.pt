@@ -49,7 +49,7 @@
                                   unwanted_content_types python: view.get_storage_config(storage, 'unwanted_content_types');
                                   prefixable_types python: view.get_storage_config(storage, 'prefixable_types');"
               >
-                  <b>Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(storage, 'prefix', 'Not Defined')"/></b><br><br>
+                  <b>Remote Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(storage, 'remote_prefix', 'Not Defined')"/></b><br><br>
                   Settings will <span tal:condition="python: not view.get_storage_config(storage, 'import_settings')">NOT</span>,
                   Registry will <span tal:condition="python: not view.get_storage_config(storage, 'import_registry')">NOT</span>,
                   Users will <span tal:condition="python: not view.get_storage_config(storage, 'import_users')">NOT</span> be imported.<br><br>

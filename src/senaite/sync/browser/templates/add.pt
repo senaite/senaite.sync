@@ -198,23 +198,23 @@
                   </li>
 
                   <li class="list-group-item">
-                    <!-- Prefix -->
+                    <!-- Remote Prefix -->
                     <div class="field form-group field">
                       <label i18n:translate=""
                              class="form-control-label"
-                             for="prefix">
-                        Prefix
+                             for="remote_prefix">
+                        Remote's Prefix
                         <span i18n:translate=""
                               class="help formHelp">
-                          A short prefix to appear in the Object ID's imported from this Remote.
+                          A short prefix to appear in the Object ID's imported from this Remote if necessary.
                         </span>
                       </label>
                       <div class="form-group input-group">
                         <input type="text"
                                size="10"
                                class="form-control"
-                               id="prefix"
-                               name="prefix"/>
+                               id="remote_prefix"
+                               name="remote_prefix"/>
                       </div>
                     </div>
                   </li>
