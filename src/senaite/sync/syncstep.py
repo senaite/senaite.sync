@@ -298,7 +298,15 @@ class SyncStep(object):
         """
         if not utils.has_valid_portal_type(item):
             return False
-        if item.get("portal_type") in self.unwanted_content_types:
+        pt = item.get("portal_type")
+        if pt in self.unwanted_content_types:
             return False
+
+        # If it is update-only content type, then Remote Id should start with
+        # this instance's prefix
+        if pt in self.update_only_types:
+            remote_id= item.get("id", "")
+            if not remote_id.startswith(self.local_prefix):
+                return False
 
         return True
