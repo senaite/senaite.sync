@@ -66,6 +66,7 @@ class FetchStep(SyncStep):
         storage["configuration"]["content_types"] = self.content_types
         storage["configuration"]["unwanted_content_types"] = self.unwanted_content_types
         storage["configuration"]["read_only_types"] = self.read_only_types
+        storage["configuration"]["update_only_types"] = self.update_only_types
         storage["configuration"]["remote_prefix"] = self.remote_prefix
         storage["configuration"]["local_prefix"] = self.local_prefix
         storage["configuration"]["prefixable_types"] = self.prefixable_types

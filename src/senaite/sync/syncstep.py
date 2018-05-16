@@ -46,6 +46,7 @@ class SyncStep(object):
         self.content_types = data.get("content_types", [])
         self.unwanted_content_types = data.get("unwanted_content_types", [])
         self.read_only_types = data.get("read_only_types", [])
+        self.update_only_types = data.get("update_only_types", [])
         self.remote_prefix = data.get("remote_prefix", None)
         self.local_prefix = data.get("local_prefix", None)
         self.prefixable_types = data.get("prefixable_types", [])

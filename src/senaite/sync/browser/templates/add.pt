@@ -285,6 +285,30 @@
                     </div>
                   </li>
 
+                  <li class="list-group-item">
+                    <!-- Update-only Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="update_only_types">
+                        Update-Only Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          Introduce Content Types ONLY to be Updated with Remote instance changes.
+                          It means, only the objects that have been created on this instance will be updated according to the Remote Instance
+                          and objects with another origin will not be imported. E.g: 'AnalysisRequest, Sample'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="update_only_types"
+                               name="update_only_types"/>
+                      </div>
+                    </div>
+                  </li>
+
                 </ul>
               </div>
             </div>
