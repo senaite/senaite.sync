@@ -66,6 +66,7 @@ class Sync(BrowserView):
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
             remote_prefix = self.get_storage_config(domain_name, "remote_prefix", None)
+            local_prefix = self.get_storage_config(domain_name, "local_prefix", None)
             content_types = self.get_storage_config(
                                     domain_name, "content_types", [])
             unwanted_content_types = self.get_storage_config(
@@ -84,6 +85,7 @@ class Sync(BrowserView):
                 "unwanted_content_types": unwanted_content_types,
                 "read_only_types": read_only_types,
                 "remote_prefix": remote_prefix,
+                "local_prefix": local_prefix,
                 "prefixable_types": prefixable_types,
             }
             step = ImportStep(data)
@@ -114,6 +116,7 @@ class Sync(BrowserView):
             username = storage["credentials"]["username"]
             password = storage["credentials"]["password"]
             remote_prefix = self.get_storage_config(domain_name, "remote_prefix", None)
+            local_prefix = self.get_storage_config(domain_name, "local_prefix", None)
             content_types = self.get_storage_config(
                                     domain_name, "content_types", [])
             unwanted_content_types = self.get_storage_config(
@@ -133,6 +136,7 @@ class Sync(BrowserView):
                 "unwanted_content_types": unwanted_content_types,
                 "read_only_types": read_only_types,
                 "remote_prefix": remote_prefix,
+                "local_prefix": local_prefix,
                 "prefixable_types": prefixable_types,
             }
             step = ComplementStep(data)

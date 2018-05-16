@@ -65,6 +65,7 @@ class Add(Sync):
                                         form.get("read_only_types"))
 
             remote_prefix = form.get("remote_prefix", None)
+            local_prefix = form.get("local_prefix", None)
             prefixable_types = utils.filter_content_types(
                                         form.get("prefixable_types"))
 
@@ -102,6 +103,7 @@ class Add(Sync):
                 "import_users": import_users,
                 "import_registry": import_registry,
                 "remote_prefix": remote_prefix,
+                "local_prefix": local_prefix,
                 "prefixable_types": prefixable_types,
             }
 

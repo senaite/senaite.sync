@@ -220,6 +220,28 @@
                   </li>
 
                   <li class="list-group-item">
+                    <!-- Local Prefix -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="local_prefix">
+                        Local Prefix
+                        <span i18n:translate=""
+                              class="help formHelp">
+                        Prefix which is used for this instance in the Remote
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="10"
+                               class="form-control"
+                               id="local_prefix"
+                               name="local_prefix"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
                     <!-- Content Types to be prefixified -->
                     <div class="field form-group field">
                       <label i18n:translate=""
