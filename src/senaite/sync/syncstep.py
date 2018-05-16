@@ -319,7 +319,8 @@ class SyncStep(object):
         # If it is update-only content type, then Remote Id should start with
         # this instance's prefix
         if pt in self.update_only_types:
-            remote_id= item.get("id", "")
+            remote_path= item.get("path", "")
+            remote_id = utils.get_id_from_path(remote_path)
             if not remote_id.startswith(self.local_prefix):
                 return False
 
