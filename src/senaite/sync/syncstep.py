@@ -74,10 +74,9 @@ class SyncStep(object):
 
         portal_id = self.portal.getId()
         remote_portal_id = remote_path.split("/")[1]
-        if not self.remote_prefix:
+        if not self.remote_prefix and not self.local_prefix:
             return str(remote_path.replace(remote_portal_id, portal_id))
 
-        rem_id = utils.get_id_from_path(remote_path)
         rec = self.sh.find_unique(REMOTE_PATH, remote_path)
         if rec is None:
             raise SyncError("error", "Missing Remote path in Soup table: {}"
@@ -95,7 +94,11 @@ class SyncStep(object):
         portal_type = rec[PORTAL_TYPE]
         prefix = self.get_prefix(portal_type)
 
-        res = "{0}/{1}{2}".format(parent_path, prefix, rem_id)
+        # Remove Local Prefix
+        rem_id = utils.get_id_from_path(remote_path)
+        local_id = self.trim_local_prefix(rem_id)
+
+        res = "{0}/{1}{2}".format(parent_path, prefix, local_id)
         res = res.replace(remote_portal_id, portal_id)
         # Save the local path in the Souper to use in the future
         self.sh.update_by_remote_path(remote_path, LOCAL_PATH = res)
@@ -109,6 +112,17 @@ class SyncStep(object):
         if self.remote_prefix and portal_type in self.prefixable_types:
             return self.remote_prefix
         return ""
+
+    def trim_local_prefix(self, remote_id):
+        """
+
+        :param remote_id:
+        :param portal_type:
+        :return:
+        """
+        if self.local_prefix and remote_id.startswith(self.local_prefix):
+            return remote_id.replace(self.local_prefix, "")
+        return remote_id
 
     def is_portal_path(self, path):
         """ Check if the given path is the path of any portal object.
