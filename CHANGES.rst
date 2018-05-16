@@ -21,6 +21,7 @@ Changelog
 
 **Changed**
 
+- 43 Querying last modified objects directly from 'uid_catalog'
 
 **Removed**
 

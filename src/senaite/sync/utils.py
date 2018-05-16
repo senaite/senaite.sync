@@ -1,20 +1,22 @@
 
+from datetime import datetime
+
 from BTrees.OOBTree import OOBTree
-
-from zope.annotation.interfaces import IAnnotations
-
+from DateTime import DateTime
+from Products.ATContentTypes.utils import DT2dt
 from senaite import api
 from senaite.sync import logger
-from DateTime import DateTime
-from datetime import datetime
 from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
-
+from zope.annotation.interfaces import IAnnotations
+from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
 
 SOUPER_REQUIRED_FIELDS = {"uid": REMOTE_UID,
                           "path": REMOTE_PATH,
                           "portal_type": PORTAL_TYPE}
 
 SYNC_CREDENTIALS = "senaite.sync.credentials"
+
+_default_date_format = "%Y-%m-%d"
 
 
 def to_review_history_format(review_history):
@@ -215,3 +217,36 @@ def get_estimated_end_date(started, processed, total):
         return None
     remaining_time = remaining_items * elapsed_time / processed
     return current_time + remaining_time
+
+
+def date_to_query_literal(date, date_format=_default_date_format):
+    """ Convert a date to a valid JSONAPI URL query string.
+    :param date: date to be converted in datetime, DateTime or string format
+    :param date_format: in case the date is string, format to parse it
+    :return string: literal date
+    """
+    if not date:
+        return None
+
+    if isinstance(date, DateTime):
+        date = DT2dt(date)
+
+    if isinstance(date, basestring):
+        date = datetime.strptime(date, date_format)
+
+    days = (datetime.now() - date).days
+
+    if days < 1:
+        return "today"
+    if days < 2:
+        return "yesterday"
+    if days < 8:
+        return "this-week"
+    if days < 32:
+        return "this-month"
+    if days < 367:
+        return "this-year"
+
+    logger.warn("Interval is too long to be converted to string: {} days"
+                .format(days))
+    return ""

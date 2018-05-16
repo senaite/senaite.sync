@@ -46,6 +46,7 @@ class ComplementStep(ImportStep):
         query = {
             "url_or_endpoint": "search",
             "catalog": 'uid_catalog',
+            "recent_modified": utils.date_to_query_literal(self.fetch_time),
             "limit": 1
         }
         if self.content_types:
@@ -61,7 +62,6 @@ class ComplementStep(ImportStep):
         # format it and insert it into the import soup
         for current_page in xrange(number_of_pages):
             start_from = (current_page * window) - overlap
-            query["complete"] = True
             query["limit"] = window
             query["b_start"] = start_from
             items = self.get_items_with_retry(**query)
@@ -72,9 +72,6 @@ class ComplementStep(ImportStep):
             for item in items:
                 # skip object or extract the required data for the import
                 if not self.is_item_allowed(item):
-                    continue
-                modified = DateTime(item.get('modification_date'))
-                if modified < self.fetch_time:
                     continue
 
                 data_dict = utils.get_soup_format(item)
