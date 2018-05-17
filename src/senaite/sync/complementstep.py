@@ -19,9 +19,9 @@ class ComplementStep(ImportStep):
     that time.
     """
 
-    def __init__(self, data):
-        ImportStep.__init__(self, data)
-        self.fetch_time = data.get("fetch_time", None)
+    def __init__(self, credentials, config, fetch_time):
+        ImportStep.__init__(self, credentials, config)
+        self.fetch_time = fetch_time
 
     def run(self):
         """

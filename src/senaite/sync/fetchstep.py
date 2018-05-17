@@ -23,6 +23,10 @@ class FetchStep(SyncStep):
     Fetch step of data migration. During this step, the data must be retrieved
     from the source and saved in 'souper' table for the domain.
     """
+    def __init__(self, credentials, config):
+        super(FetchStep, self).__init__(credentials, config)
+        self.credentials = credentials
+        self.config = config
 
     def run(self):
         """
@@ -59,20 +63,13 @@ class FetchStep(SyncStep):
 
         # remember the credentials in the storage
         storage = self.get_storage()
-        storage["credentials"]["url"] = self.url
-        storage["credentials"]["username"] = self.username
-        storage["credentials"]["password"] = self.password
-        # remember import configuration in the storage
-        storage["configuration"]["content_types"] = self.content_types
-        storage["configuration"]["unwanted_content_types"] = self.unwanted_content_types
-        storage["configuration"]["read_only_types"] = self.read_only_types
-        storage["configuration"]["update_only_types"] = self.update_only_types
-        storage["configuration"]["remote_prefix"] = self.remote_prefix
-        storage["configuration"]["local_prefix"] = self.local_prefix
-        storage["configuration"]["prefixable_types"] = self.prefixable_types
-        storage["configuration"]["import_settings"] = self.import_settings
-        storage["configuration"]["import_registry"] = self.import_registry
-        storage["configuration"]["import_users"] = self.import_users
+
+        for k, v in self.credentials:
+            storage["credentials"][k] = v
+
+        for k, v in self.config:
+            storage["configuration"][k] = v
+
         storage["last_fetch_time"] = DateTime()
 
         message = "Data fetched and saved: {}".format(self.domain_name)

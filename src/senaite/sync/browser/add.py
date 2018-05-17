@@ -94,11 +94,13 @@ class Add(Sync):
                                         "error")
                 return self.template()
 
-        data = dict(
+        credentials = dict(
             url=url,
             domain_name=domain_name,
             ac_name=username,
-            ac_password=password,
+            ac_password=password)
+
+        config = dict(
             import_settings=import_settings,
             import_users=import_users,
             import_registry=import_registry,
@@ -111,7 +113,7 @@ class Add(Sync):
             prefixable_types=prefixable_types,
         )
 
-        fs = FetchStep(data)
+        fs = FetchStep(credentials, config)
         verified, message = fs.verify()
         if verified:
             fs.run()

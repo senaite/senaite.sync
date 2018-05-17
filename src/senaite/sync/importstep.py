@@ -63,8 +63,8 @@ class ImportStep(SyncStep):
     fields_to_skip = ['id',  # Overriding ID's can remove prefixes
                       'excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
-    def __init__(self, data):
-        SyncStep.__init__(self, data)
+    def __init__(self, credentials, config):
+        SyncStep.__init__(self, credentials, config)
         # A list to keep UID's of an object chunk
         self.uids_to_reindex = []
         # An 'infinite recursion preventative' list of objects which are

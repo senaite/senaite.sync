@@ -52,54 +52,31 @@ class Sync(BrowserView):
 
         # Handle form submit
         form = self.request.form
-        fetchform = form.get("fetchform", False)
-        dataform = form.get("dataform", False)
-        if not any([fetchform, dataform]):
+
+        if not form.get("dataform", False):
             return self.template()
+
+        domain_name = form.get("domain_name", None)
+
+        # Handle "Clear this Storage" action
+        if form.get("clear_storage", False):
+            del self.storage[domain_name]
+            delete_soup(self.portal, domain_name)
+            message = _("Cleared Storage {}".format(domain_name))
+            self.add_status_message(message, "info")
+            return self.template()
+
+        # Get the necessary data for the domain
+        storage = self.get_storage(domain_name)
+        credentials = storage["credentials"]
+        config = storage["configuration"]
 
         # Handle "Import" action
         if form.get("import", False):
-            domain_name = form.get("domain_name", None)
-            # initialize the session
-            storage = self.get_storage(domain_name)
-            url = storage["credentials"]["url"]
-            username = storage["credentials"]["username"]
-            password = storage["credentials"]["password"]
-            remote_prefix = self.get_storage_config(domain_name, "remote_prefix", None)
-            local_prefix = self.get_storage_config(domain_name, "local_prefix", None)
-            content_types = self.get_storage_config(
-                                    domain_name, "content_types", [])
-            unwanted_content_types = self.get_storage_config(
-                                    domain_name, "unwanted_content_types", [])
-            prefixable_types = self.get_storage_config(
-                                    domain_name, "prefixable_types", [])
-            read_only_types = self.get_storage_config(
-                                    domain_name, "read_only_types", [])
-            update_only_types = self.get_storage_config(
-                                    domain_name, "update_only_types", [])
-
-            data = {
-                "url": url,
-                "domain_name": domain_name,
-                "ac_name": username,
-                "ac_password": password,
-                "content_types": content_types,
-                "unwanted_content_types": unwanted_content_types,
-                "read_only_types": read_only_types,
-                "update_only_types": update_only_types,
-                "remote_prefix": remote_prefix,
-                "local_prefix": local_prefix,
-                "prefixable_types": prefixable_types,
-            }
-            step = ImportStep(data)
-            step.run()
-            return self.template()
+            step = ImportStep(credentials, config)
 
         # Handle "Complement" action
-        if form.get("complement", False):
-            domain_name = form.get("domain_name", None)
-            storage = self.get_storage(domain_name)
-
+        else:
             fetch_time = form.get("mod_date_limit", None) or \
                 storage.get("last_fetch_time", None)
             if not fetch_time:
@@ -115,50 +92,9 @@ class Sync(BrowserView):
                     self.add_status_message(message, "error")
                     return self.template()
 
-            url = storage["credentials"]["url"]
-            username = storage["credentials"]["username"]
-            password = storage["credentials"]["password"]
-            remote_prefix = self.get_storage_config(domain_name, "remote_prefix", None)
-            local_prefix = self.get_storage_config(domain_name, "local_prefix", None)
-            content_types = self.get_storage_config(
-                                    domain_name, "content_types", [])
-            unwanted_content_types = self.get_storage_config(
-                                    domain_name, "unwanted_content_types", [])
-            prefixable_types = self.get_storage_config(
-                                    domain_name, "prefixable_types", [])
-            read_only_types = self.get_storage_config(
-                                    domain_name, "read_only_types", [])
-            update_only_types = self.get_storage_config(
-                                    domain_name, "update_only_types", [])
+            step = ComplementStep(credentials, config, fetch_time)
 
-            data = {
-                "url": url,
-                "domain_name": domain_name,
-                "ac_name": username,
-                "ac_password": password,
-                "fetch_time": fetch_time,
-                "content_types": content_types,
-                "unwanted_content_types": unwanted_content_types,
-                "read_only_types": read_only_types,
-                "update_only_types": update_only_types,
-                "remote_prefix": remote_prefix,
-                "local_prefix": local_prefix,
-                "prefixable_types": prefixable_types,
-            }
-            step = ComplementStep(data)
-            step.run()
-            return self.template()
-
-        # Handle "Clear this Storage" action
-        if form.get("clear_storage", False):
-            domain = form.get("domain_name", None)
-            del self.storage[domain]
-            delete_soup(self.portal, domain)
-            message = _("Cleared Storage {}".format(domain))
-            self.add_status_message(message, "info")
-            return self.template()
-
-        # always render the template
+        step.run()
         return self.template()
 
     def get_storage_config(self, domain_name, config_name, default = None):
