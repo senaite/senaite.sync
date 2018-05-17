@@ -154,23 +154,24 @@
 	                </div>
                   </li>
                   <li class="list-group-item">
-                    <!-- Content Types -->
+                    <!-- Full Sync Content Types -->
                     <div class="field form-group field">
                       <label i18n:translate=""
                              class="form-control-label"
-                             for="content_types">
+                             for="full_sync_types">
                         Content Types
                         <span i18n:translate=""
                               class="help formHelp">
-                          If filled, ONLY indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
+                          If filled, ONLY introduced Content Types (separated by comma) will be imported in 'Full Synchronization' mode.
+                          It means imported objects in this instance and the original ones in the Remote will be identical. E.g: 'Client, Worksheet'
                         </span>
                       </label>
                       <div class="form-group input-group">
                         <input type="text"
                                size="45"
                                class="form-control"
-                               id="content_types"
-                               name="content_types"/>
+                               id="full_sync_types"
+                               name="full_sync_types"/>
                       </div>
                     </div>
                   </li>

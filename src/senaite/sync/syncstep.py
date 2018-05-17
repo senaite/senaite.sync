@@ -56,7 +56,7 @@ class SyncStep(object):
         self.remote_prefix = config.get("remote_prefix", None)
         self.local_prefix = config.get("local_prefix", None)
 
-        self.content_types = config.get("content_types", [])
+        self.full_sync_types = config.get("full_sync_types", [])
         self.unwanted_content_types = config.get("unwanted_content_types", [])
         self.read_only_types = config.get("read_only_types", [])
         self.update_only_types = config.get("update_only_types", [])

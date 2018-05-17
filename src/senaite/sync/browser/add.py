@@ -61,8 +61,8 @@ class Add(Sync):
         remote_prefix = form.get("remote_prefix", None)
         local_prefix = form.get("local_prefix", None)
 
-        content_types = utils.filter_content_types(
-                                    form.get("content_types"))
+        full_sync_types = utils.filter_content_types(
+                                    form.get("full_sync_types"))
         unwanted_content_types = utils.filter_content_types(
                                     form.get("unwanted_content_types"))
         read_only_types = utils.filter_content_types(
@@ -106,7 +106,7 @@ class Add(Sync):
             import_registry=import_registry,
             remote_prefix=remote_prefix,
             local_prefix=local_prefix,
-            content_types=content_types,
+            full_sync_types=full_sync_types,
             unwanted_content_types=unwanted_content_types,
             read_only_types=read_only_types,
             update_only_types=update_only_types,
