@@ -15,6 +15,7 @@ from zope.interface import implements
 SYNC_STORAGE = "senaite.sync"
 PREFIX_SPECIAL_CHARACTERS = u"*.!$%&/()=-+:'`´^"
 
+
 class Add(Sync):
     """ Add new sync instance view
     """
@@ -35,88 +36,88 @@ class Add(Sync):
         # Handle form submit
         form = self.request.form
         fetchform = form.get("fetchform", False)
-        dataform = form.get("dataform", False)
-        if not any([fetchform, dataform]):
+
+        if not fetchform:
             return self.template()
 
-        # Handle "Fetch" action
-        if form.get("fetch", False):
+        url = form.get("url", "")
+        if not url.startswith("http"):
+            url = "https://{}".format(url)
 
-            url = form.get("url", "")
-            if not url.startswith("http"):
-                url = "https://{}".format(url)
-            domain_name = form.get("domain_name", None)
-            username = form.get("ac_name", None)
-            password = form.get("ac_password", None)
-            # check if all mandatory fields have values
-            if not all([domain_name, url, username, password]):
-                message = _("Please fill in all required fields")
-                self.add_status_message(message, "error")
+        domain_name = form.get("domain_name", None)
+        username = form.get("ac_name", None)
+        password = form.get("ac_password", None)
+
+        # check if all mandatory fields have values
+        if not all([domain_name, url, username, password]):
+            message = _("Please fill in all required fields")
+            self.add_status_message(message, "error")
+            return self.template()
+
+        import_settings = (form.get("import_settings") == 'on')
+        import_users = (form.get("import_users") == 'on')
+        import_registry = (form.get("import_registry") == 'on')
+
+        remote_prefix = form.get("remote_prefix", None)
+        local_prefix = form.get("local_prefix", None)
+
+        content_types = utils.filter_content_types(
+                                    form.get("content_types"))
+        unwanted_content_types = utils.filter_content_types(
+                                    form.get("unwanted_content_types"))
+        read_only_types = utils.filter_content_types(
+                                    form.get("read_only_types"))
+        update_only_types = utils.filter_content_types(
+                                    form.get("update_only_types"))
+        prefixable_types = utils.filter_content_types(
+                                    form.get("prefixable_types"))
+
+        # Prefix Validation
+        if remote_prefix:
+            remote_prefix = remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
+            if not remote_prefix:
+                self.add_status_message("Invalid Remote Prefix!", "error")
                 return self.template()
 
-            import_settings = (form.get("import_settings") == 'on')
-            import_users = (form.get("import_users") == 'on')
-            import_registry = (form.get("import_registry") == 'on')
-            content_types = utils.filter_content_types(
-                                        form.get("content_types"))
-            unwanted_content_types = utils.filter_content_types(
-                                        form.get("unwanted_content_types"))
-            read_only_types = utils.filter_content_types(
-                                        form.get("read_only_types"))
-            update_only_types = utils.filter_content_types(
-                                        form.get("update_only_types"))
+            if len(remote_prefix) > 3:
+                self.add_status_message("Remote's Prefix is too long!!",
+                                        "warning")
 
-            remote_prefix = form.get("remote_prefix", None)
-            local_prefix = form.get("local_prefix", None)
-            prefixable_types = utils.filter_content_types(
-                                        form.get("prefixable_types"))
+            if not prefixable_types:
+                self.add_status_message("Please enter valid Content Types "
+                                        "to be created with the Prefix.",
+                                        "error")
+                return self.template()
+        else:
+            if prefixable_types:
+                self.add_status_message("Please enter a valid Prefix.",
+                                        "error")
+                return self.template()
 
-            # Prefix Validation
-            if remote_prefix:
-                remote_prefix = remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
-                if not remote_prefix:
-                    self.add_status_message("Invalid Remote Prefix!", "error")
-                    return self.template()
+        data = dict(
+            url=url,
+            domain_name=domain_name,
+            ac_name=username,
+            ac_password=password,
+            import_settings=import_settings,
+            import_users=import_users,
+            import_registry=import_registry,
+            remote_prefix=remote_prefix,
+            local_prefix=local_prefix,
+            content_types=content_types,
+            unwanted_content_types=unwanted_content_types,
+            read_only_types=read_only_types,
+            update_only_types=update_only_types,
+            prefixable_types=prefixable_types,
+        )
 
-                if len(remote_prefix) > 3:
-                    self.add_status_message("Remote's Prefix is too long!!",
-                                            "warning")
-
-                if not prefixable_types:
-                    self.add_status_message("Please enter valid Content Types "
-                                            "to be created with the Prefix.",
-                                            "error")
-                    return self.template()
-            else:
-                if prefixable_types:
-                    self.add_status_message("Please enter a valid Prefix.",
-                                            "error")
-                    return self.template()
-
-            data = {
-                "url": url,
-                "domain_name": domain_name,
-                "ac_name": username,
-                "ac_password": password,
-                "content_types": content_types,
-                "unwanted_content_types": unwanted_content_types,
-                "read_only_types": read_only_types,
-                "update_only_types": update_only_types,
-                "import_settings": import_settings,
-                "import_users": import_users,
-                "import_registry": import_registry,
-                "remote_prefix": remote_prefix,
-                "local_prefix": local_prefix,
-                "prefixable_types": prefixable_types,
-            }
-
-            fs = FetchStep(data)
-            verified, message = fs.verify()
-            if verified:
-                fs.run()
-                self.add_status_message(message, "info")
-            else:
-                self.add_status_message(message, "error")
+        fs = FetchStep(data)
+        verified, message = fs.verify()
+        if verified:
+            fs.run()
+            self.add_status_message(message, "info")
+        else:
+            self.add_status_message(message, "error")
 
         # render the template
         return self.template()
