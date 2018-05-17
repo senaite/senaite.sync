@@ -47,7 +47,9 @@
             <input type="text" size="30"
                    class="form-control"
                    id="domain_name"
-                   name="domain_name"/>
+                   name="domain_name"
+                   tal:attributes="value python: view._get_attr('domain_name', '');"
+            />
           </div>
         </div>
 
@@ -68,7 +70,9 @@
             <input type="text" size="30"
                    class="form-control"
                    id="url"
-                   name="url"/>
+                   name="url"
+                   tal:attributes="value python: view._get_attr('url', '');"
+            />
           </div>
         </div>
 
@@ -91,7 +95,9 @@
                    autocomplete="new-username"
                    class="form-control"
                    id="ac_name"
-                   name="ac_name"/>
+                   name="ac_name"
+                   tal:attributes="value python: view._get_attr('username', '');"
+            />
           </div>
         </div>
 
@@ -133,7 +139,8 @@
                     <div>
                       <input type="checkbox"
                              name="import_settings"
-                             id="import_settings"/>
+                             id="import_settings"
+                      />
 	     	          <label for="import_settings">Import Settings</label>
 	                </div>
                   </li>
@@ -141,7 +148,8 @@
                     <div>
                       <input type="checkbox"
                              name="import_registry"
-                             id="import_registry"/>
+                             id="import_registry"
+                      />
 	     	          <label for="import_registry">Import Registry</label>
 	                </div>
                   </li>
@@ -149,7 +157,8 @@
                     <div>
                       <input type="checkbox"
                              name="import_users"
-                             id="import_users"/>
+                             id="import_users"
+                      />
 	     	          <label for="import_users">Import Users</label>
 	                </div>
                   </li>
@@ -171,7 +180,9 @@
                                size="45"
                                class="form-control"
                                id="full_sync_types"
-                               name="full_sync_types"/>
+                               name="full_sync_types"
+                               tal:attributes="value python: view._get_attr('full_sync_types', '');"
+                        />
                       </div>
                     </div>
                   </li>
@@ -193,7 +204,8 @@
                                size="45"
                                class="form-control"
                                id="unwanted_content_types"
-                               name="unwanted_content_types"/>
+                               name="unwanted_content_types"
+                               tal:attributes="value python: view._get_attr('unwanted_content_types', '');"/>
                       </div>
                     </div>
                   </li>
@@ -215,7 +227,8 @@
                                size="10"
                                class="form-control"
                                id="remote_prefix"
-                               name="remote_prefix"/>
+                               name="remote_prefix"
+                               tal:attributes="value python: view._get_attr('remote_prefix', '');"/>
                       </div>
                     </div>
                   </li>
@@ -237,7 +250,8 @@
                                size="10"
                                class="form-control"
                                id="local_prefix"
-                               name="local_prefix"/>
+                               name="local_prefix"
+                               tal:attributes="value python: view._get_attr('local_prefix', '');"/>
                       </div>
                     </div>
                   </li>
@@ -259,7 +273,8 @@
                                size="45"
                                class="form-control"
                                id="prefixable_types"
-                               name="prefixable_types"/>
+                               name="prefixable_types"
+                               tal:attributes="value python: view._get_attr('prefixable_types', '');"/>
                       </div>
                     </div>
                   </li>
@@ -281,7 +296,8 @@
                                size="45"
                                class="form-control"
                                id="read_only_types"
-                               name="read_only_types"/>
+                               name="read_only_types"
+                               tal:attributes="value python: view._get_attr('read_only_types', '');"/>
                       </div>
                     </div>
                   </li>
@@ -305,7 +321,8 @@
                                size="45"
                                class="form-control"
                                id="update_only_types"
-                               name="update_only_types"/>
+                               name="update_only_types"
+                               tal:attributes="value python: view._get_attr('update_only_types', '');"/>
                       </div>
                     </div>
                   </li>

@@ -40,77 +40,77 @@ class Add(Sync):
         if not fetchform:
             return self.template()
 
-        url = form.get("url", "")
-        if not url.startswith("http"):
-            url = "https://{}".format(url)
+        self.url = form.get("url", "")
+        if not self.url.startswith("http"):
+            self.url = "https://{}".format(self.url)
 
-        domain_name = form.get("domain_name", None)
-        username = form.get("ac_name", None)
-        password = form.get("ac_password", None)
+        self.domain_name = form.get("domain_name", None)
+        self.username = form.get("ac_name", None)
+        self.password = form.get("ac_password", None)
 
         # check if all mandatory fields have values
-        if not all([domain_name, url, username, password]):
+        if not all([self.domain_name, self.url, self.username, self.password]):
             message = _("Please fill in all required fields")
             self.add_status_message(message, "error")
             return self.template()
 
-        import_settings = (form.get("import_settings") == 'on')
-        import_users = (form.get("import_users") == 'on')
-        import_registry = (form.get("import_registry") == 'on')
+        self.import_settings = (form.get("import_settings") == 'on')
+        self.import_users = (form.get("import_users") == 'on')
+        self.import_registry = (form.get("import_registry") == 'on')
 
-        remote_prefix = form.get("remote_prefix", None)
-        local_prefix = form.get("local_prefix", None)
+        self.remote_prefix = form.get("remote_prefix", None)
+        self.local_prefix = form.get("local_prefix", None)
 
-        full_sync_types = utils.filter_content_types(
+        self.full_sync_types = utils.filter_content_types(
                                     form.get("full_sync_types"))
-        unwanted_content_types = utils.filter_content_types(
+        self.unwanted_content_types = utils.filter_content_types(
                                     form.get("unwanted_content_types"))
-        read_only_types = utils.filter_content_types(
+        self.read_only_types = utils.filter_content_types(
                                     form.get("read_only_types"))
-        update_only_types = utils.filter_content_types(
+        self.update_only_types = utils.filter_content_types(
                                     form.get("update_only_types"))
-        prefixable_types = utils.filter_content_types(
+        self.prefixable_types = utils.filter_content_types(
                                     form.get("prefixable_types"))
 
         # Prefix Validation
-        if remote_prefix:
-            remote_prefix = remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
-            if not remote_prefix:
+        if self.remote_prefix:
+            self.remote_prefix = self.remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
+            if not self.remote_prefix:
                 self.add_status_message("Invalid Remote Prefix!", "error")
                 return self.template()
 
-            if len(remote_prefix) > 3:
+            if len(self.remote_prefix) > 3:
                 self.add_status_message("Remote's Prefix is too long!!",
                                         "warning")
 
-            if not prefixable_types:
+            if not self.prefixable_types:
                 self.add_status_message("Please enter valid Content Types "
                                         "to be created with the Prefix.",
                                         "error")
                 return self.template()
         else:
-            if prefixable_types:
+            if self.prefixable_types:
                 self.add_status_message("Please enter a valid Prefix.",
                                         "error")
                 return self.template()
 
         credentials = dict(
-            url=url,
-            domain_name=domain_name,
-            ac_name=username,
-            ac_password=password)
+            url=self.url,
+            domain_name=self.domain_name,
+            ac_name=self.username,
+            ac_password=self.password)
 
         config = dict(
-            import_settings=import_settings,
-            import_users=import_users,
-            import_registry=import_registry,
-            remote_prefix=remote_prefix,
-            local_prefix=local_prefix,
-            full_sync_types=full_sync_types,
-            unwanted_content_types=unwanted_content_types,
-            read_only_types=read_only_types,
-            update_only_types=update_only_types,
-            prefixable_types=prefixable_types,
+            import_settings=self.import_settings,
+            import_users=self.import_users,
+            import_registry=self.import_registry,
+            remote_prefix=self.remote_prefix,
+            local_prefix=self.local_prefix,
+            full_sync_types=self.full_sync_types,
+            unwanted_content_types=self.unwanted_content_types,
+            read_only_types=self.read_only_types,
+            update_only_types=self.update_only_types,
+            prefixable_types=self.prefixable_types,
         )
 
         fs = FetchStep(credentials, config)
@@ -124,3 +124,17 @@ class Add(Sync):
         # render the template
         return self.template()
 
+    def _get_attr(self, attr_name, default):
+        """ Get an attribute for HTML elements
+        :param attr_name:
+        :param default:
+        :return:
+        """
+        res = getattr(self, attr_name, default)
+        if isinstance(res, basestring):
+            res = res.replace(" ", "")
+
+        if isinstance(res, (list, tuple)):
+            res = ", ".join(res)
+
+        return res
