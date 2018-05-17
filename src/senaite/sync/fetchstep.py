@@ -64,10 +64,10 @@ class FetchStep(SyncStep):
         # remember the credentials in the storage
         storage = self.get_storage()
 
-        for k, v in self.credentials:
+        for k, v in self.credentials.iteritems():
             storage["credentials"][k] = v
 
-        for k, v in self.config:
+        for k, v in self.config.iteritems():
             storage["configuration"][k] = v
 
         storage["last_fetch_time"] = DateTime()
