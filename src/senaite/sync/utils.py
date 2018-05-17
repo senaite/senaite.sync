@@ -60,7 +60,7 @@ def filter_content_types(content_types):
 
     # Get available portal types and make it all lowercase
     portal_types = api.get_tool("portal_types").listContentTypes()
-    portal_types = [t.lower for t in portal_types]
+    portal_types = [t.lower() for t in portal_types]
 
     ret = [t.strip() for t in content_types.split(",") if t]
     ret = filter(lambda ct, types=portal_types: ct.lower() in types, ret)

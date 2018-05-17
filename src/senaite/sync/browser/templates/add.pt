@@ -198,23 +198,45 @@
                   </li>
 
                   <li class="list-group-item">
-                    <!-- Prefix -->
+                    <!-- Remote Prefix -->
                     <div class="field form-group field">
                       <label i18n:translate=""
                              class="form-control-label"
-                             for="prefix">
-                        Prefix
+                             for="remote_prefix">
+                        Remote's Prefix
                         <span i18n:translate=""
                               class="help formHelp">
-                          A short prefix to appear in the Object ID's imported from this Remote.
+                          A short prefix to appear in the Object ID's imported from this Remote if necessary.
                         </span>
                       </label>
                       <div class="form-group input-group">
                         <input type="text"
                                size="10"
                                class="form-control"
-                               id="prefix"
-                               name="prefix"/>
+                               id="remote_prefix"
+                               name="remote_prefix"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Local Prefix -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="local_prefix">
+                        Local Prefix
+                        <span i18n:translate=""
+                              class="help formHelp">
+                        Prefix which is used for this instance in the Remote
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="10"
+                               class="form-control"
+                               id="local_prefix"
+                               name="local_prefix"/>
                       </div>
                     </div>
                   </li>
@@ -259,6 +281,30 @@
                                class="form-control"
                                id="read_only_types"
                                name="read_only_types"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Update-only Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="update_only_types">
+                        Update-Only Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          Introduce Content Types ONLY to be Updated with Remote instance changes.
+                          It means, only the objects that have been created on this instance will be updated according to the Remote Instance
+                          and objects with another origin will not be imported. E.g: 'AnalysisRequest, Sample'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="update_only_types"
+                               name="update_only_types"/>
                       </div>
                     </div>
                   </li>

@@ -46,7 +46,9 @@ class SyncStep(object):
         self.content_types = data.get("content_types", [])
         self.unwanted_content_types = data.get("unwanted_content_types", [])
         self.read_only_types = data.get("read_only_types", [])
-        self.prefix = data.get("prefix", None)
+        self.update_only_types = data.get("update_only_types", [])
+        self.remote_prefix = data.get("remote_prefix", None)
+        self.local_prefix = data.get("local_prefix", None)
         self.prefixable_types = data.get("prefixable_types", [])
         self.import_settings = data.get("import_settings", False)
         self.import_users = data.get("import_users", False)
@@ -72,10 +74,9 @@ class SyncStep(object):
 
         portal_id = self.portal.getId()
         remote_portal_id = remote_path.split("/")[1]
-        if not self.prefix:
+        if not self.remote_prefix and not self.local_prefix:
             return str(remote_path.replace(remote_portal_id, portal_id))
 
-        rem_id = utils.get_id_from_path(remote_path)
         rec = self.sh.find_unique(REMOTE_PATH, remote_path)
         if rec is None:
             raise SyncError("error", "Missing Remote path in Soup table: {}"
@@ -93,7 +94,11 @@ class SyncStep(object):
         portal_type = rec[PORTAL_TYPE]
         prefix = self.get_prefix(portal_type)
 
-        res = "{0}/{1}{2}".format(parent_path, prefix, rem_id)
+        # Remove Local Prefix
+        rem_id = utils.get_id_from_path(remote_path)
+        local_id = self.trim_local_prefix(rem_id)
+
+        res = "{0}/{1}{2}".format(parent_path, prefix, local_id)
         res = res.replace(remote_portal_id, portal_id)
         # Save the local path in the Souper to use in the future
         self.sh.update_by_remote_path(remote_path, LOCAL_PATH = res)
@@ -104,9 +109,20 @@ class SyncStep(object):
         :param portal_type: content type to get the prefix for
         :return:
         """
-        if self.prefix and portal_type in self.prefixable_types:
-            return self.prefix
+        if self.remote_prefix and portal_type in self.prefixable_types:
+            return self.remote_prefix
         return ""
+
+    def trim_local_prefix(self, remote_id):
+        """
+
+        :param remote_id:
+        :param portal_type:
+        :return:
+        """
+        if self.local_prefix and remote_id.startswith(self.local_prefix):
+            return remote_id.replace(self.local_prefix, "")
+        return remote_id
 
     def is_portal_path(self, path):
         """ Check if the given path is the path of any portal object.
@@ -296,7 +312,16 @@ class SyncStep(object):
         """
         if not utils.has_valid_portal_type(item):
             return False
-        if item.get("portal_type") in self.unwanted_content_types:
+        pt = item.get("portal_type")
+        if pt in self.unwanted_content_types:
             return False
+
+        # If it is update-only content type, then Remote Id should start with
+        # this instance's prefix
+        if pt in self.update_only_types:
+            remote_path= item.get("path", "")
+            remote_id = utils.get_id_from_path(remote_path)
+            if not remote_id.startswith(self.local_prefix):
+                return False
 
         return True
