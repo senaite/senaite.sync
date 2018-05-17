@@ -6,6 +6,7 @@ Changelog
 
 **Added**
 
+- #46 Advanced Configuration: Local Prefix and Update only Content Types
 - #44 Advanced Configuration: 'Read-Only' Portal Types
 - #42 New Advanced Configuration Options
 - #34 Complement step for migration
