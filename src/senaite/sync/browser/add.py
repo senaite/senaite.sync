@@ -73,26 +73,8 @@ class Add(Sync):
                                     form.get("prefixable_types"))
 
         # Prefix Validation
-        if self.remote_prefix:
-            self.remote_prefix = self.remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
-            if not self.remote_prefix:
-                self.add_status_message("Invalid Remote Prefix!", "error")
-                return self.template()
-
-            if len(self.remote_prefix) > 3:
-                self.add_status_message("Remote's Prefix is too long!!",
-                                        "warning")
-
-            if not self.prefixable_types:
-                self.add_status_message("Please enter valid Content Types "
-                                        "to be created with the Prefix.",
-                                        "error")
-                return self.template()
-        else:
-            if self.prefixable_types:
-                self.add_status_message("Please enter a valid Prefix.",
-                                        "error")
-                return self.template()
+        if not self.validate_prefix():
+            return self.template()
 
         credentials = dict(
             url=self.url,
@@ -138,3 +120,32 @@ class Add(Sync):
             res = ", ".join(res)
 
         return res
+
+    def validate_prefix(self):
+        """ Validate Prefix & Prefixable Types convenience
+        """
+        if not self.remote_prefix:
+            # No prefix and no prefixable types, everything is okay
+            if not self.prefixable_types:
+                return True
+
+            # There are prefixable types but not a valid prefix
+            self.add_status_message("Please enter a valid Prefix.", "error")
+            return False
+
+        self.remote_prefix = self.remote_prefix.strip(PREFIX_SPECIAL_CHARACTERS)
+        if not self.remote_prefix:
+            self.add_status_message("Invalid Remote Prefix!", "error")
+            return False
+
+        if len(self.remote_prefix) > 3:
+            self.add_status_message("Remote's Prefix is too long!!",
+                                    "warning")
+
+        if not self.prefixable_types:
+            self.add_status_message("Please enter valid Content Types "
+                                    "to be created with the Prefix.",
+                                    "error")
+            return False
+
+        return True
