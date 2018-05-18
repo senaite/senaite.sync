@@ -12,7 +12,7 @@
 
     <metal:title fill-slot="content-title">
       <h1 i18n:translate="">
-        SENAITE SYNC
+        SENAITE SYNC REMOTES
       </h1>
     </metal:title>
     <metal:description fill-slot="content-description">
@@ -23,178 +23,13 @@
     <div metal:fill-slot="content-core"
          tal:define="portal context/@@plone_portal_state/portal;">
 
-      <form id="fetch_form"
-            name="fetch_form"
-            method="POST">
-
-        <input type="hidden" name="fetchform" value="1"/>
-        <span tal:replace="structure context/@@authenticator/authenticator"/>
-
-        <!-- Domain Name -->
-        <div class="field form-group field">
-          <label i18n:translate=""
-                 class="form-control-label"
-                 for="domain_name">
-            Domain Name
-            <span class="required"></span>
-            <span i18n:translate=""
-                  class="help formHelp">
-              Representative unique name for the source system.
-            </span>
-          </label>
-          <div class="form-group input-group">
-            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
-            <input type="text" size="30"
-                   class="form-control"
-                   id="domain_name"
-                   tal:attributes="value view/domain_name|nothing"
-                   name="domain_name"/>
-          </div>
-        </div>
-
-        <!-- Base URL -->
-        <div class="field form-group field">
-          <label i18n:translate=""
-                 class="form-control-label"
-                 for="url">
-            Source URL
-            <span class="required"></span>
-            <span i18n:translate=""
-                  class="help formHelp">
-              The base URL of the source system, e.g. http://localhost:1337/senaitelims
-            </span>
-          </label>
-          <div class="form-group input-group">
-            <span class="input-group-addon"><i class="glyphicon glyphicon-link"></i></span>
-            <input type="text" size="30"
-                   class="form-control"
-                   id="url"
-                   tal:attributes="value view/url|nothing"
-                   name="url"/>
-          </div>
-        </div>
-
-        <!-- Username -->
-        <div class="field form-group field">
-          <label i18n:translate=""
-                 class="form-control-label"
-                 for="ac_name">
-            Username
-            <span class="required"></span>
-            <span i18n:translate=""
-                  class="help formHelp">
-              The username to login into the source system
-            </span>
-          </label>
-          <div class="form-group input-group">
-            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
-            <input type="text"
-                   size="30"
-                   autocomplete="new-username"
-                   class="form-control"
-                   id="ac_name"
-                   tal:attributes="value view/username|nothing"
-                   name="ac_name"/>
-          </div>
-        </div>
-
-        <!-- Password -->
-        <div class="field form-group field">
-          <label i18n:translate=""
-                 class="form-control-label"
-                 for="ac_password">
-            Password
-            <span class="required"></span>
-            <span i18n:translate=""
-                  class="help formHelp">
-              The password to login into the source system
-            </span>
-          </label>
-          <div class="form-group input-group">
-            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-            <input type="password"
-                   autocomplete="new-password"
-                   size="30"
-                   class="form-control"
-                   id="ac_password"
-                   tal:attributes="value view/password|nothing"
-                   name="ac_password"/>
-          </div>
-        </div>
-
-        <!-- Import configuration -->
-        <div class="field form-group field">
-          <div class="panel-group">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h4 class="panel-title">
-                 <a data-toggle="collapse" href="#collapse1">Show import configuration</a>
-               </h4>
-              </div>
-              <div id="collapse1" class="panel-collapse collapse">
-                <ul class="list-group">
-                  <li class="list-group-item">
-                    <div>
-                      <input type="checkbox"
-                             name="import_settings"
-                             id="import_settings"/>
-	     	          <label for="import_settings">Import Settings</label>
-	                </div>
-                  </li>
-                  <li class="list-group-item">
-                    <div>
-                      <input type="checkbox"
-                             name="import_registry"
-                             id="import_registry"/>
-	     	          <label for="import_registry">Import Registry</label>
-	                </div>
-                  </li>
-                  <li class="list-group-item">
-                    <div>
-                      <input type="checkbox"
-                             name="import_users"
-                             id="import_users"/>
-	     	          <label for="import_users">Import Users</label>
-	                </div>
-                  </li>
-                  <li class="list-group-item">
-                    <!-- Content Types -->
-                    <div class="field form-group field">
-                      <label i18n:translate=""
-                             class="form-control-label"
-                             for="content_types">
-                        Content Types
-                        <span i18n:translate=""
-                              class="help formHelp">
-                          If filled, only indicated Content Types (separated by comma) will be imported. E.g: 'Sample, Client, Worksheet'
-                        </span>
-                      </label>
-                      <div class="form-group input-group">
-                        <input type="text"
-                               size="45"
-                               class="form-control"
-                               id="content_types"
-                               tal:attributes="value view/content_types|nothing"
-                               name="content_types"/>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <input class="btn btn-success btn-sm allowMultiSubmit"
-               type="submit"
-               name="fetch"
-               i18n:attributes="value"
-               value="Fetch"/>
-
-      </form>
+      <form action="sync_add">
+        <input type="submit" value="Add New Remote" />
+      </form><br><br>
 
       <!-- Storage View -->
       <tal:storage repeat="storage view/storage">
+        <div style="border:double; padding:10px">
         <form
           name="data_form"
           method="POST">
@@ -202,17 +37,31 @@
           <dl class="collapsible">
 
             <dt class="collapsibleHeader">
-              Data for <span tal:replace="storage"/>
+              <span tal:replace="python: storage.upper()"/>
               (<span tal:replace="python:len(view.storage[storage]['ordered_uids'])"/> Items)
             </dt>
             <input type="hidden" name="dataform" value="1"/>
             <input type="hidden" name="domain_name" value="" tal:attributes="value storage" />
 
             <dd class="collapsibleContent">
-              <div>
-                  Import settings: <span tal:replace="python:view.storage[storage]['configuration'].get('import_settings')"/>
-                  Import registry: <span tal:replace="python:view.storage[storage]['configuration'].get('import_registry')"/>
-                  Import users: <span tal:replace="python:view.storage[storage]['configuration'].get('import_users')"/>
+              <div
+                      tal:define="full_sync_types python: view.get_storage_config(storage, 'full_sync_types');
+                                  unwanted_content_types python: view.get_storage_config(storage, 'unwanted_content_types');
+                                  prefixable_types python: view.get_storage_config(storage, 'prefixable_types');
+                                  read_only_types python: view.get_storage_config(storage, 'read_only_types');
+                                  update_only_types python: view.get_storage_config(storage, 'update_only_types');"
+              >
+                  <b>Remote's Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(storage, 'remote_prefix', 'Not Defined')"/></b><br><br>
+                  <b>Local Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(storage, 'local_prefix', 'Not Defined')"/></b><br><br>
+                  Settings will <span tal:condition="python: not view.get_storage_config(storage, 'import_settings')">NOT</span>,
+                  Registry will <span tal:condition="python: not view.get_storage_config(storage, 'import_registry')">NOT</span>,
+                  Users will <span tal:condition="python: not view.get_storage_config(storage, 'import_users')">NOT</span> be imported.<br><br>
+
+                  Content types to be imported: <b><span tal:replace="python: ', '.join(full_sync_types) if full_sync_types else 'All the content types'"/> </b><br><br>
+                  Content types to be skipped: <b><span tal:replace="python: ', '.join(unwanted_content_types) if unwanted_content_types else 'Not specified'"/> </b><br><br>
+                  Content types that will contain prefix: <b><span tal:replace="python: ', '.join(prefixable_types) if prefixable_types else 'Not defined'"/> </b><br><br>
+                  Content types that will be in read-only mode: <b><span tal:replace="python: ', '.join(read_only_types) if read_only_types else 'Not defined'"/> </b><br><br>
+                  Content types just to be updated: <b><span tal:replace="python: ', '.join(update_only_types) if update_only_types else 'Not defined'"/> </b><br><br>
               </div><br>
               <input class="btn btn-default btn-sm"
                      type="submit"
@@ -226,10 +75,10 @@
                      name="clear_storage"
                      i18n:attributes="value"
                      value="Clear this Storage"/>
-              <div>
+              <div style="margin-top: 15px">
                   <dl class="collapsible">
                       <dt class="collapsibleHeader">
-                          Complement Step
+                          RUN COMPLEMENT STEP
                       </dt>
                       <dd class="collapsibleContent">
                           <div class="field form-group field">
@@ -261,6 +110,7 @@
             </dd>
           </dl>
         </form>
+      </div>
       </tal:storage>
 
     </div>

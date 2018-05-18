@@ -12,7 +12,8 @@ from senaite import api
 from senaite.sync.importstep import ImportStep
 
 from senaite.sync import logger, utils
-from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID
+from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID, \
+                                     REMOTE_PATH
 
 
 class ComplementStep(ImportStep):
@@ -21,9 +22,9 @@ class ComplementStep(ImportStep):
     that time.
     """
 
-    def __init__(self, data):
-        ImportStep.__init__(self, data)
-        self.fetch_time = data.get("fetch_time", None)
+    def __init__(self, credentials, config, fetch_time):
+        ImportStep.__init__(self, credentials, config)
+        self.fetch_time = fetch_time
 
     def run(self):
         """
@@ -48,10 +49,14 @@ class ComplementStep(ImportStep):
         query = {
             "url_or_endpoint": "search",
             "catalog": 'uid_catalog',
+            "recent_modified": utils.date_to_query_literal(self.fetch_time),
             "limit": 1
         }
-        if self.content_types:
-            query["portal_type"] = self.content_types
+        if self.full_sync_types:
+            types = list()
+            types.extend(self.full_sync_types + self.prefixable_types +
+                         self.update_only_types + self.read_only_types)
+            query["portal_type"] = types
         cd = self.get_json(**query)
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
@@ -63,7 +68,6 @@ class ComplementStep(ImportStep):
         # format it and insert it into the import soup
         for current_page in xrange(number_of_pages):
             start_from = (current_page * window) - overlap
-            query["complete"] = True
             query["limit"] = window
             query["b_start"] = start_from
             items = self.get_items_with_retry(**query)
@@ -73,10 +77,7 @@ class ComplementStep(ImportStep):
 
             for item in items:
                 # skip object or extract the required data for the import
-                if not item or not item.get("portal_type", True):
-                    continue
-                modified = DateTime(item.get('modification_date'))
-                if modified < self.fetch_time:
+                if not self.is_item_allowed(item):
                     continue
 
                 data_dict = utils.get_soup_format(item)
@@ -85,8 +86,8 @@ class ComplementStep(ImportStep):
                 # If remote UID is in the souper table already, just check if
                 # remote path of the object has been updated
                 if existing_rec:
-                    rem_path = data_dict.get('path')
-                    if rem_path != existing_rec.get('path'):
+                    rem_path = data_dict.get(REMOTE_PATH)
+                    if rem_path != existing_rec.get(REMOTE_PATH):
                         self.sh.update_by_remote_uid(**data_dict)
                     rec_id = existing_rec.get("rec_int_id")
                 else:
@@ -125,7 +126,7 @@ class ComplementStep(ImportStep):
             row = self.sh.get_record_by_id(rec_id, as_dict=True)
             if not row:
                 continue
-            logger.debug("Handling: {} ".format(row["path"]))
+            logger.debug("Handling: {} ".format(row[REMOTE_PATH]))
             self._handle_obj(row, handle_dependencies=False)
 
             # Log.info every 50 objects imported

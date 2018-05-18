@@ -5,21 +5,24 @@
 # Copyright 2018 by it's authors.
 # Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
 
-from BTrees.OOBTree import OOBTree
-
-from zope.annotation.interfaces import IAnnotations
-
-from senaite import api
-from senaite.sync import logger
-from DateTime import DateTime
 from datetime import datetime
 
+from BTrees.OOBTree import OOBTree
+from DateTime import DateTime
+from Products.ATContentTypes.utils import DT2dt
+from senaite import api
+from senaite.sync import logger
+from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
+from zope.annotation.interfaces import IAnnotations
+from senaite.sync.souphandler import REMOTE_UID, REMOTE_PATH, PORTAL_TYPE
 
-SOUPER_REQUIRED_FIELDS = {"uid": "remote_uid",
-                          "path": "path",
-                          "portal_type": "portal_type"}
+SOUPER_REQUIRED_FIELDS = {"uid": REMOTE_UID,
+                          "path": REMOTE_PATH,
+                          "portal_type": PORTAL_TYPE}
 
 SYNC_CREDENTIALS = "senaite.sync.credentials"
+
+_default_date_format = "%Y-%m-%d"
 
 
 def to_review_history_format(review_history):
@@ -36,19 +39,39 @@ def to_review_history_format(review_history):
     return review_history
 
 
-def is_item_allowed(item):
+def has_valid_portal_type(item):
     """ Check if an item can be handled based on its portal type.
     :return: True if the item can be handled
     """
     if not isinstance(item, dict):
         return False
 
-    portal_types = api.get_tool("portal_types")
+    portal_types = api.get_tool("portal_types").listContentTypes()
     pt = item.get("portal_type", None)
     if pt not in portal_types:
         return False
 
     return True
+
+
+def filter_content_types(content_types):
+    """
+
+    :param content_types:
+    :return:
+    """
+    ret = list()
+    if not content_types:
+        return ret
+
+    # Get available portal types and make it all lowercase
+    portal_types = api.get_tool("portal_types").listContentTypes()
+    portal_types = [t.lower() for t in portal_types]
+
+    ret = [t.strip() for t in content_types.split(",") if t]
+    ret = filter(lambda ct, types=portal_types: ct.lower() in types, ret)
+    ret = list(set(ret))
+    return ret
 
 
 def get_parent_path(path):
@@ -62,7 +85,9 @@ def get_parent_path(path):
     if path.endswith("/"):
         path = path[:-1]
     parts = path.split("/")
-    return "/".join(parts[:-1])
+    if len(parts) < 3:
+        return "/"
+    return str("/".join(parts[:-1]))
 
 
 def get_id_from_path(path):
@@ -198,3 +223,36 @@ def get_estimated_end_date(started, processed, total):
         return None
     remaining_time = remaining_items * elapsed_time / processed
     return current_time + remaining_time
+
+
+def date_to_query_literal(date, date_format=_default_date_format):
+    """ Convert a date to a valid JSONAPI URL query string.
+    :param date: date to be converted in datetime, DateTime or string format
+    :param date_format: in case the date is string, format to parse it
+    :return string: literal date
+    """
+    if not date:
+        return None
+
+    if isinstance(date, DateTime):
+        date = DT2dt(date)
+
+    if isinstance(date, basestring):
+        date = datetime.strptime(date, date_format)
+
+    days = (datetime.now() - date).days
+
+    if days < 1:
+        return "today"
+    if days < 2:
+        return "yesterday"
+    if days < 8:
+        return "this-week"
+    if days < 32:
+        return "this-month"
+    if days < 367:
+        return "this-year"
+
+    logger.warn("Interval is too long to be converted to string: {} days"
+                .format(days))
+    return ""

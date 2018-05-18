@@ -71,9 +71,10 @@ class SoupHandler:
             return False
         record = Record()
         record.attrs[REMOTE_UID] = data[REMOTE_UID]
-        record.attrs['path'] = data['path']
-        record.attrs[PORTAL_TYPE] = data[PORTAL_TYPE]
         record.attrs[LOCAL_UID] = data.get(LOCAL_UID, "")
+        record.attrs[REMOTE_PATH] = data[REMOTE_PATH]
+        record.attrs[LOCAL_PATH] = data.get(LOCAL_PATH, "")
+        record.attrs[PORTAL_TYPE] = data[PORTAL_TYPE]
         record.attrs[UPDATED] = data.get(UPDATED, "0")
         r_id = self.soup.add(record)
         logger.info("Record {} inserted: {}".format(r_id, data))
@@ -87,11 +88,13 @@ class SoupHandler:
         """
         r_uid = data.get(REMOTE_UID, False) or '-1'
         l_uid = data.get(LOCAL_UID, False) or '-1'
-        path = data.get("path", False) or '-1'
+        r_path = data.get(REMOTE_PATH, False) or '-1'
+        l_path = data.get(LOCAL_PATH, False) or '-1'
         r_uid_q = Eq(REMOTE_UID, r_uid)
         l_uid_q = Eq(LOCAL_UID, l_uid)
-        p_q = Eq('path', path)
-        ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, p_q))]
+        r_p_q = Eq(REMOTE_PATH, r_path)
+        l_p_q = Eq(LOCAL_PATH, l_path)
+        ret = [r for r in self.soup.query(Or(r_uid_q, l_uid_q, r_p_q, l_p_q))]
         return ret != []
 
     def get_record_by_id(self, rec_id, as_dict=False):
@@ -142,16 +145,16 @@ class SoupHandler:
         self.soup.reindex([recs[0]])
         return True
 
-    def update_by_path(self, path, **kwargs):
+    def update_by_remote_path(self, remote_path, **kwargs):
         """
         Update the row by path column.
         :param path: path of the record
         :param kwargs: columns and their values to be updated.
         """
-        recs = [r for r in self.soup.query(Eq('path', path))]
+        recs = [r for r in self.soup.query(Eq(REMOTE_PATH, remote_path))]
         if not recs:
             logger.error("Could not find any record with path: '{}'"
-                         .format(path))
+                         .format(REMOTE_PATH))
             return False
         for k, v in kwargs.iteritems():
             recs[0].attrs[k] = v
@@ -179,7 +182,7 @@ class SoupHandler:
         for intid in self.soup.data:
             rec = self.soup.get(intid)
             rec.attrs[UPDATED] = "0"
-            self.soup.reindex(rec)
+        self.soup.reindex()
         return True
 
     def _create_domain_catalog(self):
@@ -192,11 +195,17 @@ class SoupHandler:
             def __call__(self, context=None):
                 catalog = Catalog()
                 r_uid_indexer = NodeAttributeIndexer(REMOTE_UID)
-                catalog[u'remote_uid'] = CatalogFieldIndex(r_uid_indexer)
-                path_indexer = NodeAttributeIndexer('path')
-                catalog[u'path'] = CatalogFieldIndex(path_indexer)
+                catalog[unicode(REMOTE_UID)] = CatalogFieldIndex(r_uid_indexer)
+
                 l_uid_indexer = NodeAttributeIndexer(LOCAL_UID)
-                catalog[u'local_uid'] = CatalogFieldIndex(l_uid_indexer)
+                catalog[unicode(LOCAL_UID)] = CatalogFieldIndex(l_uid_indexer)
+
+                r_path_indexer = NodeAttributeIndexer(REMOTE_PATH)
+                catalog[unicode(REMOTE_PATH)] = CatalogFieldIndex(r_path_indexer)
+
+                l_path_indexer = NodeAttributeIndexer(LOCAL_PATH)
+                catalog[unicode(LOCAL_PATH)] = CatalogFieldIndex(l_path_indexer)
+
                 return catalog
 
         provideUtility(DomainSoupCatalogFactory(), name=self.domain_name)
@@ -231,7 +240,8 @@ def record_to_dict(record):
         'rec_int_id': record.intid,
         REMOTE_UID: record.attrs.get(REMOTE_UID, ""),
         LOCAL_UID: record.attrs.get(LOCAL_UID, ""),
-        'path': record.attrs.get('path', ""),
+        REMOTE_PATH: record.attrs.get(REMOTE_PATH, ""),
+        LOCAL_PATH: record.attrs.get(LOCAL_PATH, ""),
         UPDATED: record.attrs.get(UPDATED, "0"),
         PORTAL_TYPE: record.attrs.get(PORTAL_TYPE, "")
     }

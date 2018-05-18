@@ -6,6 +6,9 @@ Changelog
 
 **Added**
 
+- #46 Advanced Configuration: Local Prefix and Update only Content Types
+- #44 Advanced Configuration: 'Read-Only' Portal Types
+- #42 New Advanced Configuration Options
 - #34 Complement step for migration
 - #33 Recover step for failed objects in data import
 - #32 Log the estimated date of end
@@ -20,12 +23,14 @@ Changelog
 
 **Changed**
 
+- 43 Querying last modified objects directly from 'uid_catalog'
 
 **Removed**
 
 
 **Fixed**
 
+- #45 Error while Fetching Missing Parents
 - #39 Complement Step does not update all objects
 - #35 Bug- Complement Step yields all the items
 - #35 Complement Step yields all the items

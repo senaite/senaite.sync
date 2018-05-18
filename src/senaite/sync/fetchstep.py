@@ -26,6 +26,10 @@ class FetchStep(SyncStep):
     Fetch step of data migration. During this step, the data must be retrieved
     from the source and saved in 'souper' table for the domain.
     """
+    def __init__(self, credentials, config):
+        super(FetchStep, self).__init__(credentials, config)
+        self.credentials = credentials
+        self.config = config
 
     def run(self):
         """
@@ -62,17 +66,16 @@ class FetchStep(SyncStep):
 
         # remember the credentials in the storage
         storage = self.get_storage()
-        storage["credentials"]["url"] = self.url
-        storage["credentials"]["username"] = self.username
-        storage["credentials"]["password"] = self.password
-        # remember import configuration in the storage
-        storage["configuration"]["content_types"] = self.content_types
-        storage["configuration"]["import_settings"] = self.import_settings
-        storage["configuration"]["import_registry"] = self.import_registry
-        storage["configuration"]["import_users"] = self.import_users
+
+        for k, v in self.credentials.iteritems():
+            storage["credentials"][k] = v
+
+        for k, v in self.config.iteritems():
+            storage["configuration"][k] = v
+
         storage["last_fetch_time"] = DateTime()
 
-        message = "Fetching Data started for {}".format(self.domain_name)
+        message = "Data fetched and saved: {}".format(self.domain_name)
         return True, message
 
     def get_version(self):
@@ -107,8 +110,11 @@ class FetchStep(SyncStep):
             "catalog": 'uid_catalog',
             "limit": 1
         }
-        if self.content_types:
-            query["portal_type"] = self.content_types
+        if self.full_sync_types:
+            types = list()
+            types.extend(self.full_sync_types + self.prefixable_types +
+                         self.update_only_types + self.read_only_types)
+            query["portal_type"] = types
         cd = self.get_json(**query)
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
@@ -126,7 +132,7 @@ class FetchStep(SyncStep):
                     start_from, start_from+window))
             for item in items:
                 # skip object or extract the required data for the import
-                if not item or not item.get("portal_type", True):
+                if not self.is_item_allowed(item):
                     continue
                 data_dict = utils.get_soup_format(item)
                 rec_id = self.sh.insert(data_dict)
