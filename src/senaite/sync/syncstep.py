@@ -31,31 +31,42 @@ class SyncStep(object):
     contains some necessary functions.
     """
 
-    def __init__(self, data):
-        # VARIABLES TO BE USED IN FETCH AND IMPORT STEPS
-
+    def __init__(self, credentials, config):
         # Soup Handler to interact with the domain's soup table
         self.sh = None
         self.session = None
         self.portal = api.get_portal()
-        self.url = data.get("url", None)
-        self.domain_name = data.get("domain_name", None)
-        self.username = data.get("ac_name", None)
-        self.password = data.get("ac_password", None)
-        # Import configuration
-        self.content_types = data.get("content_types", [])
-        self.unwanted_content_types = data.get("unwanted_content_types", [])
-        self.read_only_types = data.get("read_only_types", [])
-        self.update_only_types = data.get("update_only_types", [])
-        self.remote_prefix = data.get("remote_prefix", None)
-        self.local_prefix = data.get("local_prefix", None)
-        self.prefixable_types = data.get("prefixable_types", [])
-        self.import_settings = data.get("import_settings", False)
-        self.import_users = data.get("import_users", False)
-        self.import_registry = data.get("import_registry", False)
+
+        # Set Credentials
+        self.domain_name = credentials.get("domain_name", None)
+        self.url = credentials.get("url", None)
+        self.username = credentials.get("ac_name", None)
+        self.password = credentials.get("ac_password", None)
 
         if not any([self.domain_name, self.url, self.username, self.password]):
-            self.fail("Missing parameter in Sync Step: {}".format(data))
+            self.fail("Missing parameter in Sync Step: {}".format(credentials))
+
+        # Import configuration
+        self.import_settings = config.get("import_settings", False)
+        self.import_users = config.get("import_users", False)
+        self.import_registry = config.get("import_registry", False)
+
+        # A prefix to be used in object ID's, representing the Remote Instance
+        self.remote_prefix = config.get("remote_prefix", None)
+        # Prefix of this instance in the Remote (if exists)
+        self.local_prefix = config.get("local_prefix", None)
+
+        # Types to be fully synchronized
+        self.full_sync_types = config.get("full_sync_types", [])
+        # Types to be skipped
+        self.unwanted_content_types = config.get("unwanted_content_types", [])
+        # Types which will not be editable on this instance
+        self.read_only_types = config.get("read_only_types", [])
+        # Types of objects that have been created on this instance and must have
+        # the changes from Remote
+        self.update_only_types = config.get("update_only_types", [])
+        # Types to contain Remote's Prefix in their ID's on this instance
+        self.prefixable_types = config.get("prefixable_types", [])
 
     def translate_path(self, remote_path):
         """ Translates a remote physical path into local path taking into account

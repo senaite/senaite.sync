@@ -63,8 +63,8 @@ class ImportStep(SyncStep):
     fields_to_skip = ['id',  # Overriding ID's can remove prefixes
                       'excludeFromNav', 'constrainTypesMode', 'allowDiscussion']
 
-    def __init__(self, data):
-        SyncStep.__init__(self, data)
+    def __init__(self, credentials, config):
+        SyncStep.__init__(self, credentials, config)
         # A list to keep UID's of an object chunk
         self.uids_to_reindex = []
         # An 'infinite recursion preventative' list of objects which are
@@ -89,13 +89,14 @@ class ImportStep(SyncStep):
     def _import_settings(self):
         """Import the settings from the storage identified by domain
         """
+        if not self.import_settings:
+            return
+
         logger.info("*** Importing Settings: {} ***".format(self.domain_name))
 
         storage = self.get_storage()
-        if not storage["configuration"].get("import_settings", False):
-            return
-
         settings_store = storage["settings"]
+
         for key in settings_store:
             self._set_settings(key, settings_store[key])
 
@@ -134,15 +135,16 @@ class ImportStep(SyncStep):
     def _import_registry_records(self):
         """Import the registry records from the storage identified by domain
         """
+        if not self.import_registry:
+            return
+
         logger.info("***Importing Registry Records: {}***".format(
             self.domain_name))
 
         storage = self.get_storage()
-        if not storage["configuration"].get("import_registry", False):
-            return
-
         registry_store = storage["registry"]
         current_registry = getUtility(IRegistry)
+
         # For each of the keywords used to retrieve registry data
         # import the records that were found
         for key in registry_store.keys():
@@ -162,11 +164,10 @@ class ImportStep(SyncStep):
     def _import_users(self):
         """Import the users from the storage identified by domain
         """
-        logger.info("*** Importing Users: {} ***".format(self.domain_name))
-
-        storage = self.get_storage()
-        if not storage["configuration"].get("import_users", False):
+        if not self.import_users:
             return
+
+        logger.info("*** Importing Users: {} ***".format(self.domain_name))
 
         for user in self.yield_items("users"):
             username = user.get("username")

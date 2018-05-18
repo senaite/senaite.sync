@@ -19,9 +19,9 @@ class ComplementStep(ImportStep):
     that time.
     """
 
-    def __init__(self, data):
-        ImportStep.__init__(self, data)
-        self.fetch_time = data.get("fetch_time", None)
+    def __init__(self, credentials, config, fetch_time):
+        ImportStep.__init__(self, credentials, config)
+        self.fetch_time = fetch_time
 
     def run(self):
         """
@@ -49,8 +49,11 @@ class ComplementStep(ImportStep):
             "recent_modified": utils.date_to_query_literal(self.fetch_time),
             "limit": 1
         }
-        if self.content_types:
-            query["portal_type"] = self.content_types
+        if self.full_sync_types:
+            types = list()
+            types.extend(self.full_sync_types + self.prefixable_types +
+                         self.update_only_types + self.read_only_types)
+            query["portal_type"] = types
         cd = self.get_json(**query)
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
