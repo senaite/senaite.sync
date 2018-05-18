@@ -162,53 +162,6 @@
 	     	          <label for="import_users">Import Users</label>
 	                </div>
                   </li>
-                  <li class="list-group-item">
-                    <!-- Full Sync Content Types -->
-                    <div class="field form-group field">
-                      <label i18n:translate=""
-                             class="form-control-label"
-                             for="full_sync_types">
-                        Content Types
-                        <span i18n:translate=""
-                              class="help formHelp">
-                          If filled, ONLY introduced Content Types (separated by comma) will be imported in 'Full Synchronization' mode.
-                          It means imported objects in this instance and the original ones in the Remote will be identical. E.g: 'Client, Worksheet'
-                        </span>
-                      </label>
-                      <div class="form-group input-group">
-                        <input type="text"
-                               size="45"
-                               class="form-control"
-                               id="full_sync_types"
-                               name="full_sync_types"
-                               tal:attributes="value python: view._get_attr('full_sync_types', '');"
-                        />
-                      </div>
-                    </div>
-                  </li>
-
-                  <li class="list-group-item">
-                    <!-- Unwanted Content Types -->
-                    <div class="field form-group field">
-                      <label i18n:translate=""
-                             class="form-control-label"
-                             for="unwanted_content_types">
-                        Content Types to be Skipped
-                        <span i18n:translate=""
-                              class="help formHelp">
-                          If filled, introduced content types will be SKIPPED and only regular objects that are dependencies of the Allowed Types will be imported.. E.g: 'Supplier, Instrument'
-                        </span>
-                      </label>
-                      <div class="form-group input-group">
-                        <input type="text"
-                               size="45"
-                               class="form-control"
-                               id="unwanted_content_types"
-                               name="unwanted_content_types"
-                               tal:attributes="value python: view._get_attr('unwanted_content_types', '');"/>
-                      </div>
-                    </div>
-                  </li>
 
                   <li class="list-group-item">
                     <!-- Remote Prefix -->
@@ -252,6 +205,54 @@
                                id="local_prefix"
                                name="local_prefix"
                                tal:attributes="value python: view._get_attr('local_prefix', '');"/>
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Full Sync Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="full_sync_types">
+                        Full-Sync Content Types
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          If filled, ONLY introduced Content Types (separated by comma) will be imported in 'Full Synchronization' mode.
+                          It means imported objects in this instance and the original ones in the Remote will be identical. E.g: 'Client, Worksheet'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="full_sync_types"
+                               name="full_sync_types"
+                               tal:attributes="value python: view._get_attr('full_sync_types', '');"
+                        />
+                      </div>
+                    </div>
+                  </li>
+
+                  <li class="list-group-item">
+                    <!-- Unwanted Content Types -->
+                    <div class="field form-group field">
+                      <label i18n:translate=""
+                             class="form-control-label"
+                             for="unwanted_content_types">
+                        Content Types to be Skipped
+                        <span i18n:translate=""
+                              class="help formHelp">
+                          If filled, introduced content types will be SKIPPED and only regular objects that are dependencies of the Allowed Types will be imported.. E.g: 'Supplier, Instrument'
+                        </span>
+                      </label>
+                      <div class="form-group input-group">
+                        <input type="text"
+                               size="45"
+                               class="form-control"
+                               id="unwanted_content_types"
+                               name="unwanted_content_types"
+                               tal:attributes="value python: view._get_attr('unwanted_content_types', '');"/>
                       </div>
                     </div>
                   </li>
