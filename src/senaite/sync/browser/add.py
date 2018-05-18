@@ -2,14 +2,16 @@
 #
 # Copyright 2017-2018 SENAITE SYNC.
 
+import re
+
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from plone import protect
 from senaite import api
 from senaite.sync import _
+from senaite.sync import utils
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync.browser.views import Sync
 from senaite.sync.fetchstep import FetchStep
-from senaite.sync import utils
 from zope.interface import implements
 
 SYNC_STORAGE = "senaite.sync"
@@ -148,4 +150,13 @@ class Add(Sync):
                                     "error")
             return False
 
+        # Check if Prefix is used in ID generator for any content type
+        config_map = api.get_bika_setup().getIDFormatting()
+        for config in config_map:
+            form = config.get("form", "")
+            if re.match(self.remote_prefix, form, re.I):
+                pt = config.get("portal_type")
+                self.add_status_message("Introduced Remote Prefix is being"
+                                        " used in {} ID's.".format(pt), "error")
+                return False
         return True
