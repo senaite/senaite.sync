@@ -16,7 +16,7 @@ Installation
 
 In order to get SENAITE.SYNC running properly both :code:`senaite.api` and :code:`senaite.jsonapi` are required in the source and destination instances. However, :code:`senaite.sync` is only required in the destination instance (where the data is to be imported).
 
-To install SENAITE SYNC, you simply have to add :code:`senaite.sync` into the :code:`eggs` section
+To install SENAITE.SYNC, you simply have to add :code:`senaite.sync` into the :code:`eggs` section
 of your :code:`buildout.cfg`::
 
     eggs =
@@ -27,7 +27,7 @@ of your :code:`buildout.cfg`::
 Importing data
 ==============
 
-Once SEANITE SYNC has been installed and the instance is up and running navigate to SENAITE SYNC's view by adding :code:`/sync` after the base url of the instance.
+Once SEANITE.SYNC has been installed and the instance is up and running navigate to SENAITE SYNC's view by adding :code:`/sync` after the base url of the instance.
 
 The migration process mainly consists of three steps. 
 
@@ -62,7 +62,7 @@ Feedback and support
 License
 =======
 
-SENAITE.CORE
+SENAITE.SYNC
 Copyright (C) 2018 Senaite Foundation
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.

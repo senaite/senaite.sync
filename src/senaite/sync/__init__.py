@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017 SENAITE
+# This file is part of SENAITE.SYNC
+#
+# Copyright 2018 by it's authors.
+# Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
 
 import logging
 
