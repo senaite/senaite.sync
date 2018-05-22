@@ -13,7 +13,7 @@ from senaite.sync.importstep import ImportStep
 
 from senaite.sync import logger, utils
 from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID, \
-                                     REMOTE_PATH
+                                     REMOTE_PATH, LOCAL_PATH
 
 
 class ComplementStep(ImportStep):
@@ -151,6 +151,38 @@ class ComplementStep(ImportStep):
         self.sh.reset_updated_flags()
         logger.info("*** IMPORT DATA FINISHED: {} ***".format(self.domain_name))
         return
+
+    def _handle_obj(self, row, handle_dependencies=False):
+        """
+        :param row: A row dictionary from the souper
+        :type row: dict
+        """
+        r_uid = row.get(REMOTE_UID)
+        try:
+            if row.get("updated", "0") == "1":
+                return True
+            self._queue.append(r_uid)
+            obj_path = row.get(LOCAL_PATH)
+            obj = self.portal.unrestrictedTraverse(obj_path, None)
+            obj_data = self.get_json(r_uid, complete=True,
+                                     workflow=True)
+
+            rem_modified = DateTime(obj_data.get('modification_date'))
+            if obj.modified() > rem_modified:
+                import pdb; pdb.set_trace()
+                logger.info("'{}' has been modified in local and will not be "
+                            "updated".format(repr(obj)))
+                return True
+
+            self._update_object_with_data(obj, obj_data)
+            self._set_object_permission(obj)
+            self.sh.mark_update(r_uid)
+            self._queue.remove(r_uid)
+        except Exception, e:
+            self._queue.remove(r_uid)
+            logger.error('Failed to handle {} : {} '.format(row, str(e)))
+
+        return True
 
     def _create_new_objects(self):
         """ Creates all the new objects from source without setting any
