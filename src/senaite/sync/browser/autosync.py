@@ -4,7 +4,7 @@
 #
 # Copyright 2018 by it's authors.
 # Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
-
+from DateTime import DateTime
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 
@@ -15,7 +15,7 @@ from plone import protect
 from senaite import api
 from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
-from senaite.sync.browser.views import Sync
+from senaite.sync.browser.views import Sync, SYNC_STORAGE
 import senaite.sync.utils as u
 
 
@@ -39,36 +39,17 @@ class AutoSync(BrowserView):
 
         # Credentials storage must be filled beforehand. Users with enough
         # privileges can add domains from 'edit_auto_sync' view.
-        storage = u.get_credentials_storage(self.portal)
+        storage = u.get_annotation(self.portal)[SYNC_STORAGE]
+
         logger.info("**** AUTO SYNC STARTED ****")
-
-        for key, value in storage.items():
+        for domain_name in storage:
             # First step is fetching data for the domain
-            logger.info("Fetching data for: {} ".format(key))
-            self.request.form["fetchform"] = 1
-            self.request.form["fetch"] = 1
-            self.request.form["url"] = value["url"]
-            self.request.form["ac_name"] = value["ac_username"]
-            self.request.form["ac_password"] = value["ac_password"]
-            response = Sync(self.context, self.request)
-            response()
-
-            # Second step is importing fetched data
-            self.request.form["fetchform"] = False
-            self.request.form["fetch"] = False
-
-            logger.info("Importing data for: {} ".format(key))
+            logger.info("Fetching data for: {} ".format(domain_name))
             self.request.form["dataform"] = 1
-            self.request.form["import"] = 1
-            self.request.form["domain"] = value["url"]
-            response = Sync(self.context, self.request)
-            response()
-
-            # The last step is clearing fetched data from the storage to avoid
-            # increase of the memory
-            logger.info("Clearing storage data for: {} ".format(key))
-            self.request.form["import"] = False
-            self.request.form["clear_storage"] = 1
+            self.request.form["complement"] = 1
+            self.request.form["domain_name"] = domain_name
+            self.request.form["mod_date_limit"] = DateTime().strftime(
+                                                        u._default_date_format)
             response = Sync(self.context, self.request)
             response()
 

@@ -169,7 +169,6 @@ class ComplementStep(ImportStep):
 
             rem_modified = DateTime(obj_data.get('modification_date'))
             if obj.modified() > rem_modified:
-                import pdb; pdb.set_trace()
                 logger.info("'{}' has been modified in local and will not be "
                             "updated".format(repr(obj)))
                 return True
