@@ -56,6 +56,8 @@ class Add(Sync):
             self.add_status_message(message, "error")
             return self.template()
 
+        self.auto_sync = (form.get("auto_sync") == 'on')
+
         self.import_settings = (form.get("import_settings") == 'on')
         self.import_users = (form.get("import_users") == 'on')
         self.import_registry = (form.get("import_registry") == 'on')
@@ -85,6 +87,7 @@ class Add(Sync):
             ac_password=self.password)
 
         config = dict(
+            auto_sync=self.auto_sync,
             import_settings=self.import_settings,
             import_users=self.import_users,
             import_registry=self.import_registry,

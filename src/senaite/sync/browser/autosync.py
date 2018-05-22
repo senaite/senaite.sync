@@ -42,8 +42,9 @@ class AutoSync(BrowserView):
         storage = u.get_annotation(self.portal)[SYNC_STORAGE]
 
         logger.info("**** AUTO SYNC STARTED ****")
-        for domain_name in storage:
-            # First step is fetching data for the domain
+        for domain_name, values in storage.iteritems():
+            if not values["configuration"]["auto_sync"]:
+                continue
             logger.info("Fetching data for: {} ".format(domain_name))
             self.request.form["dataform"] = 1
             self.request.form["complement"] = 1
