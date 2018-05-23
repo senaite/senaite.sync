@@ -45,6 +45,7 @@ class UpdateStep(ImportStep):
         self.records = []
         self.waiting_records = []
         self.sh = SoupHandler(self.domain_name)
+
         # Dummy query to get overall number of items in the specified catalog
         query = {
             "url_or_endpoint": "search",
@@ -58,6 +59,7 @@ class UpdateStep(ImportStep):
                          self.update_only_types + self.read_only_types)
             query["portal_type"] = types
         cd = self.get_json(**query)
+
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
         window = 500
@@ -106,6 +108,8 @@ class UpdateStep(ImportStep):
             rec_id = self.sh.insert(record)
             self.records.append(rec_id)
 
+        storage = self.get_storage()
+        storage["last_fetch_time"] = DateTime()
         logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
                                                         len(self.records)))
         return

@@ -4,19 +4,14 @@
 #
 # Copyright 2018 by it's authors.
 # Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
-from DateTime import DateTime
+import senaite.sync.utils as u
 from Products.Five import BrowserView
-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-
-from zope.interface import implements
-
 from plone import protect
-
 from senaite import api
 from senaite.sync import logger
 from senaite.sync.browser.interfaces import ISync
 from senaite.sync.browser.views import Sync, SYNC_STORAGE
-import senaite.sync.utils as u
+from zope.interface import implements
 
 
 class AutoSync(BrowserView):
@@ -50,8 +45,6 @@ class AutoSync(BrowserView):
             self.request.form["dataform"] = 1
             self.request.form["update"] = 1
             self.request.form["domain_name"] = domain_name
-            self.request.form["mod_date_limit"] = DateTime().strftime(
-                                                        u._default_date_format)
             response = Sync(self.context, self.request)
             response()
 
