@@ -48,7 +48,7 @@ class AutoSync(BrowserView):
 
             logger.info("Updating data with: '{}' ".format(domain_name))
             self.request.form["dataform"] = 1
-            self.request.form["complement"] = 1
+            self.request.form["update"] = 1
             self.request.form["domain_name"] = domain_name
             self.request.form["mod_date_limit"] = DateTime().strftime(
                                                         u._default_date_format)

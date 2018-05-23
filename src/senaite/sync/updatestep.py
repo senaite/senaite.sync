@@ -16,8 +16,8 @@ from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID, \
                                      REMOTE_PATH, LOCAL_PATH
 
 
-class ComplementStep(ImportStep):
-    """ A Complement Step to be run after the Import Step. Might be useful when
+class UpdateStep(ImportStep):
+    """ An Update Step to be run after the Import Step. Might be useful when
     import takes too long and there are objects that have been created during
     that time.
     """
@@ -39,7 +39,7 @@ class ComplementStep(ImportStep):
     def _fetch_data(self):
         """ Fetch necessary objects and save their UIDs in memory.
         """
-        logger.info("*** COMPLEMENT STEP - FETCHING DATA: {} ***".format(
+        logger.info("*** UPDATE STEP - FETCHING DATA: {} ***".format(
             self.domain_name))
 
         self.records = []
@@ -130,7 +130,7 @@ class ComplementStep(ImportStep):
             self._handle_obj(row, handle_dependencies=False)
 
             # Log.info every 50 objects imported
-            utils.log_process(task_name="Complement Step", started=start_time,
+            utils.log_process(task_name="Update Step", started=start_time,
                               processed=item_index+1, total=total_object_count,
                               frequency=50)
 
@@ -193,7 +193,7 @@ class ComplementStep(ImportStep):
         """ Creates all the new objects from source without setting any
         field data. We use this to skip handling dependencies process. If any
         dependency of the object is new (or recently modified), it must be
-        handled during Complement Step. So before updating objects with data,
+        handled during Update Step. So before updating objects with data,
         we must be sure that all its dependencies are created.
         """
         logger.info("*** CREATING NEW OBJECTS: {} ***".format(self.domain_name))

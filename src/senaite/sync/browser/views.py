@@ -5,24 +5,19 @@
 # Copyright 2018 by it's authors.
 # Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
 
-from DateTime import DateTime
 from BTrees.OOBTree import OOBTree
-
+from DateTime import DateTime
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-from senaite.sync.complementstep import ComplementStep
-from senaite.sync.importstep import ImportStep
-
-from zope.interface import implements
-from zope.annotation.interfaces import IAnnotations
-
 from plone import protect
-
 from senaite import api
-from senaite.sync.browser.interfaces import ISync
 from senaite.sync import _
-from senaite.sync.fetchstep import FetchStep
+from senaite.sync.browser.interfaces import ISync
+from senaite.sync.importstep import ImportStep
 from senaite.sync.souphandler import delete_soup
+from senaite.sync.updatestep import UpdateStep
+from zope.annotation.interfaces import IAnnotations
+from zope.interface import implements
 
 SYNC_STORAGE = "senaite.sync"
 
@@ -78,7 +73,7 @@ class Sync(BrowserView):
         if form.get("import", False):
             step = ImportStep(credentials, config)
 
-        # Handle "Complement" action
+        # Handle "Update" action
         else:
             fetch_time = form.get("mod_date_limit", None) or \
                 storage.get("last_fetch_time", None)
@@ -95,7 +90,7 @@ class Sync(BrowserView):
                     self.add_status_message(message, "error")
                     return self.template()
 
-            step = ComplementStep(credentials, config, fetch_time)
+            step = UpdateStep(credentials, config, fetch_time)
 
         step.run()
         return self.template()

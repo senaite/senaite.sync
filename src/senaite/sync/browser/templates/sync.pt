@@ -80,7 +80,7 @@
               <div style="margin-top: 15px">
                   <dl class="collapsible">
                       <dt class="collapsibleHeader">
-                          RUN COMPLEMENT STEP
+                          UPDATE
                       </dt>
                       <dd class="collapsibleContent">
                           <div class="field form-group field">
@@ -90,7 +90,7 @@
                                 Modification Date Limit
                                 <span i18n:translate=""
                                       class="help formHelp">
-                                  If filled, complement step will run for the objects created/modified after this time.
+                                  If filled, objects created/modified in Remote after this time will be updated. By default it is 'Last Fetch Time'.
                                 </span>
                               </label>
                               <div class="form-group input-group">
@@ -103,9 +103,9 @@
                           </div>
                           <input class="btn btn-default btn-sm"
                                  type="submit"
-                                 name="complement"
+                                 name="update"
                                  i18n:attributes="value"
-                                 value="Complement"/>
+                                 value="Get Updates"/>
                       </dd>
                   </dl>
               </div>
