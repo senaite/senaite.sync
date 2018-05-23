@@ -23,8 +23,7 @@ class AutoSync(BrowserView):
     """
     A View to be called by clock server periodically in order to run Auto Sync.
     With an authentication required, it will go through all the domains
-    registered in the system and run 1. Fetch, 2. Import, 3. Clear steps for
-    each of them.
+    registered in the system and run Update Step
     """
     implements(ISync)
 
@@ -35,17 +34,19 @@ class AutoSync(BrowserView):
 
     def __call__(self):
         protect.CheckAuthenticator(self.request.form)
-        self.portal = api.get_portal()
-
-        # Credentials storage must be filled beforehand. Users with enough
-        # privileges can add domains from 'edit_auto_sync' view.
-        storage = u.get_annotation(self.portal)[SYNC_STORAGE]
 
         logger.info("**** AUTO SYNC STARTED ****")
+
+        self.portal = api.get_portal()
+        storage = u.get_annotation(self.portal)[SYNC_STORAGE]
+
         for domain_name, values in storage.iteritems():
+
+            # Check if Auto-Sync is enabled for this Remote
             if not values["configuration"]["auto_sync"]:
                 continue
-            logger.info("Fetching data for: {} ".format(domain_name))
+
+            logger.info("Updating data with: '{}' ".format(domain_name))
             self.request.form["dataform"] = 1
             self.request.form["complement"] = 1
             self.request.form["domain_name"] = domain_name

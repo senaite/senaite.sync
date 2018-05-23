@@ -153,7 +153,13 @@ class ComplementStep(ImportStep):
         return
 
     def _handle_obj(self, row, handle_dependencies=False):
-        """
+        """ Override super's method due to the following reasons:
+            1.  No need to create object slugs, they are already created in
+                '_create_new_objects step.
+            2. If object has been modified in local, it should not be updated
+                by the data from the Remote.
+            3. No need to handle Dependencies.
+
         :param row: A row dictionary from the souper
         :type row: dict
         """
