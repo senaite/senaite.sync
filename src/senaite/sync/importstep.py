@@ -29,7 +29,7 @@ from senaite.sync import logger
 from senaite.sync import _
 from senaite.sync.souphandler import SoupHandler
 from senaite.sync.souphandler import REMOTE_UID, LOCAL_UID, REMOTE_PATH,\
-                                     PORTAL_TYPE
+                                     PORTAL_TYPE, LOCAL_PATH
 from senaite.sync import utils
 
 COMMIT_INTERVAL = 1000
@@ -316,11 +316,12 @@ class ImportStep(SyncStep):
         local_path = self.translate_path(remote_path)
         existing = self.portal.unrestrictedTraverse(local_path, None)
         if existing:
-            local_uid = self.sh.find_unique(REMOTE_PATH, remote_path).get(LOCAL_UID,
-                                                              None)
-            if not local_uid:
+            rec = self.sh.find_unique(REMOTE_PATH, remote_path)
+            if not rec.get(LOCAL_UID, None) or not rec.get(LOCAL_PATH, None):
                 local_uid = api.get_uid(existing)
-                self.sh.update_by_remote_path(remote_path, local_uid=local_uid)
+                self.sh.update_by_remote_path(remote_path, local_uid=local_uid,
+                                              local_path=local_path)
+
             return existing
 
         if not self._parents_created(remote_path):

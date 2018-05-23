@@ -30,6 +30,7 @@ Changelog
 
 **Fixed**
 
+- #48 Auto Synchronization
 - #45 Error while Fetching Missing Parents
 - #39 Complement Step does not update all objects
 - #35 Bug- Complement Step yields all the items

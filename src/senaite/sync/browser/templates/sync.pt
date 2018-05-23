@@ -49,7 +49,8 @@
                                   unwanted_content_types python: view.get_storage_config(storage, 'unwanted_content_types');
                                   prefixable_types python: view.get_storage_config(storage, 'prefixable_types');
                                   read_only_types python: view.get_storage_config(storage, 'read_only_types');
-                                  update_only_types python: view.get_storage_config(storage, 'update_only_types');"
+                                  update_only_types python: view.get_storage_config(storage, 'update_only_types');
+                                  auto_sync python: view.get_storage_config(storage, 'auto_sync');"
               >
                   <b>Remote's Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(storage, 'remote_prefix', 'Not Defined')"/></b><br><br>
                   <b>Local Prefix: <span style="font-size: medium" tal:replace="python: view.get_storage_config(storage, 'local_prefix', 'Not Defined')"/></b><br><br>
@@ -57,6 +58,7 @@
                   Registry will <span tal:condition="python: not view.get_storage_config(storage, 'import_registry')">NOT</span>,
                   Users will <span tal:condition="python: not view.get_storage_config(storage, 'import_users')">NOT</span> be imported.<br><br>
 
+                  Auto Synchronization: <b><span tal:replace="python: 'Enabled' if auto_sync else 'Disabled'"/> </b><br><br>
                   Content types to be imported: <b><span tal:replace="python: ', '.join(full_sync_types) if full_sync_types else 'All the content types'"/> </b><br><br>
                   Content types to be skipped: <b><span tal:replace="python: ', '.join(unwanted_content_types) if unwanted_content_types else 'Not specified'"/> </b><br><br>
                   Content types that will contain prefix: <b><span tal:replace="python: ', '.join(prefixable_types) if prefixable_types else 'Not defined'"/> </b><br><br>
@@ -78,7 +80,7 @@
               <div style="margin-top: 15px">
                   <dl class="collapsible">
                       <dt class="collapsibleHeader">
-                          RUN COMPLEMENT STEP
+                          UPDATE
                       </dt>
                       <dd class="collapsibleContent">
                           <div class="field form-group field">
@@ -88,7 +90,7 @@
                                 Modification Date Limit
                                 <span i18n:translate=""
                                       class="help formHelp">
-                                  If filled, complement step will run for the objects created/modified after this time.
+                                  If filled, objects created/modified in Remote after this time will be updated. By default it is 'Last Fetch Time'.
                                 </span>
                               </label>
                               <div class="form-group input-group">
@@ -101,9 +103,9 @@
                           </div>
                           <input class="btn btn-default btn-sm"
                                  type="submit"
-                                 name="complement"
+                                 name="update"
                                  i18n:attributes="value"
-                                 value="Complement"/>
+                                 value="Get Updates"/>
                       </dd>
                   </dl>
               </div>

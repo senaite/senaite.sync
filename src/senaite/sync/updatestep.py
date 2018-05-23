@@ -13,11 +13,11 @@ from senaite.sync.importstep import ImportStep
 
 from senaite.sync import logger, utils
 from senaite.sync.souphandler import SoupHandler, REMOTE_UID, LOCAL_UID, \
-                                     REMOTE_PATH
+                                     REMOTE_PATH, LOCAL_PATH
 
 
-class ComplementStep(ImportStep):
-    """ A Complement Step to be run after the Import Step. Might be useful when
+class UpdateStep(ImportStep):
+    """ An Update Step to be run after the Import Step. Might be useful when
     import takes too long and there are objects that have been created during
     that time.
     """
@@ -39,12 +39,13 @@ class ComplementStep(ImportStep):
     def _fetch_data(self):
         """ Fetch necessary objects and save their UIDs in memory.
         """
-        logger.info("*** COMPLEMENT STEP - FETCHING DATA: {} ***".format(
+        logger.info("*** UPDATE STEP - FETCHING DATA: {} ***".format(
             self.domain_name))
 
         self.records = []
         self.waiting_records = []
         self.sh = SoupHandler(self.domain_name)
+
         # Dummy query to get overall number of items in the specified catalog
         query = {
             "url_or_endpoint": "search",
@@ -58,6 +59,7 @@ class ComplementStep(ImportStep):
                          self.update_only_types + self.read_only_types)
             query["portal_type"] = types
         cd = self.get_json(**query)
+
         # Knowing the catalog length compute the number of pages we will need
         # with the desired window size and overlap
         window = 500
@@ -106,6 +108,8 @@ class ComplementStep(ImportStep):
             rec_id = self.sh.insert(record)
             self.records.append(rec_id)
 
+        storage = self.get_storage()
+        storage["last_fetch_time"] = DateTime()
         logger.info("*** FETCH FINISHED. {} OBJECTS WILL BE UPDATED".format(
                                                         len(self.records)))
         return
@@ -130,7 +134,7 @@ class ComplementStep(ImportStep):
             self._handle_obj(row, handle_dependencies=False)
 
             # Log.info every 50 objects imported
-            utils.log_process(task_name="Complement Step", started=start_time,
+            utils.log_process(task_name="Update Step", started=start_time,
                               processed=item_index+1, total=total_object_count,
                               frequency=50)
 
@@ -152,11 +156,48 @@ class ComplementStep(ImportStep):
         logger.info("*** IMPORT DATA FINISHED: {} ***".format(self.domain_name))
         return
 
+    def _handle_obj(self, row, handle_dependencies=False):
+        """ Override super's method due to the following reasons:
+            1.  No need to create object slugs, they are already created in
+                '_create_new_objects step.
+            2. If object has been modified in local, it should not be updated
+                by the data from the Remote.
+            3. No need to handle Dependencies.
+
+        :param row: A row dictionary from the souper
+        :type row: dict
+        """
+        r_uid = row.get(REMOTE_UID)
+        try:
+            if row.get("updated", "0") == "1":
+                return True
+            self._queue.append(r_uid)
+            obj_path = row.get(LOCAL_PATH)
+            obj = self.portal.unrestrictedTraverse(obj_path, None)
+            obj_data = self.get_json(r_uid, complete=True,
+                                     workflow=True)
+
+            rem_modified = DateTime(obj_data.get('modification_date'))
+            if obj.modified() > rem_modified:
+                logger.info("'{}' has been modified in local and will not be "
+                            "updated".format(repr(obj)))
+                return True
+
+            self._update_object_with_data(obj, obj_data)
+            self._set_object_permission(obj)
+            self.sh.mark_update(r_uid)
+            self._queue.remove(r_uid)
+        except Exception, e:
+            self._queue.remove(r_uid)
+            logger.error('Failed to handle {} : {} '.format(row, str(e)))
+
+        return True
+
     def _create_new_objects(self):
         """ Creates all the new objects from source without setting any
         field data. We use this to skip handling dependencies process. If any
         dependency of the object is new (or recently modified), it must be
-        handled during Complement Step. So before updating objects with data,
+        handled during Update Step. So before updating objects with data,
         we must be sure that all its dependencies are created.
         """
         logger.info("*** CREATING NEW OBJECTS: {} ***".format(self.domain_name))

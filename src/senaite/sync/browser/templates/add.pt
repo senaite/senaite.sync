@@ -328,6 +328,21 @@
                     </div>
                   </li>
 
+                  <li class="list-group-item">
+                    <!-- Auto Sync -->
+                    <div>
+                      <input type="checkbox"
+                             name="auto_sync"
+                             id="auto_sync"
+                      />
+	     	          <label for="auto_sync">Auto Sync</label>
+                      <span i18n:translate="" class="help formHelp">
+                        Enable/Disable Periodic Auto Synchronization for this Remote.
+                      </span>
+	                </div>
+                  </li>
+
+
                 </ul>
               </div>
             </div>
