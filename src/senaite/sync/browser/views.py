@@ -139,3 +139,20 @@ class Sync(BrowserView):
         if annotation.get(SYNC_STORAGE) is None:
             annotation[SYNC_STORAGE] = OOBTree()
         return annotation[SYNC_STORAGE]
+
+
+class ContentTypesView:
+    """Sync Controller View
+    """
+
+    template = ViewPageTemplateFile("templates/content_types.pt")
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+
+    def __call__(self):
+        return self.template()
+
+    def get_content_types(self):
+        return api.get_tool("portal_types").listContentTypes()

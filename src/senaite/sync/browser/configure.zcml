@@ -23,4 +23,11 @@
       permission="cmf.ManagePortal"
       />
 
+  <browser:page
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="sync_content_types"
+      class=".views.ContentTypesView"
+      permission="cmf.ManagePortal"
+      />
+
 </configure>
