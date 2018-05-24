@@ -348,7 +348,7 @@
             </div>
           </div>
         </div>
-
+        <a target="_blank" href="sync_content_types"> Click here to list all the available Content Types.</a><br><br><br>
         <input class="btn btn-success btn-sm allowMultiSubmit"
                type="submit"
                name="fetch"
