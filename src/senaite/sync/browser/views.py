@@ -142,7 +142,7 @@ class Sync(BrowserView):
 
 
 class ContentTypesView:
-    """Sync Controller View
+    """ A view to list all the Content Types existing on the portal.
     """
 
     template = ViewPageTemplateFile("templates/content_types.pt")
