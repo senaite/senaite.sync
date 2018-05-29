@@ -1,0 +1,28 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      i18n:domain="senaite">
+<head>
+
+</head>
+<body tal:define="types view/get_content_types;
+                  total python: len(types)">
+    <table border="1">
+            <tr>
+                <tal:col repeat="col python: range(total)">
+                    <td tal:condition="python: not col % 30" >
+                        <table>
+                            <tal:row repeat="row python: range(30)">
+                                <tr tal:attributes="style python: 'background-color: aliceblue' if row % 2 else '';">
+                                    <td style="vertical-align:top; padding-right: 80px;">
+                                        <span tal:replace="python: types[row+col] if row+col < total else '' "/><br>
+                                    </td>
+                                </tr>
+                            </tal:row>
+                        </table>
+                    </td>
+                </tal:col>
+            </tr>
+    </table>
+</body>
+</html>
