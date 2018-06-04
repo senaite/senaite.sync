@@ -25,6 +25,7 @@ class UpdateStep(ImportStep):
     def __init__(self, credentials, config, fetch_time):
         ImportStep.__init__(self, credentials, config)
         self.fetch_time = fetch_time
+        # Keep modification times in a dictionary to restore after Update Step
         self.modification_dates = dict()
 
     def run(self):
@@ -186,7 +187,8 @@ class UpdateStep(ImportStep):
                 return True
 
             self._update_object_with_data(obj, obj_data)
-            # In the end, we will keep the old modification time
+
+            # In the end, we will restore the modification time
             self.modification_dates[row[LOCAL_UID]] = time_modified
         except Exception, e:
             logger.error('Failed to handle {} : {} '.format(row, str(e)))
@@ -216,7 +218,12 @@ class UpdateStep(ImportStep):
         return
 
     def restore_modification_dates(self):
-        """
+        """ When objects are updated by Sync, their 'modified' time should not
+        be updated. Otherwise, it can cause an infinite loop between source and
+        destination instances, since Update step based on 'modified' times.
+        It must be handled manually because reindexing object updates 'modified'
+        attribute.
+        https://docs.plone.org/4/en/develop/plone/content/manipulating.html
         """
         logger.info(" *** Restoring Old Modification Dates ***")
 
