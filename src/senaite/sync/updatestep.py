@@ -25,6 +25,7 @@ class UpdateStep(ImportStep):
     def __init__(self, credentials, config, fetch_time):
         ImportStep.__init__(self, credentials, config)
         self.fetch_time = fetch_time
+        self.modification_dates = dict()
 
     def run(self):
         """
@@ -34,6 +35,7 @@ class UpdateStep(ImportStep):
         self._fetch_data()
         self._create_new_objects()
         self._update_objects()
+        self.restore_modification_dates()
         return
 
     def _fetch_data(self):
@@ -42,8 +44,8 @@ class UpdateStep(ImportStep):
         logger.info("*** UPDATE STEP - FETCHING DATA: {} ***".format(
             self.domain_name))
 
-        self.records = []
-        self.waiting_records = []
+        self.records = list()
+        self.waiting_records = list()
         self.sh = SoupHandler(self.domain_name)
 
         # Dummy query to get overall number of items in the specified catalog
@@ -171,24 +173,22 @@ class UpdateStep(ImportStep):
         try:
             if row.get("updated", "0") == "1":
                 return True
-            self._queue.append(r_uid)
             obj_path = row.get(LOCAL_PATH)
             obj = self.portal.unrestrictedTraverse(obj_path, None)
+            time_modified = obj.modified()
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
 
-            rem_modified = DateTime(obj_data.get('modification_date'))
-            if obj.modified() > rem_modified:
+            rem_modified = DateTime(obj_data.get('modified'))
+            if time_modified > rem_modified:
                 logger.info("'{}' has been modified in local and will not be "
                             "updated".format(repr(obj)))
                 return True
 
             self._update_object_with_data(obj, obj_data)
-            self._set_object_permission(obj)
-            self.sh.mark_update(r_uid)
-            self._queue.remove(r_uid)
+            # In the end, we will keep the old modification time
+            self.modification_dates[row[LOCAL_UID]] = time_modified
         except Exception, e:
-            self._queue.remove(r_uid)
             logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
         return True
@@ -213,4 +213,17 @@ class UpdateStep(ImportStep):
                 logger.error("Object creation failed for: {} ... {}".
                              format(row, str(e)))
         logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
+        return
+
+    def restore_modification_dates(self):
+        """
+        """
+        logger.info(" *** Restoring Old Modification Dates ***")
+
+        for uid, mod_time in self.modification_dates.iteritems():
+            obj = api.get_object_by_uid(uid)
+            obj.setModificationDate(mod_time)
+            obj.reindexObject(idxs=['modified'])
+
+        logger.info(" *** Modification Dates Restored ***")
         return

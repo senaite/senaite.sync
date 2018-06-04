@@ -240,7 +240,7 @@ def date_to_query_literal(date, date_format=_default_date_format):
     if isinstance(date, basestring):
         date = datetime.strptime(date, date_format)
 
-    days = (datetime.now() - date).days
+    days = (datetime.now() - date.replace(tzinfo=None)).days
 
     if days < 1:
         return "today"
