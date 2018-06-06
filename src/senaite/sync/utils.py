@@ -135,7 +135,7 @@ def is_review_history_imported(obj, review_history, wf_tool=None):
     time = DateTime(review_history.get('time'))
     current_rh = wf_tool.getInfoFor(obj, 'review_history', '')
     for rh in current_rh:
-        if rh.get(state_variable) == state and time < rh.get('time'):
+        if rh.get(state_variable) == state and time <= rh.get('time'):
             return True
 
     return False
