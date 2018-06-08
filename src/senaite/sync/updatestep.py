@@ -6,6 +6,8 @@
 # Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
 
 from datetime import datetime
+
+import transaction
 from DateTime import DateTime
 
 from senaite import api
@@ -34,6 +36,7 @@ class UpdateStep(ImportStep):
         """
         self.session = self.get_session()
         self._fetch_data()
+        transaction.commit()
         self._create_new_objects()
         self._update_objects()
         self.restore_modification_dates()
