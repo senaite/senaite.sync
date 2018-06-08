@@ -209,7 +209,7 @@ class UpdateStep(ImportStep):
 
         self.sh = SoupHandler(self.domain_name)
 
-        for rec_id in self.records:
+        for idx, rec_id in enumerate(self.records):
             row = self.sh.get_record_by_id(rec_id, as_dict=True)
             try:
                 if row:
@@ -217,6 +217,9 @@ class UpdateStep(ImportStep):
             except Exception, e:
                 logger.error("Object creation failed for: {} ... {}".
                              format(row, str(e)))
+            if (idx % 500) == 0:
+                transaction.commit()
+                logger.info(" {} objects created.".format(idx))
         logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
         return
 
