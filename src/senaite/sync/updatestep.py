@@ -65,7 +65,8 @@ class UpdateStep(ImportStep):
         window = 500
         overlap = 5
         effective_window = window-overlap
-        number_of_pages = (cd["count"]/effective_window) + 1
+        count = cd["count"] if cd["count"] else 0
+        number_of_pages = (count/effective_window) + 1
         # Retrieve data from catalog in batches with size equal to window,
         # format it and insert it into the import soup
         for current_page in xrange(number_of_pages):
