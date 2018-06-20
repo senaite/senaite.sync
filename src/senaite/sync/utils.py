@@ -135,7 +135,7 @@ def is_review_history_imported(obj, review_history, wf_tool=None):
     time = DateTime(review_history.get('time'))
     current_rh = wf_tool.getInfoFor(obj, 'review_history', '')
     for rh in current_rh:
-        if rh.get(state_variable) == state and time < rh.get('time'):
+        if rh.get(state_variable) == state and time <= rh.get('time'):
             return True
 
     return False
@@ -147,41 +147,6 @@ def get_annotation(portal):
     if portal is None:
         portal = api.get_portal()
     return IAnnotations(portal)
-
-
-def get_credentials_storage(portal):
-    """
-    Credentials for domains to be used for Auto Sync are stored in a different
-    annotation. Required parameters for each domain are following:
-        -domain_name:   Unique name for the domain,
-        -url:           URL of the remote instance,
-        -ac_username:   Username to log in the remote instance,
-        -ac_password:   Unique name for the domain,
-
-    Credentials are saved in a OOBTree with the structure as in the example:
-    E.g:
-        {
-            'server_1': {
-                        'url': 'http://localhost:8080/Plone/',
-                        'ac_username': 'lab_man',
-                        'ac_password': 'lab_man',
-                        'domain_name': 'server_1',
-                        },
-            'client_1': {
-                        'url': 'http://localhost:9090/Plone/',
-                        'ac_username': 'admin',
-                        'ac_password': 'admin',
-                        'domain_name': 'client_1',
-                        },
-        }
-
-    :param portal: Portal object.
-    :return:
-    """
-    annotation = get_annotation(portal)
-    if not annotation.get(SYNC_CREDENTIALS):
-        annotation[SYNC_CREDENTIALS] = OOBTree()
-    return annotation[SYNC_CREDENTIALS]
 
 
 def log_process(task_name, started, processed, total, frequency=1):
@@ -240,7 +205,7 @@ def date_to_query_literal(date, date_format=_default_date_format):
     if isinstance(date, basestring):
         date = datetime.strptime(date, date_format)
 
-    days = (datetime.now() - date).days
+    days = (datetime.now() - date.replace(tzinfo=None)).days
 
     if days < 1:
         return "today"

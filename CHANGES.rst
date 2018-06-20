@@ -30,6 +30,7 @@ Changelog
 
 **Fixed**
 
+- #50 Long term infinite loops in Update Step
 - #48 Auto Synchronization
 - #45 Error while Fetching Missing Parents
 - #39 Complement Step does not update all objects

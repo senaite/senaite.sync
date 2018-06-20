@@ -6,6 +6,8 @@
 # Some rights reserved. See LICENSE.rst, CONTRIBUTORS.rst.
 
 from datetime import datetime
+
+import transaction
 from DateTime import DateTime
 
 from senaite import api
@@ -25,6 +27,8 @@ class UpdateStep(ImportStep):
     def __init__(self, credentials, config, fetch_time):
         ImportStep.__init__(self, credentials, config)
         self.fetch_time = fetch_time
+        # Keep modification times in a dictionary to restore after Update Step
+        self.modification_dates = dict()
 
     def run(self):
         """
@@ -32,8 +36,10 @@ class UpdateStep(ImportStep):
         """
         self.session = self.get_session()
         self._fetch_data()
+        transaction.commit()
         self._create_new_objects()
         self._update_objects()
+        self.restore_modification_dates()
         return
 
     def _fetch_data(self):
@@ -42,8 +48,8 @@ class UpdateStep(ImportStep):
         logger.info("*** UPDATE STEP - FETCHING DATA: {} ***".format(
             self.domain_name))
 
-        self.records = []
-        self.waiting_records = []
+        self.records = list()
+        self.waiting_records = list()
         self.sh = SoupHandler(self.domain_name)
 
         # Dummy query to get overall number of items in the specified catalog
@@ -171,24 +177,23 @@ class UpdateStep(ImportStep):
         try:
             if row.get("updated", "0") == "1":
                 return True
-            self._queue.append(r_uid)
             obj_path = row.get(LOCAL_PATH)
             obj = self.portal.unrestrictedTraverse(obj_path, None)
+            time_modified = obj.modified()
             obj_data = self.get_json(r_uid, complete=True,
                                      workflow=True)
 
-            rem_modified = DateTime(obj_data.get('modification_date'))
-            if obj.modified() > rem_modified:
+            rem_modified = DateTime(obj_data.get('modified'))
+            if time_modified > rem_modified:
                 logger.info("'{}' has been modified in local and will not be "
                             "updated".format(repr(obj)))
                 return True
 
             self._update_object_with_data(obj, obj_data)
-            self._set_object_permission(obj)
-            self.sh.mark_update(r_uid)
-            self._queue.remove(r_uid)
+
+            # In the end, we will restore the modification time
+            self.modification_dates[row[LOCAL_UID]] = time_modified
         except Exception, e:
-            self._queue.remove(r_uid)
             logger.error('Failed to handle {} : {} '.format(row, str(e)))
 
         return True
@@ -204,7 +209,7 @@ class UpdateStep(ImportStep):
 
         self.sh = SoupHandler(self.domain_name)
 
-        for rec_id in self.records:
+        for idx, rec_id in enumerate(self.records):
             row = self.sh.get_record_by_id(rec_id, as_dict=True)
             try:
                 if row:
@@ -212,5 +217,26 @@ class UpdateStep(ImportStep):
             except Exception, e:
                 logger.error("Object creation failed for: {} ... {}".
                              format(row, str(e)))
+            if (idx % 500) == 0:
+                transaction.commit()
+                logger.info(" {} objects created.".format(idx))
         logger.info("***OBJ CREATION FINISHED: {} ***".format(self.domain_name))
+        return
+
+    def restore_modification_dates(self):
+        """ When objects are updated by Sync, their 'modified' time should not
+        be updated. Otherwise, it can cause an infinite loop between source and
+        destination instances, since Update step based on 'modified' times.
+        It must be handled manually because reindexing object updates 'modified'
+        attribute.
+        https://docs.plone.org/4/en/develop/plone/content/manipulating.html
+        """
+        logger.info(" *** Restoring Old Modification Dates ***")
+
+        for uid, mod_time in self.modification_dates.iteritems():
+            obj = api.get_object_by_uid(uid)
+            obj.setModificationDate(mod_time)
+            obj.reindexObject(idxs=['modified'])
+
+        logger.info(" *** Modification Dates Restored ***")
         return
