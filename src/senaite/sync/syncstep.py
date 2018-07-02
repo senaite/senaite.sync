@@ -21,7 +21,7 @@ from senaite.sync.syncerror import SyncError
 from senaite.sync.souphandler import REMOTE_PATH, LOCAL_PATH, PORTAL_TYPE
 
 SYNC_STORAGE = "senaite.sync"
-API_BASE_URL = "API/senaite/v1"
+API_BASE_URL = "@@API/senaite/v1"
 # Sometimes we might want to send the request to the source until we get the
 # response
 API_MAX_ATTEMPTS = 5
