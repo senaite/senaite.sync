@@ -23,7 +23,8 @@ Changelog
 
 **Changed**
 
-- 43 Querying last modified objects directly from 'uid_catalog'
+- #53 Update API base url
+- #43 Querying last modified objects directly from 'uid_catalog'
 
 **Removed**
 
