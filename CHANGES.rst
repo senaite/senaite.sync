@@ -15,6 +15,7 @@ Changelog
 - #32 Log the percentage of completion
 - #19 Configurable import
 - #16 Content type filtering
+- #14 Upgrade step machinery
 - #12 Settings import
 - #8 Periodic auto sync
 - #5 Import review history og objects
@@ -23,7 +24,8 @@ Changelog
 
 **Changed**
 
-- 43 Querying last modified objects directly from 'uid_catalog'
+- #49 Make interface more user friendly
+- #43 Querying last modified objects directly from 'uid_catalog'
 
 **Removed**
 
