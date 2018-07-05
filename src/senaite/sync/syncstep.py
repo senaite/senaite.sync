@@ -26,6 +26,8 @@ API_BASE_URL = "API/senaite/v1"
 # response
 API_MAX_ATTEMPTS = 5
 API_ATTEMPT_INTERVAL = 5
+# Certificates path
+CUSTOM_CA_DIR = "/etc/ssl/certs"
 
 
 class SyncStep(object):
@@ -247,6 +249,7 @@ class SyncStep(object):
         """Return a session object for authenticated requests
         """
         session = requests.Session()
+        session.verify = CUSTOM_CA_DIR
         session.auth = (self.username, self.password)
         return session
 
