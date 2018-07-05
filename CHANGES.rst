@@ -30,6 +30,7 @@ Changelog
 
 **Fixed**
 
+- #55 Sync's certificates search location so that syncronization over https works
 - #50 Long term infinite loops in Update Step
 - #48 Auto Synchronization
 - #45 Error while Fetching Missing Parents
