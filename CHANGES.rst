@@ -30,7 +30,7 @@ Changelog
 
 **Fixed**
 
-- #57 Handle errors in API resonse when fetching data for updates
+- #57 Handle errors in API resonse when fetching data
 - #50 Long term infinite loops in Update Step
 - #48 Auto Synchronization
 - #45 Error while Fetching Missing Parents
