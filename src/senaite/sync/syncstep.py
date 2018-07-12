@@ -21,7 +21,7 @@ from senaite.sync.syncerror import SyncError
 from senaite.sync.souphandler import REMOTE_PATH, LOCAL_PATH, PORTAL_TYPE
 
 SYNC_STORAGE = "senaite.sync"
-API_BASE_URL = "API/senaite/v1"
+API_BASE_URL = "@@API/senaite/v1"
 # Sometimes we might want to send the request to the source until we get the
 # response
 API_MAX_ATTEMPTS = 5
@@ -45,6 +45,7 @@ class SyncStep(object):
         self.url = credentials.get("url", None)
         self.username = credentials.get("ac_name", None)
         self.password = credentials.get("ac_password", None)
+        self.certificate_file = credentials.get("certificate_file", None)
 
         if not any([self.domain_name, self.url, self.username, self.password]):
             self.fail("Missing parameter in Sync Step: {}".format(credentials))
@@ -247,6 +248,10 @@ class SyncStep(object):
         """Return a session object for authenticated requests
         """
         session = requests.Session()
+        # if a certificate path has been specified
+        #  use it for this session
+        if self.certificate_file:
+            session.verify = self.certificate_file
         session.auth = (self.username, self.password)
         return session
 
