@@ -74,8 +74,9 @@ class UpdateStep(ImportStep):
         # When we receive an error message in JSON response or we
         # don't get any response at all the key 'count' doesn't exist.
         if not cd.get("count", None):
+            error_message = "Error message: {}".format(cd.get('message', "")) if cd.get('message', None) else ""
             logger.error(
-                "The query returned and error. Error message: {}".format(cd.get('message', ""))
+                "A query to the JSON API returned and error. {}".format(error_message)
             )
             return
 
