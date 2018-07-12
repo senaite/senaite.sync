@@ -71,6 +71,15 @@ class UpdateStep(ImportStep):
         window = 500
         overlap = 5
         effective_window = window-overlap
+        # When we receive an error message in JSON response or we
+        # don't get any response at all the key 'count' doesn't exist.
+        if not cd.get("count", None):
+            error_message = "Error message: {}".format(cd.get('message', None) or '')
+            logger.error(
+                "A query to the JSON API returned and error. {}".format(error_message)
+            )
+            return
+
         number_of_pages = (cd["count"]/effective_window) + 1
         # Retrieve data from catalog in batches with size equal to window,
         # format it and insert it into the import soup
