@@ -76,6 +76,28 @@
           </div>
         </div>
 
+        <!-- Certificate file -->
+        <div class="field form-group field">
+          <label i18n:translate=""
+                 class="form-control-label"
+                 for="certificate_file">
+            Certificate path
+            <span i18n:translate=""
+                  class="help formHelp">
+                If required, the full path to the public certificate file
+            </span>
+          </label>
+          <div class="form-group input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-file"></i></span>
+            <input type="text" size="30"
+                   class="form-control"
+                   id="certificate_file"
+                   name="certificate_file"
+                   tal:attributes="value python: view._get_attr('certificate_file', '');"
+            />
+          </div>
+        </div>
+
         <!-- Username -->
         <div class="field form-group field">
           <label i18n:translate=""

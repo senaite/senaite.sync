@@ -49,6 +49,7 @@ class Add(Sync):
         self.domain_name = form.get("domain_name", None)
         self.username = form.get("ac_name", None)
         self.password = form.get("ac_password", None)
+        self.certificate_file = form.get("certificate_file", None)
 
         # check if all mandatory fields have values
         if not all([self.domain_name, self.url, self.username, self.password]):
@@ -84,7 +85,8 @@ class Add(Sync):
             url=self.url,
             domain_name=self.domain_name,
             ac_name=self.username,
-            ac_password=self.password)
+            ac_password=self.password,
+            certificate_file=self.certificate_file)
 
         config = dict(
             auto_sync=self.auto_sync,
