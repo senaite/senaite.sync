@@ -70,17 +70,34 @@ Create a new buildout file, :code:`<DEV_BUILDOUT>.cfg` which extends your existi
 :code:`buildout.cfg` – this way you can easily keep development stuff separate
 from your main buildout file, which you can also use on the production server.  
 
-:code:`<DEV_BUILDOUT>.cfg`::
+:code:`<DEV_BUILDOUT>.cfg` should look like::
 
   [buildout]
   index = https://pypi.python.org/simple
   extends = buildout.cfg
   develop +=
-      src/senaite.health
+      src/senaite.sync
 
   [instance]
   eggs +=
-      senaite.health
+      senaite.sync
+
+If you are using :code:`senaite.core` and not :code:`senaite.lims` then :code:`<DEV_BUILDOUT>.cfg` should look like::
+
+  [buildout]
+  index = https://pypi.python.org/simple
+  extends = buildout.cfg
+  develop +=
+      src/senaite.sync
+      src/senaite.api
+      src/senaite.jsonapi
+
+  [instance]
+  eggs +=
+      senaite.sync
+      senaite.api
+      senaite.jsonapi
+
 
 If you already have a custom buildout file, replace :code:`buildout.cfg` in :code:`extends = buildout.cfg` by your custom buildout file. Note that with this approach you do not need to modify the existing buildout file.
 
