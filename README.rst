@@ -108,10 +108,10 @@ Then build it out with this special config file::
 and buildout will automatically download and install all required dependencies.
 
 
-Introduction
-============
+Documentation
+=============
 
-This document gives some information about functional side of Senaite
+The following sections give some information about the functional side of Senaite
 Sync. First we will explain what is the purpose of Sync, what it can be
 used for. Then, we will talk about its configration and in the end a few
 examples to make it more understandable.

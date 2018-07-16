@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0.0 (unreleased)
+1.0.0 (2018-07-16) 
 ------------------
 
 **Added**
@@ -31,9 +31,6 @@ Changelog
 - #53 Update API base url
 - #43 Querying last modified objects directly from 'uid_catalog'
 
-**Removed**
-
-
 **Fixed**
 
 - #57 Handle errors in API resonse when fetching data
@@ -52,7 +49,4 @@ Changelog
 - #22 Creation flag wasn't being unset for objects under Bika Setup
 - #21 Attachments were not imported
 - #6 ProxyField setter fails when proxy object has not been set yet
-
-**Security**
-
 
