@@ -6,6 +6,8 @@ Changelog
 
 **Added**
 
+- #58 Include detailed installation instructions in the README
+- #58 Include functional documentation in the README
 - #56 Allow to specify the certificate to be used when connecting to the source instance
 - #46 Advanced Configuration: Local Prefix and Update only Content Types
 - #44 Advanced Configuration: 'Read-Only' Portal Types
