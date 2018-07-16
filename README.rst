@@ -2,7 +2,7 @@
    :alt: senaite.sync
 
 |
-| — **SENAITE.SYNC**: *SENAITE Add-on to synchroniza data between two SENAITE instances*
+| — **SENAITE.SYNC**: *SENAITE Add-on to synchronize data between two SENAITE instances*
 
 Introduction
 ============
