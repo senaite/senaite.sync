@@ -16,12 +16,80 @@ Installation
 
 In order to get SENAITE.SYNC running properly both :code:`senaite.api` and :code:`senaite.jsonapi` are required in the source and destination instances. However, :code:`senaite.sync` is only required in the destination instance (where the data is to be imported).
 
-To install SENAITE.SYNC, you simply have to add :code:`senaite.sync` into the :code:`eggs` section
+Ready-to-go Installation
+------------------------
+
+With this installation modality, the sources from :code:`senaite.sync` will be downloaded automatically from `Python Package Index (Pypi) <https://pypi.python.org/pypi/senaite.health>`_. If you want the latest code from the `source code repository <https://github.com/senaite/senaite.sync>`_, follow the installation instructions for development listed in the next section.
+
+To install SENAITE.SYNC, if you are already using :code:`senaite.lims`, you simply have to add :code:`senaite.sync` into the :code:`eggs` section
 of your :code:`buildout.cfg`::
 
     eggs =
       ...
       senaite.sync
+
+:code:`senaite.lims` already installs :code:`senaite.jsonapi` and :code:`senaite.api` for you. However, if you are only using :code:`senaite.core` you should also add :code:`senaite.jsonapi` and :code:`senaite.api` as dependencies. Hence, the :code:`eggs` section
+of your :code:`buildout.cfg` should look like::
+
+    eggs =
+      ...
+      senaite.sync
+      senaite.api
+      senaite.jsonapi
+
+For the changes to take effect you need to re-run buildout from your console:
+
+  bin/buildout
+
+
+Note
+~~~~
+
+The above example works for the buildout created by the unified installer. If you are using a custom buildout file for SENAITE, as `suggested when installing <https://github.com/senaite/senaite.health/blob/master/README.rst#ready-to-go-installation>`_ :code:`senaite.health`, you should then add the eggs to the :code:`eggs` list in the :code:`[instance]` section rather than adding it in the :code:`[buildout]` section.
+
+Then build it out with your custom config file:
+
+  bin/buildout -c <CUSTOM_BUILDOUT>.cfg
+
+Also see this section of the Plone documentation for further details: https://docs.plone.org/4/en/manage/installing/installing_addons.html
+
+Installation for Development
+----------------------------
+
+This is the recommended approach how to enable :code:`senaite.sync`` for your
+development environment. With this approach, you'll be able to download the
+latest source code from `senaite.sync's repository <https://github.com/senaite/senaite.sync>`_
+and contribute as well.
+
+Use git to fetch :code:`senaite.sync` source code to your buildout environment::
+
+  cd src
+  git clone git://github.com/senaite/senaite.sync.git senaite.sync
+
+Create a new buildout file, :code:`<DEV_BUILDOUT>.cfg` which extends your existing
+:code:`buildout.cfg` – this way you can easily keep development stuff separate
+from your main buildout file, which you can also use on the production server.  
+
+:code:`<DEV_BUILDOUT>.cfg`::
+
+  [buildout]
+  index = https://pypi.python.org/simple
+  extends = buildout.cfg
+  develop +=
+      src/senaite.health
+
+  [instance]
+  eggs +=
+      senaite.health
+
+If you already have a custom buildout file, replace :code:`buildout.cfg` in :code:`extends = buildout.cfg` by your custom buildout file. Note that with this approach you do not need to modify the existing buildout file.
+
+Then build it out with this special config file::
+
+  bin/buildout -c <DEV_BUILDOUT>.cfg
+
+
+and buildout will automatically download and install all required dependencies.
 
 
 Introduction
