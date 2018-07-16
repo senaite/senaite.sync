@@ -2,12 +2,12 @@
    :alt: senaite.sync
 
 |
-| — **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
+| — **SENAITE.SYNC**: *SENAITE Add-on to synchroniza data between two SENAITE instances*
 
 Introduction
 ============
 
-SENAITE.SYNC is a Synchronization Solution to migrate data between two SENAITE instances or from a BIKA instance to a SENAITE instance. 
+SENAITE.SYNC is a SENAITE add-on to synchronize data amongst SENAITE instances or migrate from a BIKA instance.  
 
 
 Installation
