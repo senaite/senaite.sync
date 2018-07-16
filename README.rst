@@ -1,5 +1,5 @@
 .. figure:: /static/logo.png
-   :alt: senaite.core
+   :alt: senaite.sync
 
 
 — **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
