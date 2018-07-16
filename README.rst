@@ -37,7 +37,7 @@ of your :code:`buildout.cfg` should look like::
       senaite.api
       senaite.jsonapi
 
-For the changes to take effect you need to re-run buildout from your console:
+For the changes to take effect you need to re-run buildout from your console::
 
   bin/buildout
 
@@ -47,7 +47,7 @@ Note
 
 The above example works for the buildout created by the unified installer. If you are using a custom buildout file for SENAITE, as `suggested when installing <https://github.com/senaite/senaite.health/blob/master/README.rst#ready-to-go-installation>`_ :code:`senaite.health`, you should then add the eggs to the :code:`eggs` list in the :code:`[instance]` section rather than adding it in the :code:`[buildout]` section.
 
-Then build it out with your custom config file:
+Then build it out with your custom config file::
 
   bin/buildout -c <CUSTOM_BUILDOUT>.cfg
 
