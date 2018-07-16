@@ -3,11 +3,18 @@
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     i18n_domain="senaite.sync">
 
- <genericsetup:upgradeStep
+  <genericsetup:upgradeStep
         title="Upgrade to SENAITE Sync 1.0.0"
         source="1000"
         destination="1.0.0"
         handler="senaite.sync.upgrade.v01_00_000.upgrade"
+        profile="senaite.sync:default"/>
+
+<genericsetup:upgradeStep
+        title="Upgrade to SENAITE Sync 1.0.1"
+        source="1.0.0"
+        destination="1.0.1"
+        handler="senaite.sync.upgrade.v01_00_001.upgrade"
         profile="senaite.sync:default"/>
 
 </configure>
