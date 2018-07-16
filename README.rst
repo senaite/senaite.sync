@@ -3,6 +3,7 @@
    :alt: senaite.core
    :align: center
 
+
 — **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
 
 Introduction
@@ -545,11 +546,9 @@ on collaborator instances as shown on the second one.
    Remote A configuration on the Master instance.
 
 .. figure:: static/bis_example.png
-   :alt: Remote Master instance configuration on collaborator
-   instances.
+   :alt: Remote Master instance configuration on collaborator instances.
 
-   Remote Master instance configuration on collaborator
-   instances.
+   Remote Master instance configuration on collaborator instances.
 
 
 
