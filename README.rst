@@ -367,9 +367,9 @@ Configuration for Migration
 ---------------------------
 
 .. figure:: static/ex_conf.png
-   :alt: Example configuration for migration
+   :alt: Example configuration for migration.
 
-   Example configuration for migration
+   Example configuration for migration.
 
 If your aim is just to migrate and update your source instance as a new
 one, you only need to fill required fields from the Add View. Since
