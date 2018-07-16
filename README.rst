@@ -544,7 +544,7 @@ on collaborator instances as shown on the second one.
 
    Example 2: Remote A configuration on the Master instance.
 
-.. figure:: static/example_bis.png
+.. figure:: static/bis_example.png
    :alt: Example 2: Remote Master instance configuration on collaborator
    instances.
 
