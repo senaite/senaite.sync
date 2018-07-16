@@ -1,9 +1,8 @@
-.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/logo.png
-   :height: 64x
-   :alt: senaite.core
-   :align: center
+.. figure:: /static/logo.png
+   :alt: senaite.sync
 
-— **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
+|
+| — **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
 
 Introduction
 ============
