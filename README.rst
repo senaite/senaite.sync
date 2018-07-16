@@ -1,5 +1,4 @@
 .. figure:: static/logo.png
-   :height: 64px
    :align: center
    :alt: senaite.core
 
