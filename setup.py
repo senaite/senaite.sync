@@ -9,13 +9,14 @@ setup(
     name='senaite.sync',
     version=version,
     description="SENAITE SYNC",
-    long_description="Changelog\n" +
-                     "=========\n" +
-                     open("docs/Changelog.rst").read() + "\n" +
+    long_description=open("README.rst").read() + "\n" +
+                     open("CHANGES.rst").read() + "\n" +
                      "\n\n" +
                      "Authors and maintainers\n" +
                      "-----------------------\n\n" +
-                     "- Ramon Bartl (RIDING BYTES) <rb@ridingbytes.com>",
+                     "- Nihad Mammadli\n" +
+                     "- Ramon Bartl (RIDING BYTES) <rb@ridingbytes.com>\n" +
+                     "- Juan Gallostra (naralabs) <jgallostra@naralabs.com>",
     # Get more strings from
     # http://pypi.python.org/pypi?:action=list_classifiers
     classifiers=[
