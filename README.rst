@@ -7,7 +7,7 @@
 Introduction
 ============
 
-SENAITE.SYNC is a Synchronization Solution to migrate data between two SENAITE instances or from a BIKA instance to a SENAITE instance. Currently it only supports migration and not synchronization. 
+SENAITE.SYNC is a Synchronization Solution to migrate data between two SENAITE instances or from a BIKA instance to a SENAITE instance. 
 
 
 Installation
