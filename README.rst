@@ -94,9 +94,9 @@ Required Configuration
 ----------------------
 
 There are some required fields that without them SYNC cannot be used at
-all. They are basically required fields for Migration. Figure
-[fig:required] shows the basic SYNC view where the fields with red dots
-are mandatory to fill.
+all. They are basically required fields for Migration. The Image below
+shows the basic SYNC view where the fields with red dots are mandatory
+to fill.
 
 Domain Name
 ~~~~~~~~~~~
@@ -126,9 +126,9 @@ session.
 Optional Configuration
 ----------------------
 
-If attention is paid to Figure [fig:required] it can be seen that there
-is one field from the basic SYNC view that is not mandatory. This field
-is *Certificate Path*.
+If attention is paid to the image presented above it can be seen that
+there is one field from the basic SYNC view that is not mandatory. This
+field is *Certificate Path*.
 
 Certificate Path
 ~~~~~~~~~~~~~~~~
@@ -157,8 +157,8 @@ Advanced Configuration
 
 The following configuration options can be used for Synchronization and
 special cases. Make sure you understand all of them properly before you
-start working with SYNC. Figure [fig:advanced\_options] presents how
-this set of advances options looks in SENAITE.
+start working with SYNC. The Image at the end of the section presents how
+this set of advanced options looks in SENAITE.
 
 Import Configuration
 ~~~~~~~~~~~~~~~~~~~~
@@ -350,8 +350,8 @@ will also provide some real examples. Let’s get started!
 We assume you have SYNC Add-on installed on your Senaite instance. In
 this case, and if you have logged into the system as an Administrator or
 a Manager, you must see SYNC after clicking on the menu icon located in
-the top right corner. See Figure [fig:link\_to] to visually locate the
-SYNC link. Click on that and go to SYNC View. If this is your first time
+the top right corner. See the image below to visually locate the SYNC
+link. Click on that and go to SYNC View. If this is your first time
 adding and you don’t have any remote added previously, you will see only
 an empty page with *Add New Remote* button. Click and go to *Add New
 Remote* View. This is the page where we can configure the Remote and
@@ -374,15 +374,15 @@ Configuration for Migration
 If your aim is just to migrate and update your source instance as a new
 one, you only need to fill required fields from the Add View. Since
 there is no Advanced configuration, SYNC will just connect to the
-Remote, get all the data and Fetch it as it is in the Remote. Figure
-[fig:ex\_conf] presents an example of configuration for migration. If
+Remote, get all the data and Fetch it as it is in the Remote. The
+image above presents an example of configuration for migration. If
 you fill all the fields properly and click on *Save and Fetch* button,
 data will be fetched and in the end you will see an informing message
-like the one presented in Figure [fig:fetch\_finished]. It means you are
-ready to run Import Step now. Click on *Show Remotes* button at the
-bottom of the page and go to Remote Listing View. You will see that now
-there is some information regarding your Remote Configuration. Figure
-[fig:fetched\_data] illustrates what each section of the *Remote Table*
+like the one presented in the image below. It means you are ready to 
+run Import Step now. Click on *Show Remotes* button at the bottom of
+the page and go to Remote Listing View. You will see that now there
+is some information regarding your Remote Configuration. The last 
+image of this section illustrates what each section of the *Remote Table*
 means with a real example.
 
 We will give more information about other parts later but for now you
@@ -536,8 +536,8 @@ should define these content types to be skipped. And in the collaborator
 instances, we will define them inside *Read-only Content Types*. By this
 way, collaborators will be able to view and use them, but never to edit
 nor delete them. In the end, *Remote A* on Master instance must look as
-shown in Figure [fig:example\_2] and Remote of Master on collaborator
-instances as shown on Figure [fig:example\_2\_1].
+shown in the first image of the two presented below and Remote of Master
+on collaborator instances as shown on the second one.
 
 .. figure:: static/example_2.png
    :alt: Example 2: Remote A configuration on the Master instance.
