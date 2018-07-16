@@ -1,7 +1,7 @@
 .. figure:: static/logo.png
-   :height: 64x
-   :alt: senaite.core
+   :height: 64px
    :align: center
+   :alt: senaite.core
 
 
 — **SENAITE.SYNC**: *Synchronization Solution to migrate data between two SENAITE instances*
