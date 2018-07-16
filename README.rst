@@ -1,4 +1,4 @@
-.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/logo.png
+.. figure:: static/logo.png
    :height: 64x
    :alt: senaite.core
    :align: center
@@ -118,7 +118,7 @@ Username & Password
 User credentials to log in to the remote instance and start an HTTP
 session.
 
-.. figure:: required_fields.png
+.. figure:: static/required_fields.png
    :alt: Basic SYNC view.
 
    Basic SYNC view.
@@ -296,7 +296,7 @@ As an example:
            host localhost:8080
         </clock-server>
 
-.. figure:: advanced_options.png
+.. figure:: static/advanced_options.png
    :alt: Advanced configuration options.
 
    Advanced configuration options.
@@ -358,7 +358,7 @@ Remote* View. This is the page where we can configure the Remote and
 Start the Synchronization. In order to make it easy-to-understand, we
 will give examples for each case we talked about in the first section.
 
-.. figure:: link_to.png
+.. figure:: static/link_to.png
    :alt: Where to find the link to SYNC.
 
    Where to find the link to SYNC.
@@ -366,7 +366,7 @@ will give examples for each case we talked about in the first section.
 Configuration for Migration
 ---------------------------
 
-.. figure:: ex_conf.png
+.. figure:: static/ex_conf.png
    :alt: Example configuration for migration
 
    Example configuration for migration
@@ -390,12 +390,12 @@ can Run import step by clicking on *Import* button. After a while,
 migration will finish and you can enjoy your migrated instance on your
 new Server!
 
-.. figure:: fetch_finished.png
+.. figure:: static/fetch_finished.png
    :alt: Successfuly fetched test domain message.
 
    Successfuly fetched test domain message.
 
-.. figure:: fetched_data.png
+.. figure:: static/fetched_data.png
    :alt: Fetched data for the test domain.
 
    Fetched data for the test domain.
@@ -539,12 +539,12 @@ nor delete them. In the end, *Remote A* on Master instance must look as
 shown in Figure [fig:example\_2] and Remote of Master on collaborator
 instances as shown on Figure [fig:example\_2\_1].
 
-.. figure:: example_2.png
+.. figure:: static/example_2.png
    :alt: Example 2: Remote A configuration on the Master instance.
 
    Example 2: Remote A configuration on the Master instance.
 
-.. figure:: example_2_1.png
+.. figure:: static/example_2_1.png
    :alt: Example 2: Remote Master instance configuration on collaborator
    instances.
 
