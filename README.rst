@@ -540,15 +540,15 @@ shown in the first image of the two presented below and Remote of Master
 on collaborator instances as shown on the second one.
 
 .. figure:: static/example_2.png
-   :alt: Example 2: Remote A configuration on the Master instance.
+   :alt: Remote A configuration on the Master instance.
 
-   Example 2: Remote A configuration on the Master instance.
+   Remote A configuration on the Master instance.
 
 .. figure:: static/bis_example.png
-   :alt: Example 2: Remote Master instance configuration on collaborator
+   :alt: Remote Master instance configuration on collaborator
    instances.
 
-   Example 2: Remote Master instance configuration on collaborator
+   Remote Master instance configuration on collaborator
    instances.
 
 
