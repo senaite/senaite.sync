@@ -1,4 +1,4 @@
-.. figure:: /static/logo.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/logo.png
    :alt: senaite.sync
 
 |
@@ -202,7 +202,7 @@ Username & Password
 User credentials to log in to the remote instance and start an HTTP
 session.
 
-.. figure:: static/required_fields.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/required_fields.png
    :alt: Basic SYNC view.
 
    Basic SYNC view.
@@ -380,7 +380,7 @@ As an example:
            host localhost:8080
         </clock-server>
 
-.. figure:: static/advanced_options.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/advanced_options.png
    :alt: Advanced configuration options.
 
    Advanced configuration options.
@@ -442,7 +442,7 @@ Remote* View. This is the page where we can configure the Remote and
 Start the Synchronization. In order to make it easy-to-understand, we
 will give examples for each case we talked about in the first section.
 
-.. figure:: static/link_to.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/link_to.png
    :alt: Where to find the link to SYNC.
 
    Where to find the link to SYNC.
@@ -450,7 +450,7 @@ will give examples for each case we talked about in the first section.
 Configuration for Migration
 ---------------------------
 
-.. figure:: static/ex_conf.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/ex_conf.png
    :alt: Example configuration for migration.
 
    Example configuration for migration.
@@ -474,12 +474,12 @@ can Run import step by clicking on *Import* button. After a while,
 migration will finish and you can enjoy your migrated instance on your
 new Server!
 
-.. figure:: static/fetch_finished.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/fetch_finished.png
    :alt: Successfuly fetched test domain message.
 
    Successfuly fetched test domain message.
 
-.. figure:: static/fetched_data.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/fetched_data.png
    :alt: Fetched data for the test domain.
 
    Fetched data for the test domain.
@@ -623,12 +623,12 @@ nor delete them. In the end, *Remote A* on Master instance must look as
 shown in the first image of the two presented below and Remote of Master
 on collaborator instances as shown on the second one.
 
-.. figure:: static/example_2.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/example_2.png
    :alt: Remote A configuration on the Master instance.
 
    Remote A configuration on the Master instance.
 
-.. figure:: static/bis_example.png
+.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/bis_example.png
    :alt: Remote Master instance configuration on collaborator instances.
 
    Remote Master instance configuration on collaborator instances.
