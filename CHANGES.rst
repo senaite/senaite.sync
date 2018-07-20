@@ -15,6 +15,7 @@ Changelog
 
 **Fixed**
 
+- #62 Use full url for images in README so that they are shown on PyPi's project page
 
 **Security**
 
