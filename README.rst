@@ -1,34 +1,42 @@
-.. figure:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/logo.png
+.. image:: https://raw.githubusercontent.com/senaite/senaite.core/master/static/logo.png
+   :target: https://github.com/senaite/senaite.sync
    :alt: senaite.sync
+   :height: 128px
 
-|
-| — **SENAITE.SYNC**: *SENAITE Add-on to synchronize data between two SENAITE instances*
+*Data Synchronization tool for SENAITE LIMS*
+============================================
 
-Introduction
-============
-
-SENAITE.SYNC is a SENAITE add-on to synchronize data amongst SENAITE instances or migrate from a BIKA instance.  
+SENAITE.SYNC is a SENAITE add-on to synchronize data amongst SENAITE instances
+or migrate from a BIKA instance.
 
 
 Installation
 ============
 
-In order to get SENAITE.SYNC running properly both :code:`senaite.api` and :code:`senaite.jsonapi` are required in the source and destination instances. However, :code:`senaite.sync` is only required in the destination instance (where the data is to be imported).
+In order to get SENAITE.SYNC running properly both `senaite.api` and
+`senaite.jsonapi` are required in the source and destination instances.
+However, `senaite.sync` is only required in the destination instance (where the
+data is to be imported).
 
 Ready-to-go Installation
 ------------------------
 
-With this installation modality, the sources from :code:`senaite.sync` will be downloaded automatically from `Python Package Index (Pypi) <https://pypi.python.org/pypi/senaite.health>`_. If you want the latest code from the `source code repository <https://github.com/senaite/senaite.sync>`_, follow the installation instructions for development listed in the next section.
+With this installation modality, the sources from `senaite.sync` will be
+downloaded automatically from
+`Python Package Index (Pypi) <https://pypi.python.org/pypi/senaite.health>`_.
+If you want the latest code from the
+`source code repository <https://github.com/senaite/senaite.sync>`_,
+follow the installation instructions for development listed in the next section.
 
-To install SENAITE.SYNC, if you are already using :code:`senaite.lims`, you simply have to add :code:`senaite.sync` into the :code:`eggs` section
-of your :code:`buildout.cfg`::
+To install SENAITE.SYNC, if you are already using `senaite.lims`, you simply
+have to add `senaite.sync` into the `eggs` section of your `buildout.cfg`::
 
     eggs =
       ...
       senaite.sync
 
-:code:`senaite.lims` already installs :code:`senaite.jsonapi` and :code:`senaite.api` for you. However, if you are only using :code:`senaite.core` you should also add :code:`senaite.jsonapi` and :code:`senaite.api` as dependencies. Hence, the :code:`eggs` section
-of your :code:`buildout.cfg` should look like::
+`senaite.lims` already installs `senaite.jsonapi` and `senaite.api` for you. However, if you are only using `senaite.core` you should also add `senaite.jsonapi` and `senaite.api` as dependencies. Hence, the `eggs` section
+of your `buildout.cfg` should look like::
 
     eggs =
       ...
@@ -44,7 +52,7 @@ For the changes to take effect you need to re-run buildout from your console::
 Note
 ~~~~
 
-The above example works for the buildout created by the unified installer. If you are using a custom buildout file for SENAITE, as `suggested when installing <https://github.com/senaite/senaite.health/blob/master/README.rst#ready-to-go-installation>`_ :code:`senaite.health`, you should then add the eggs to the :code:`eggs` list in the :code:`[instance]` section rather than adding it in the :code:`[buildout]` section.
+The above example works for the buildout created by the unified installer. If you are using a custom buildout file for SENAITE, as `suggested when installing <https://github.com/senaite/senaite.health/blob/master/README.rst#ready-to-go-installation>`_ `senaite.health`, you should then add the eggs to the `eggs` list in the `[instance]` section rather than adding it in the `[buildout]` section.
 
 Then build it out with your custom config file::
 
@@ -55,21 +63,21 @@ Also see this section of the Plone documentation for further details: https://do
 Installation for Development
 ----------------------------
 
-This is the recommended approach how to enable :code:`senaite.sync`` for your
+This is the recommended approach how to enable `senaite.sync` for your
 development environment. With this approach, you'll be able to download the
 latest source code from `senaite.sync's repository <https://github.com/senaite/senaite.sync>`_
 and contribute as well.
 
-Use git to fetch :code:`senaite.sync` source code to your buildout environment::
+Use git to fetch `senaite.sync` source code to your buildout environment::
 
   cd src
   git clone git://github.com/senaite/senaite.sync.git senaite.sync
 
-Create a new buildout file, :code:`<DEV_BUILDOUT>.cfg` which extends your existing
-:code:`buildout.cfg` – this way you can easily keep development stuff separate
-from your main buildout file, which you can also use on the production server.  
+Create a new buildout file, `<DEV_BUILDOUT>.cfg` which extends your existing
+`buildout.cfg` – this way you can easily keep development stuff separate
+from your main buildout file, which you can also use on the production server.
 
-:code:`<DEV_BUILDOUT>.cfg` should look like::
+`<DEV_BUILDOUT>.cfg` should look like::
 
   [buildout]
   index = https://pypi.python.org/simple
@@ -81,7 +89,7 @@ from your main buildout file, which you can also use on the production server.
   eggs +=
       senaite.sync
 
-If you are using :code:`senaite.core` and not :code:`senaite.lims` then :code:`<DEV_BUILDOUT>.cfg` should look like::
+If you are using `senaite.core` and not `senaite.lims` then `<DEV_BUILDOUT>.cfg` should look like::
 
   [buildout]
   index = https://pypi.python.org/simple
@@ -98,7 +106,7 @@ If you are using :code:`senaite.core` and not :code:`senaite.lims` then :code:`<
       senaite.jsonapi
 
 
-If you already have a custom buildout file, replace :code:`buildout.cfg` in :code:`extends = buildout.cfg` by your custom buildout file. Note that with this approach you do not need to modify the existing buildout file.
+If you already have a custom buildout file, replace `buildout.cfg` in `extends = buildout.cfg` by your custom buildout file. Note that with this approach you do not need to modify the existing buildout file.
 
 Then build it out with this special config file::
 

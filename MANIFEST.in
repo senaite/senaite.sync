@@ -1,5 +1,6 @@
 include LICENSE
-include README.md
-recursive-include docs *
+include *.rst
+include *.md
+recursive-exclude docs *
 recursive-include src/senaite *
 recursive-exclude src/senaite *.pyc
