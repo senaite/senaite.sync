@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/senaite/senaite.core/master/static/logo.png
+.. image:: https://raw.githubusercontent.com/senaite/senaite.sync/master/static/logo.png
    :target: https://github.com/senaite/senaite.sync
    :alt: senaite.sync
    :height: 128px
